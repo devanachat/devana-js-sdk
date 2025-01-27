@@ -29,10 +29,10 @@ export type EventsMap = {
     PermissionOverwritesUpdated: PermissionOverwritesUpdated;
     PermissionOverwriteTargets: PermissionOverwriteTargets;
     Owners: Owners;
-    DiscoverableSpaces: DiscoverableSpaces;
     NewEmoticon: NewEmoticon;
     EmoticonDeleted: EmoticonDeleted;
     Emoticons: Emoticons;
+    DiscoverableSpaces: DiscoverableSpaces;
     SpaceJoined: SpaceJoined;
     SpaceLeft: SpaceLeft;
     SpaceMemberJoined: SpaceMemberJoined;
@@ -78,10 +78,10 @@ export type CommandsMap = {
     GetOwners: [GetOwners, EventsMap['Owners']];
     CreateOwner: [CreateOwner, EventsMap['Owners']];
     DeleteOwner: [CreateOwner, EventsMap['Owners']];
-    GetDiscoverableSpaces: [GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']];
     CreateEmoticon: [CreateEmoticon, EventsMap['NewEmoticon']];
     DeleteEmoticon: [DeleteEmoticon, EventsMap['EmoticonDeleted']];
     GetEmoticons: [GetEmoticons, EventsMap['Emoticons']];
+    GetDiscoverableSpaces: [GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']];
     JoinSpace: [JoinSpace, EventsMap['SpaceJoined']];
     LeaveSpace: [LeaveSpace, EventsMap['SpaceLeft']];
     CreateSpace: [CreateSpace, EventsMap['SpaceJoined']];

@@ -1,3 +1,4 @@
+import { SpaceDiscoverable } from "../Space";
 export interface UpdateSpace {
     id: string;
     name?: string;
@@ -6,4 +7,5 @@ export interface UpdateSpace {
     defaultRooms?: string[];
     icon?: string | null;
     banner?: string | null;
+    discoverable?: SpaceDiscoverable;
 }
