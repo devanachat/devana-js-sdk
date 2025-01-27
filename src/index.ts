@@ -92,6 +92,13 @@ import {TopicUpdated} from "./schemes/events/TopicUpdated";
 import {GetDiscoverableSpaces} from "./schemes/commands/GetDiscoverableSpaces";
 import {DiscoverableSpaces} from "./schemes/events/DiscoverableSpaces";
 import {SpaceSummary} from "./schemes/SpaceSummary";
+import {Emoticon} from "./schemes/Emoticon";
+import {Emoticons} from "./schemes/events/Emoticons";
+import {GetEmoticons} from "./schemes/commands/GetEmoticons";
+import {CreateEmoticon} from "./schemes/commands/CreateEmoticon";
+import {DeleteEmoticon} from "./schemes/commands/DeleteEmoticon";
+import {NewEmoticon} from "./schemes/events/NewEmoticon";
+import {EmoticonDeleted} from "./schemes/events/EmoticonDeleted";
 
 export {
     // objects
@@ -114,6 +121,7 @@ export {
     ChatLocation,
     SpaceSummary,
     SpaceDiscoverable,
+    Emoticon,
     // events
     Bye,
     Error,
@@ -156,6 +164,9 @@ export {
     Owners,
     Ok,
     DiscoverableSpaces,
+    Emoticons,
+    EmoticonDeleted,
+    NewEmoticon,
     // commands
     AssignRole,
     GetMessages,
@@ -195,4 +206,7 @@ export {
     Topics,
     GetTopics,
     GetDiscoverableSpaces,
+    GetEmoticons,
+    CreateEmoticon,
+    DeleteEmoticon,
 };
