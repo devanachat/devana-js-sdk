@@ -72,8 +72,17 @@ import {
     Messages,
     GetMessages,
     Topics,
-    GetTopics, TopicUpdated, UpdateTopic,
-    GetDiscoverableSpaces, DiscoverableSpaces,
+    GetTopics,
+    TopicUpdated,
+    UpdateTopic,
+    GetDiscoverableSpaces,
+    DiscoverableSpaces,
+    CreateEmoticon,
+    DeleteEmoticon,
+    GetEmoticons,
+    Emoticons,
+    EmoticonDeleted,
+    NewEmoticon,
 } from "./types/src/index";
 import {EventTarget} from "./EventTarget";
 
@@ -146,6 +155,9 @@ export type EventsMap = {
     PermissionOverwritesUpdated: PermissionOverwritesUpdated,
     PermissionOverwriteTargets: PermissionOverwriteTargets,
     Owners: Owners,
+    NewEmoticon: NewEmoticon,
+    EmoticonDeleted: EmoticonDeleted,
+    Emoticons: Emoticons,
     // Space events
     DiscoverableSpaces: DiscoverableSpaces,
     SpaceJoined: SpaceJoined,
@@ -197,6 +209,9 @@ export type CommandsMap = {
     GetOwners: [GetOwners, EventsMap['Owners']],
     CreateOwner: [CreateOwner, EventsMap['Owners']],
     DeleteOwner: [CreateOwner, EventsMap['Owners']],
+    CreateEmoticon: [CreateEmoticon, EventsMap['NewEmoticon']],
+    DeleteEmoticon: [DeleteEmoticon, EventsMap['EmoticonDeleted']],
+    GetEmoticons: [GetEmoticons, EventsMap['Emoticons']],
     // Space commands
     GetDiscoverableSpaces: [GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']],
     JoinSpace: [JoinSpace, EventsMap['SpaceJoined']],
