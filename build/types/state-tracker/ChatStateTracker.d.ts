@@ -3,6 +3,7 @@ import { User } from "../types/src";
 import { RoomsManager } from "./RoomsManager";
 import { SpacesManager } from "./SpacesManager";
 import { PermissionsManager } from "./PermissionsManager";
+import { EmoticonsManager } from "./EmoticonsManager";
 export declare class ChatStateTracker {
     readonly client: WebSocketChatClient;
     /**
@@ -17,6 +18,10 @@ export declare class ChatStateTracker {
      * State of the spaces you are in.
      */
     readonly spaces: SpacesManager;
+    /**
+     * State of the emoticons (global and space-related).
+     */
+    readonly emoticons: EmoticonsManager;
     private _me;
     private readonly deferredSession;
     constructor(client: WebSocketChatClient);
