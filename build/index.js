@@ -3033,7 +3033,7 @@ Permissions_defineProperty(Permissions, "list", {
   },
   CreateEmoticons: {
     value: 1 << 13,
-    maxLayer: Layer.Global
+    maxLayer: Layer.Space
   },
   ManageEmoticon: {
     value: 1 << 14,
