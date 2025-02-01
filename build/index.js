@@ -3030,6 +3030,14 @@ Permissions_defineProperty(Permissions, "list", {
   ManageSpaceRooms: {
     value: 1 << 12,
     maxLayer: Layer.Space
+  },
+  CreateEmoticons: {
+    value: 1 << 13,
+    maxLayer: Layer.Global
+  },
+  ManageEmoticon: {
+    value: 1 << 14,
+    maxLayer: Layer.Space
   }
 });
 ;// CONCATENATED MODULE: ./src/state-tracker/PermissionsManager.ts

@@ -62,6 +62,14 @@ export declare class Permissions {
             value: number;
             maxLayer: Layer;
         };
+        CreateEmoticons: {
+            value: number;
+            maxLayer: Layer;
+        };
+        ManageEmoticon: {
+            value: number;
+            maxLayer: Layer;
+        };
     };
     static getNames(): (keyof typeof this.list)[];
     static getByName(name: keyof typeof this.list): PermissionDefinition | undefined;
