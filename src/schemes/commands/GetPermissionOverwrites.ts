@@ -1,7 +1,7 @@
 import {ChatLocation} from "../ChatLocation";
+import {PermissionOverwritesTarget} from "../PermissionOverwritesTarget";
 
 export interface GetPermissionOverwrites {
     location: ChatLocation;
-    target: 'User' | 'Role';
-    targetId: string;
+    target: PermissionOverwritesTarget;
 }

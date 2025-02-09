@@ -99,6 +99,7 @@ import {CreateEmoticon} from "./schemes/commands/CreateEmoticon";
 import {DeleteEmoticon} from "./schemes/commands/DeleteEmoticon";
 import {NewEmoticon} from "./schemes/events/NewEmoticon";
 import {EmoticonDeleted} from "./schemes/events/EmoticonDeleted";
+import {PermissionOverwritesTarget} from "./schemes/PermissionOverwritesTarget";
 
 export {
     // objects
@@ -122,6 +123,7 @@ export {
     SpaceSummary,
     SpaceDiscoverable,
     Emoticon,
+    PermissionOverwritesTarget,
     // events
     Bye,
     Error,
