@@ -1,7 +1,7 @@
 import {ChatStateTracker} from "./ChatStateTracker";
 import {
     ChatLocation,
-    PermissionOverwrites,
+    PermissionOverwrites, PermissionOverwritesTarget,
     PermissionOverwritesUpdated,
     PermissionOverwritesValue,
     RoleDeleted,
@@ -19,13 +19,11 @@ import {PromiseRegistry} from "./AsyncUtils";
 
 const getOvId = (
     location: ChatLocation,
-    target?: PermissionOverwrites['target'],
-    targetId?: PermissionOverwrites['targetId'],
-) => (location.spaceId ?? '') + (location.roomId ?? '') + (location.topicId ?? '') + (target ?? '') + (targetId ?? '');
+    target?: PermissionOverwritesTarget,
+) => [location.spaceId, location.roomId, location.topicId, target.type, target.userId, target.roleId].filter(Boolean).join('/');
 
-const getOvIdByObject = (overwrites: PermissionOverwrites | PermissionOverwritesUpdated): string => getOvId(
-    overwrites.location, overwrites.target, overwrites.targetId
-);
+const getOvIdByObject
+    = (overwrites: PermissionOverwrites | PermissionOverwritesUpdated): string => getOvId(overwrites.location, overwrites.target);
 
 interface CheckPermissionsResult {
     /**
@@ -58,18 +56,17 @@ export class PermissionsManager extends EventTarget {
 
     public async getOverwrites(
         location: ChatLocation,
-        target: PermissionOverwrites['target'],
-        targetId: PermissionOverwrites['targetId'],
+        target: PermissionOverwritesTarget,
     ): Promise<PermissionOverwrites | undefined> {
         this.validateLocation(location);
 
-        const id = getOvId(location, target, targetId);
+        const id = getOvId(location, target);
 
         if (this.overwritesPromises.notExist(id)) {
             this.overwritesPromises.registerByFunction(async () => {
                 const result = await this.tracker.client.send(
                     'GetPermissionOverwrites',
-                    {location, target, targetId},
+                    {location, target},
                 );
                 if (result.error) {
                     throw result.error;
@@ -119,13 +116,13 @@ export class PermissionsManager extends EventTarget {
         const userRoles: string[] = [...(spaceMember?.roles ?? []), ...(roomMember?.roles ?? [])];
         const promises: Promise<PermissionOverwritesValue>[] = [
             // Global user overwrites
-            this.getOverwrites({}, 'User', userId).then(v => v.overwrites),
+            this.getOverwrites({}, { type: 'User', userId }).then(v => v.overwrites),
         ];
 
         if (location.spaceId && (await this.tracker.spaces.get())?.has(location.spaceId)) {
             const filterLocation: ChatLocation = {spaceId: location.spaceId};
             promises.push(this.collectRoleOverwrites(filterLocation, userRoles));
-            promises.push(this.getOverwrites(filterLocation, 'User', userId).then(v => v.overwrites));
+            promises.push(this.getOverwrites(filterLocation, { type: 'User', userId }).then(v => v.overwrites));
         }
 
         if (location.roomId && (await this.tracker.rooms.get())?.has(location.roomId)) {
@@ -133,14 +130,14 @@ export class PermissionsManager extends EventTarget {
             if (userRoles.length) {
                 promises.push(this.collectRoleOverwrites(filterLocation, userRoles));
             }
-            promises.push(this.getOverwrites(filterLocation, 'User', userId).then(v => v.overwrites));
+            promises.push(this.getOverwrites(filterLocation, { type: 'User', userId }).then(v => v.overwrites));
         }
 
         if (location.topicId && (await this.tracker.rooms.getTopics(location.roomId))?.has(location.topicId)) {
             if (userRoles.length) {
                 promises.push(this.collectRoleOverwrites(location, userRoles));
             }
-            promises.push(this.getOverwrites(location, 'User', userId).then(v => v.overwrites));
+            promises.push(this.getOverwrites(location, { type: 'User', userId }).then(v => v.overwrites));
         }
 
         return this.resolveOverwritesHierarchy(await Promise.all(promises));
@@ -170,7 +167,7 @@ export class PermissionsManager extends EventTarget {
     }
 
     private handleRoleDeleted(ev: RoleDeleted): void {
-        const ids = this.deleteOverwritesByIdPrefix(getOvId({spaceId: ev.spaceId}, 'Role', ev.id));
+        const ids = this.deleteOverwritesByIdPrefix(getOvId({spaceId: ev.spaceId}, { type: 'Role', roleId: ev.id }));
         this.overwritesPromises.forget(...ids);
     }
 
@@ -208,7 +205,7 @@ export class PermissionsManager extends EventTarget {
         userRoles: string[],
     ): Promise<PermissionOverwritesValue> {
         const roleOverwrites = await Promise.all(userRoles.map(
-            roleId => this.getOverwrites(location, 'Role', roleId)
+            roleId => this.getOverwrites(location, { type: 'Role', roleId }),
         ));
 
         return this.resolveOverwritesFromRolesByOrder(location.spaceId, roleOverwrites);
@@ -222,7 +219,7 @@ export class PermissionsManager extends EventTarget {
         const roles = await this.tracker.spaces.getRoles(spaceId);
         const sortedOverwrites = overwrites.sort(
             (a, b) =>
-                roles.get(a.targetId).priority - roles.get(b.targetId).priority
+                roles.get(a.target.roleId).priority - roles.get(b.target.roleId).priority
         );
 
         // Max length of bit word

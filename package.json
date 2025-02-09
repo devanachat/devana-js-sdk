@@ -1,6 +1,6 @@
 {
   "name": "polfan-server-js-client",
-  "version": "0.1.99925",
+  "version": "0.1.99926",
   "description": "JavaScript client library for handling communication with Polfan chat server.",
   "author": "Jarosław Żak",
   "license": "MIT",

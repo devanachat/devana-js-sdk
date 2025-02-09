@@ -3075,12 +3075,11 @@ function PermissionsManager_toPrimitive(input, hint) { if (PermissionsManager_ty
 
 
 
-var getOvId = function getOvId(location, target, targetId) {
-  var _location$spaceId, _location$roomId, _location$topicId;
-  return ((_location$spaceId = location.spaceId) !== null && _location$spaceId !== void 0 ? _location$spaceId : '') + ((_location$roomId = location.roomId) !== null && _location$roomId !== void 0 ? _location$roomId : '') + ((_location$topicId = location.topicId) !== null && _location$topicId !== void 0 ? _location$topicId : '') + (target !== null && target !== void 0 ? target : '') + (targetId !== null && targetId !== void 0 ? targetId : '');
+var getOvId = function getOvId(location, target) {
+  return [location.spaceId, location.roomId, location.topicId, target.type, target.userId, target.roleId].filter(Boolean).join('/');
 };
 var getOvIdByObject = function getOvIdByObject(overwrites) {
-  return getOvId(overwrites.location, overwrites.target, overwrites.targetId);
+  return getOvId(overwrites.location, overwrites.target);
 };
 var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
   PermissionsManager_inherits(PermissionsManager, _EventTarget);
@@ -3130,7 +3129,7 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
   PermissionsManager_createClass(PermissionsManager, [{
     key: "getOverwrites",
     value: function () {
-      var _getOverwrites = PermissionsManager_asyncToGenerator( /*#__PURE__*/PermissionsManager_regeneratorRuntime().mark(function _callee2(location, target, targetId) {
+      var _getOverwrites = PermissionsManager_asyncToGenerator( /*#__PURE__*/PermissionsManager_regeneratorRuntime().mark(function _callee2(location, target) {
         var _this2 = this;
         var id;
         return PermissionsManager_regeneratorRuntime().wrap(function _callee2$(_context2) {
@@ -3138,7 +3137,7 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
             switch (_context2.prev = _context2.next) {
               case 0:
                 this.validateLocation(location);
-                id = getOvId(location, target, targetId);
+                id = getOvId(location, target);
                 if (this.overwritesPromises.notExist(id)) {
                   this.overwritesPromises.registerByFunction( /*#__PURE__*/PermissionsManager_asyncToGenerator( /*#__PURE__*/PermissionsManager_regeneratorRuntime().mark(function _callee() {
                     var result;
@@ -3149,8 +3148,7 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
                             _context.next = 2;
                             return _this2.tracker.client.send('GetPermissionOverwrites', {
                               location: location,
-                              target: target,
-                              targetId: targetId
+                              target: target
                             });
                           case 2:
                             result = _context.sent;
@@ -3180,7 +3178,7 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
           }
         }, _callee2, this);
       }));
-      function getOverwrites(_x, _x2, _x3) {
+      function getOverwrites(_x, _x2) {
         return _getOverwrites.apply(this, arguments);
       }
       return getOverwrites;
@@ -3228,7 +3226,7 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
           }
         }, _callee3, this);
       }));
-      function check(_x4, _x5) {
+      function check(_x3, _x4) {
         return _check.apply(this, arguments);
       }
       return check;
@@ -3258,7 +3256,10 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
                 userRoles = [].concat(PermissionsManager_toConsumableArray((_spaceMember$roles = spaceMember === null || spaceMember === void 0 ? void 0 : spaceMember.roles) !== null && _spaceMember$roles !== void 0 ? _spaceMember$roles : []), PermissionsManager_toConsumableArray((_roomMember$roles = roomMember === null || roomMember === void 0 ? void 0 : roomMember.roles) !== null && _roomMember$roles !== void 0 ? _roomMember$roles : []));
                 promises = [
                 // Global user overwrites
-                this.getOverwrites({}, 'User', userId).then(function (v) {
+                this.getOverwrites({}, {
+                  type: 'User',
+                  userId: userId
+                }).then(function (v) {
                   return v.overwrites;
                 })];
                 _context4.t0 = location.spaceId;
@@ -3294,7 +3295,10 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
                   spaceId: location.spaceId
                 };
                 promises.push(this.collectRoleOverwrites(filterLocation, userRoles));
-                promises.push(this.getOverwrites(filterLocation, 'User', userId).then(function (v) {
+                promises.push(this.getOverwrites(filterLocation, {
+                  type: 'User',
+                  userId: userId
+                }).then(function (v) {
                   return v.overwrites;
                 }));
               case 28:
@@ -3334,7 +3338,10 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
                 if (userRoles.length) {
                   promises.push(this.collectRoleOverwrites(_filterLocation, userRoles));
                 }
-                promises.push(this.getOverwrites(_filterLocation, 'User', userId).then(function (v) {
+                promises.push(this.getOverwrites(_filterLocation, {
+                  type: 'User',
+                  userId: userId
+                }).then(function (v) {
                   return v.overwrites;
                 }));
               case 44:
@@ -3370,7 +3377,10 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
                 if (userRoles.length) {
                   promises.push(this.collectRoleOverwrites(location, userRoles));
                 }
-                promises.push(this.getOverwrites(location, 'User', userId).then(function (v) {
+                promises.push(this.getOverwrites(location, {
+                  type: 'User',
+                  userId: userId
+                }).then(function (v) {
                   return v.overwrites;
                 }));
               case 59:
@@ -3387,7 +3397,7 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
           }
         }, _callee4, this);
       }));
-      function calculatePermissions(_x6) {
+      function calculatePermissions(_x5) {
         return _calculatePermissions.apply(this, arguments);
       }
       return calculatePermissions;
@@ -3434,7 +3444,7 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
           }
         }, _callee5, this);
       }));
-      function handleRoomDeleted(_x7) {
+      function handleRoomDeleted(_x6) {
         return _handleRoomDeleted.apply(this, arguments);
       }
       return handleRoomDeleted;
@@ -3452,7 +3462,10 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
       var _this$overwritesPromi4;
       var ids = this.deleteOverwritesByIdPrefix(getOvId({
         spaceId: ev.spaceId
-      }, 'Role', ev.id));
+      }, {
+        type: 'Role',
+        roleId: ev.id
+      }));
       (_this$overwritesPromi4 = this.overwritesPromises).forget.apply(_this$overwritesPromi4, PermissionsManager_toConsumableArray(ids));
     }
   }, {
@@ -3503,7 +3516,10 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
               case 0:
                 _context6.next = 2;
                 return Promise.all(userRoles.map(function (roleId) {
-                  return _this4.getOverwrites(location, 'Role', roleId);
+                  return _this4.getOverwrites(location, {
+                    type: 'Role',
+                    roleId: roleId
+                  });
                 }));
               case 2:
                 roleOverwrites = _context6.sent;
@@ -3515,7 +3531,7 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
           }
         }, _callee6, this);
       }));
-      function collectRoleOverwrites(_x8, _x9) {
+      function collectRoleOverwrites(_x7, _x8) {
         return _collectRoleOverwrites.apply(this, arguments);
       }
       return collectRoleOverwrites;
@@ -3535,7 +3551,7 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
               case 3:
                 roles = _context7.sent;
                 sortedOverwrites = overwrites.sort(function (a, b) {
-                  return roles.get(a.targetId).priority - roles.get(b.targetId).priority;
+                  return roles.get(a.target.roleId).priority - roles.get(b.target.roleId).priority;
                 }); // Max length of bit word
                 permissionsLength = overwrites.reduce(function (previousValue, currentValue) {
                   var _currentValue$overwri, _currentValue$overwri2, _currentValue$overwri3, _currentValue$overwri4;
@@ -3569,7 +3585,7 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
           }
         }, _callee7, this);
       }));
-      function resolveOverwritesFromRolesByOrder(_x10, _x11) {
+      function resolveOverwritesFromRolesByOrder(_x9, _x10) {
         return _resolveOverwritesFromRolesByOrder.apply(this, arguments);
       }
       return resolveOverwritesFromRolesByOrder;
@@ -3643,7 +3659,7 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
           }
         }, _callee8, this);
       }));
-      function fetchMembersOrFail(_x12) {
+      function fetchMembersOrFail(_x11) {
         return _fetchMembersOrFail.apply(this, arguments);
       }
       return fetchMembersOrFail;
