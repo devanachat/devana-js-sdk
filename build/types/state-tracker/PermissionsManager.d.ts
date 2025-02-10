@@ -1,5 +1,5 @@
 import { ChatStateTracker } from "./ChatStateTracker";
-import { ChatLocation, PermissionOverwrites } from "../types/src";
+import { ChatLocation, PermissionOverwrites, PermissionOverwritesTarget } from "../types/src";
 import { EventHandler, EventTarget } from "../EventTarget";
 import { Permissions } from "../Permissions";
 interface CheckPermissionsResult {
@@ -16,7 +16,7 @@ export declare class PermissionsManager extends EventTarget {
     private readonly overwrites;
     private readonly overwritesPromises;
     constructor(tracker: ChatStateTracker);
-    getOverwrites(location: ChatLocation, target: PermissionOverwrites['target'], targetId: PermissionOverwrites['targetId']): Promise<PermissionOverwrites | undefined>;
+    getOverwrites(location: ChatLocation, target: PermissionOverwritesTarget): Promise<PermissionOverwrites | undefined>;
     on(eventName: 'change', handler: EventHandler<any>): this;
     check(permissionNames: (keyof typeof Permissions.list)[], location: ChatLocation): Promise<CheckPermissionsResult>;
     calculatePermissions(location: ChatLocation): Promise<number>;
