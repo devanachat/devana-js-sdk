@@ -3076,7 +3076,7 @@ function PermissionsManager_toPrimitive(input, hint) { if (PermissionsManager_ty
 
 
 var getOvId = function getOvId(location, target) {
-  return [location.spaceId, location.roomId, location.topicId, target.type, target.userId, target.roleId].filter(Boolean).join('/');
+  return [location.spaceId, location.roomId, location.topicId, target === null || target === void 0 ? void 0 : target.type, target === null || target === void 0 ? void 0 : target.userId, target === null || target === void 0 ? void 0 : target.roleId].filter(Boolean).join('/');
 };
 var getOvIdByObject = function getOvIdByObject(overwrites) {
   return getOvId(overwrites.location, overwrites.target);

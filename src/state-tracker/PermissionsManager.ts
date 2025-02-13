@@ -20,7 +20,7 @@ import {PromiseRegistry} from "./AsyncUtils";
 const getOvId = (
     location: ChatLocation,
     target?: PermissionOverwritesTarget,
-) => [location.spaceId, location.roomId, location.topicId, target.type, target.userId, target.roleId].filter(Boolean).join('/');
+) => [location.spaceId, location.roomId, location.topicId, target?.type, target?.userId, target?.roleId].filter(Boolean).join('/');
 
 const getOvIdByObject
     = (overwrites: PermissionOverwrites | PermissionOverwritesUpdated): string => getOvId(overwrites.location, overwrites.target);
