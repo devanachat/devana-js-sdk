@@ -221,7 +221,13 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
     }
 
     private handleSession(ev: Session): void {
-        this.resetToLatest();
+        const rooms = ev.state.rooms;
+
+        if (rooms.find(room => room.id === this.roomId)) {
+            this.resetToLatest();
+        } else {
+            this.deleteAll();
+        }
     }
 
     protected async fetchItemsAfter(): Promise<Message[] | null> {

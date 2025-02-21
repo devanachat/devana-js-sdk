@@ -5,11 +5,11 @@ import {Envelope} from "./types/src";
 
 export interface WebSocketClientOptions {
     url: string;
-    token?: string;
-    temporaryNick?: string;
+    token: string;
     connectingTimeoutMs?: number;
     awaitQueueSendDelayMs?: number;
     stateTracking?: boolean;
+    queryParams?: Record<string, string>;
 }
 
 enum WebSocketChatClientEvent {
@@ -31,17 +31,16 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
 
     public constructor(private readonly options: WebSocketClientOptions) {
         super();
-        if (!this.options.token && !this.options.temporaryNick) {
-            throw new Error('Token or temporary nick is required');
-        }
         if (this.options.stateTracking ?? true) {
             this.state = new ChatStateTracker(this);
         }
     }
 
     public async connect(): Promise<void> {
-        const authString = this.options.token ? `token=${this.options.token}` : `nick=${this.options.temporaryNick}`;
-        this.ws = new WebSocket(`${this.options.url}?${authString}`);
+        const params = new URLSearchParams(this.options.queryParams ?? {});
+        params.set('token', this.options.token);
+
+        this.ws = new WebSocket(`${this.options.url}?${params}`);
         this.ws.onclose = ev => this.onClose(ev);
         this.ws.onmessage = ev => this.onMessage(ev);
         this.connectingTimeoutId = setTimeout(
@@ -49,6 +48,7 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
             this.options.connectingTimeoutMs ?? 10000
         );
         this.authenticated = false;
+
         return new Promise((...args) => this.authenticatedResolvers = args);
     }
 

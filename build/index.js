@@ -1010,7 +1010,15 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
   }, {
     key: "handleSession",
     value: function handleSession(ev) {
-      this.resetToLatest();
+      var _this3 = this;
+      var rooms = ev.state.rooms;
+      if (rooms.find(function (room) {
+        return room.id === _this3.roomId;
+      })) {
+        this.resetToLatest();
+      } else {
+        this.deleteAll();
+      }
     }
   }, {
     key: "fetchItemsAfter",
@@ -3038,6 +3046,14 @@ Permissions_defineProperty(Permissions, "list", {
   ManageEmoticon: {
     value: 1 << 14,
     maxLayer: Layer.Space
+  },
+  ManageBan: {
+    value: 1 << 15,
+    maxLayer: Layer.Room
+  },
+  Kick: {
+    value: 1 << 16,
+    maxLayer: Layer.Room
   }
 });
 ;// CONCATENATED MODULE: ./src/state-tracker/PermissionsManager.ts
@@ -3943,9 +3959,6 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
     WebSocketChatClient_defineProperty(WebSocketChatClient_assertThisInitialized(_this), "connectingTimeoutId", void 0);
     WebSocketChatClient_defineProperty(WebSocketChatClient_assertThisInitialized(_this), "authenticated", void 0);
     WebSocketChatClient_defineProperty(WebSocketChatClient_assertThisInitialized(_this), "authenticatedResolvers", void 0);
-    if (!_this.options.token && !_this.options.temporaryNick) {
-      throw new Error('Token or temporary nick is required');
-    }
     if ((_this$options$stateTr = _this.options.stateTracking) !== null && _this$options$stateTr !== void 0 ? _this$options$stateTr : true) {
       _this.state = new ChatStateTracker(WebSocketChatClient_assertThisInitialized(_this));
     }
@@ -3955,15 +3968,17 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
     key: "connect",
     value: function () {
       var _connect = WebSocketChatClient_asyncToGenerator( /*#__PURE__*/WebSocketChatClient_regeneratorRuntime().mark(function _callee() {
-        var _this2 = this,
+        var _this$options$queryPa,
+          _this2 = this,
           _this$options$connect;
-        var authString;
+        var params;
         return WebSocketChatClient_regeneratorRuntime().wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                authString = this.options.token ? "token=".concat(this.options.token) : "nick=".concat(this.options.temporaryNick);
-                this.ws = new WebSocket("".concat(this.options.url, "?").concat(authString));
+                params = new URLSearchParams((_this$options$queryPa = this.options.queryParams) !== null && _this$options$queryPa !== void 0 ? _this$options$queryPa : {});
+                params.set('token', this.options.token);
+                this.ws = new WebSocket("".concat(this.options.url, "?").concat(params));
                 this.ws.onclose = function (ev) {
                   return _this2.onClose(ev);
                 };
@@ -3980,7 +3995,7 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
                   }
                   return _this2.authenticatedResolvers = args;
                 }));
-              case 7:
+              case 8:
               case "end":
                 return _context.stop();
             }
@@ -4144,9 +4159,6 @@ var WebApiChatClient = /*#__PURE__*/function (_AbstractChatClient) {
     _this.options = options;
     WebApiChatClient_defineProperty(WebApiChatClient_assertThisInitialized(_this), "Event", WebApiChatClientEvent);
     WebApiChatClient_defineProperty(WebApiChatClient_assertThisInitialized(_this), "sendStack", void 0);
-    if (!_this.options.token && !_this.options.temporaryNick) {
-      throw new Error('Token or temporary nick is required');
-    }
     return _this;
   }
   WebApiChatClient_createClass(WebApiChatClient, [{
@@ -4239,19 +4251,18 @@ var WebApiChatClient = /*#__PURE__*/function (_AbstractChatClient) {
   }, {
     key: "makeApiCall",
     value: function makeApiCall(reqId) {
-      var _this4 = this;
+      var _this$options$queryPa,
+        _this4 = this;
       this.sendStack[reqId].attempts++;
       var bodyJson = JSON.stringify(this.sendStack[reqId].data);
       var headers = {
         'Content-Type': 'application/json',
         Accept: 'application/json'
       };
-      if (this.options.token) {
-        headers.Authorization = "Bearer ".concat(this.options.token);
-      } else if (this.options.temporaryNick) {
-        headers.Authorization = "Temp ".concat(this.options.temporaryNick);
-      }
-      fetch(this.options.url, {
+      headers.Authorization = "Bearer ".concat(this.options.token);
+      var params = new URLSearchParams((_this$options$queryPa = this.options.queryParams) !== null && _this$options$queryPa !== void 0 ? _this$options$queryPa : {});
+      var url = "".concat(this.options.url).concat(params ? '?' + params : '');
+      fetch(url, {
         headers: headers,
         body: bodyJson,
         method: 'POST'

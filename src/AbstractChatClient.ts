@@ -82,7 +82,7 @@ import {
     GetEmoticons,
     Emoticons,
     EmoticonDeleted,
-    NewEmoticon,
+    NewEmoticon, Bans, GetBans, Ban, Unban, Kick,
 } from "./types/src/index";
 import {EventTarget} from "./EventTarget";
 
@@ -158,6 +158,7 @@ export type EventsMap = {
     NewEmoticon: NewEmoticon,
     EmoticonDeleted: EmoticonDeleted,
     Emoticons: Emoticons,
+    Bans: Bans,
     // Space events
     DiscoverableSpaces: DiscoverableSpaces,
     SpaceJoined: SpaceJoined,
@@ -212,6 +213,10 @@ export type CommandsMap = {
     CreateEmoticon: [CreateEmoticon, EventsMap['NewEmoticon']],
     DeleteEmoticon: [DeleteEmoticon, EventsMap['EmoticonDeleted']],
     GetEmoticons: [GetEmoticons, EventsMap['Emoticons']],
+    GetBans: [GetBans, EventsMap['Bans']],
+    Ban: [Ban, EventsMap['Ok']],
+    Unban: [Unban, EventsMap['Ok']],
+    Kick: [Kick, EventsMap['Ok']],
     // Space commands
     GetDiscoverableSpaces: [GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']],
     JoinSpace: [JoinSpace, EventsMap['SpaceJoined']],

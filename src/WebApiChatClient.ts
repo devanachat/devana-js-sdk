@@ -4,10 +4,10 @@ import {Envelope} from "./types/src";
 
 export interface WebApiChatClientOptions {
     url: string;
-    token?: string;
-    temporaryNick?: string;
+    token: string;
     attemptsToSend?: number;
     attemptDelayMs?: number;
+    queryParams?: Record<string, string>;
 }
 
 enum WebApiChatClientEvent {
@@ -23,9 +23,6 @@ export class WebApiChatClient extends AbstractChatClient implements ObservableIn
 
     public constructor(private readonly options: WebApiChatClientOptions) {
         super();
-        if (!this.options.token && !this.options.temporaryNick) {
-            throw new Error('Token or temporary nick is required');
-        }
     }
 
     public async send<CommandType extends keyof CommandsMap>(commandType: CommandType, commandData: CommandsMap[CommandType][0]):
@@ -78,13 +75,12 @@ export class WebApiChatClient extends AbstractChatClient implements ObservableIn
             Accept: 'application/json'
         };
 
-        if (this.options.token) {
-            headers.Authorization = `Bearer ${this.options.token}`;
-        } else if (this.options.temporaryNick) {
-            headers.Authorization = `Temp ${this.options.temporaryNick}`;
-        }
+        headers.Authorization = `Bearer ${this.options.token}`;
 
-        fetch(this.options.url, {
+        const params = new URLSearchParams(this.options.queryParams ?? {});
+        const url = `${this.options.url}${params ? '?' + params : ''}`;
+
+        fetch(url, {
             headers,
             body: bodyJson,
             method: 'POST',

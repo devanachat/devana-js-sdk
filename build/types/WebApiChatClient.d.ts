@@ -2,10 +2,10 @@ import { AbstractChatClient, CommandResult, CommandsMap } from "./AbstractChatCl
 import { ObservableInterface } from "./EventTarget";
 export interface WebApiChatClientOptions {
     url: string;
-    token?: string;
-    temporaryNick?: string;
+    token: string;
     attemptsToSend?: number;
     attemptDelayMs?: number;
+    queryParams?: Record<string, string>;
 }
 declare enum WebApiChatClientEvent {
     message = "message",

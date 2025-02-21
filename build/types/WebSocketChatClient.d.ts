@@ -4,11 +4,11 @@ import { ChatStateTracker } from "./state-tracker/ChatStateTracker";
 import { Envelope } from "./types/src";
 export interface WebSocketClientOptions {
     url: string;
-    token?: string;
-    temporaryNick?: string;
+    token: string;
     connectingTimeoutMs?: number;
     awaitQueueSendDelayMs?: number;
     stateTracking?: boolean;
+    queryParams?: Record<string, string>;
 }
 declare enum WebSocketChatClientEvent {
     connect = "connect",
