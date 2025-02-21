@@ -100,6 +100,13 @@ import {DeleteEmoticon} from "./schemes/commands/DeleteEmoticon";
 import {NewEmoticon} from "./schemes/events/NewEmoticon";
 import {EmoticonDeleted} from "./schemes/events/EmoticonDeleted";
 import {PermissionOverwritesTarget} from "./schemes/PermissionOverwritesTarget";
+import {Ban} from "./schemes/commands/Ban";
+import {Unban} from "./schemes/commands/Unban";
+import {GetBans} from "./schemes/commands/GetBans";
+import {BanObject} from "./schemes/BanObject";
+import {Bans} from "./schemes/events/Bans";
+import {Kick} from "./schemes/commands/Kick";
+import {LeaveReason} from "./schemes/LeaveReason";
 
 export {
     // objects
@@ -124,6 +131,8 @@ export {
     SpaceDiscoverable,
     Emoticon,
     PermissionOverwritesTarget,
+    BanObject,
+    LeaveReason,
     // events
     Bye,
     Error,
@@ -169,6 +178,7 @@ export {
     Emoticons,
     EmoticonDeleted,
     NewEmoticon,
+    Bans,
     // commands
     AssignRole,
     GetMessages,
@@ -211,4 +221,8 @@ export {
     GetEmoticons,
     CreateEmoticon,
     DeleteEmoticon,
+    Ban,
+    Unban,
+    GetBans,
+    Kick,
 };
