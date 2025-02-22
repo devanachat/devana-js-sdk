@@ -1,3 +1,5 @@
+import {LeaveReason} from "../LeaveReason";
+
 export interface Bye {
-    reason: string;
+    reason: LeaveReason;
 }
