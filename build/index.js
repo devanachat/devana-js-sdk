@@ -4074,7 +4074,7 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
 
       // Login successfully
       if (!this.authenticated) {
-        var isAuthenticated = envelope.type !== 'Error';
+        var isAuthenticated = envelope.type !== 'Bye';
         this.authenticated = isAuthenticated;
         if (isAuthenticated) {
           this.authenticatedResolvers[0]();

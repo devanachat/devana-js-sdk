@@ -92,7 +92,7 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
 
         // Login successfully
         if (!this.authenticated) {
-            const isAuthenticated = envelope.type !== 'Error';
+            const isAuthenticated = envelope.type !== 'Bye';
             this.authenticated = isAuthenticated;
             if (isAuthenticated) {
                 this.authenticatedResolvers[0]();
