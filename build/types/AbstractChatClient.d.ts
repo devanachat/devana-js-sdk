@@ -14,7 +14,7 @@ export declare abstract class AbstractChatClient extends EventTarget {
 }
 export type CommandResult<ResultT> = {
     data?: ResultT;
-    error?: Error;
+    error?: ErrorType;
 };
 /**
  * Map of incoming events.

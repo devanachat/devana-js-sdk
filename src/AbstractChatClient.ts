@@ -85,6 +85,7 @@ import {
     NewEmoticon, Bans, GetBans, Ban, Unban, Kick,
 } from "./types/src/index";
 import {EventTarget} from "./EventTarget";
+import {ErrorObject} from "css-minimizer-webpack-plugin";
 
 type ArrayOfPromiseResolvers = [(value: any) => void, (reason?: any) => void];
 
@@ -139,7 +140,7 @@ export abstract class AbstractChatClient extends EventTarget {
     }
 }
 
-export type CommandResult<ResultT> = {data?: ResultT, error?: Error};
+export type CommandResult<ResultT> = {data?: ResultT, error?: ErrorType};
 
 /**
  * Map of incoming events.
