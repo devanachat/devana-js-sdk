@@ -1,4 +1,4 @@
-import {Role} from "../types/src";
+import {Role, RoomMember, SpaceMember, User} from "../types/src";
 
 export function reorderRolesOnPriorityUpdate(allRoles: Role[], oldRole: Role, updatedRole: Role): Role[] {
     // If the priority has changed, adjust the rest of roles
@@ -22,4 +22,8 @@ export function reorderRolesOnPriorityUpdate(allRoles: Role[], oldRole: Role, up
     });
 
     return changedRoles;
+}
+
+export function extractUserFromMember(member: RoomMember | SpaceMember): User | null {
+    return member.user ?? (member as RoomMember).spaceMember?.user;
 }
