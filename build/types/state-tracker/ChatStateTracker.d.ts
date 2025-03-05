@@ -4,7 +4,7 @@ import { RoomsManager } from "./RoomsManager";
 import { SpacesManager } from "./SpacesManager";
 import { PermissionsManager } from "./PermissionsManager";
 import { EmoticonsManager } from "./EmoticonsManager";
-import { Utils } from "./Utils";
+import { UsersManager } from "./UsersManager";
 export declare class ChatStateTracker {
     readonly client: WebSocketChatClient;
     /**
@@ -24,9 +24,9 @@ export declare class ChatStateTracker {
      */
     readonly emoticons: EmoticonsManager;
     /**
-     * Various utilities.
+     * Users related state.
      */
-    readonly utils: Utils;
+    readonly users: UsersManager;
     private _me;
     private readonly deferredSession;
     constructor(client: WebSocketChatClient);

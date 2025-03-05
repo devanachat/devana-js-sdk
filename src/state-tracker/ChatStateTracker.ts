@@ -5,7 +5,7 @@ import {SpacesManager} from "./SpacesManager";
 import {PermissionsManager} from "./PermissionsManager";
 import {DeferredTask} from "./AsyncUtils";
 import {EmoticonsManager} from "./EmoticonsManager";
-import {Utils} from "./Utils";
+import {UsersManager} from "./UsersManager";
 
 export class ChatStateTracker {
     /**
@@ -29,9 +29,9 @@ export class ChatStateTracker {
     public readonly emoticons = new EmoticonsManager(this);
 
     /**
-     * Various utilities.
+     * Users related state.
      */
-    public readonly utils = new Utils(this);
+    public readonly users = new UsersManager(this);
 
     private _me: User = null;
     private readonly deferredSession = new DeferredTask();
