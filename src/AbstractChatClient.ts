@@ -82,7 +82,7 @@ import {
     GetEmoticons,
     Emoticons,
     EmoticonDeleted,
-    NewEmoticon, Bans, GetBans, Ban, Unban, Kick,
+    NewEmoticon, Bans, GetBans, Ban, Unban, Kick, ClientData, GetClientData, SetClientData,
 } from "./types/src/index";
 import {EventTarget} from "./EventTarget";
 import {ErrorObject} from "css-minimizer-webpack-plugin";
@@ -160,6 +160,7 @@ export type EventsMap = {
     EmoticonDeleted: EmoticonDeleted,
     Emoticons: Emoticons,
     Bans: Bans,
+    ClientData: ClientData,
     // Space events
     DiscoverableSpaces: DiscoverableSpaces,
     SpaceJoined: SpaceJoined,
@@ -218,6 +219,8 @@ export type CommandsMap = {
     Ban: [Ban, EventsMap['Ok']],
     Unban: [Unban, EventsMap['Ok']],
     Kick: [Kick, EventsMap['Ok']],
+    GetClientData: [GetClientData, EventsMap['ClientData']],
+    SetClientData: [SetClientData, EventsMap['Ok']],
     // Space commands
     GetDiscoverableSpaces: [GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']],
     JoinSpace: [JoinSpace, EventsMap['SpaceJoined']],
