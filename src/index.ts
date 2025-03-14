@@ -107,6 +107,10 @@ import {BanObject} from "./schemes/BanObject";
 import {Bans} from "./schemes/events/Bans";
 import {Kick} from "./schemes/commands/Kick";
 import {LeaveReason} from "./schemes/LeaveReason";
+import {GetClientData} from "./schemes/commands/GetClientData";
+import {SetClientData} from "./schemes/commands/SetClientData";
+import {ClientData} from "./schemes/events/ClientData";
+import {RoomStream, RoomStreamType} from "./schemes/RoomStream";
 
 export {
     // objects
@@ -133,6 +137,8 @@ export {
     PermissionOverwritesTarget,
     BanObject,
     LeaveReason,
+    RoomStream,
+    RoomStreamType,
     // events
     Bye,
     Error,
@@ -179,6 +185,7 @@ export {
     EmoticonDeleted,
     NewEmoticon,
     Bans,
+    ClientData,
     // commands
     AssignRole,
     GetMessages,
@@ -225,4 +232,6 @@ export {
     Unban,
     GetBans,
     Kick,
+    GetClientData,
+    SetClientData,
 };
