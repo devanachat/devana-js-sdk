@@ -261,9 +261,15 @@ var IndexedCollection = /*#__PURE__*/function () {
     var items = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
     IndexedObjectCollection_classCallCheck(this, IndexedCollection);
     IndexedObjectCollection_defineProperty(this, "_items", new Map());
+    IndexedObjectCollection_defineProperty(this, "_mutationCounter", 0);
     this.set.apply(this, _toConsumableArray(items));
   }
   IndexedObjectCollection_createClass(IndexedCollection, [{
+    key: "mutationCounter",
+    get: function get() {
+      return this._mutationCounter;
+    }
+  }, {
     key: "items",
     get: function get() {
       return this._items;
@@ -276,6 +282,7 @@ var IndexedCollection = /*#__PURE__*/function () {
   }, {
     key: "set",
     value: function set() {
+      this._mutationCounter++;
       for (var _len = arguments.length, items = new Array(_len), _key = 0; _key < _len; _key++) {
         items[_key] = arguments[_key];
       }
@@ -326,13 +333,6 @@ var IndexedCollection = /*#__PURE__*/function () {
       }
       return result;
     }
-  }, {
-    key: "map",
-    value: function map(callback) {
-      return Array.from(this.items.entries()).map(function (entry) {
-        return callback(entry[1], entry[0]);
-      });
-    }
   }]);
   return IndexedCollection;
 }();
@@ -354,6 +354,11 @@ var IndexedObjectCollection = /*#__PURE__*/function () {
     key: "length",
     get: function get() {
       return this._items.length;
+    }
+  }, {
+    key: "mutationCounter",
+    get: function get() {
+      return this._items.mutationCounter;
     }
   }, {
     key: "set",
@@ -416,11 +421,6 @@ var IndexedObjectCollection = /*#__PURE__*/function () {
         _iterator.f();
       }
       return result;
-    }
-  }, {
-    key: "map",
-    value: function map(callback) {
-      return this.items.map(callback);
     }
   }, {
     key: "getId",
@@ -2179,11 +2179,11 @@ var RoomsManager = /*#__PURE__*/function () {
       (_this$members = this.members)["delete"].apply(_this$members, roomIds);
       (_this$membersPromises = this.membersPromises).forget.apply(_this$membersPromises, roomIds);
       for (var _i = 0, _roomIds = roomIds; _i < _roomIds.length; _i++) {
-        var _this$topics$get$map, _this$topics$get, _this$messages;
+        var _this$topics$get$item, _this$topics$get, _this$messages;
         var roomId = _roomIds[_i];
-        var topicIds = (_this$topics$get$map = (_this$topics$get = this.topics.get(roomId)) === null || _this$topics$get === void 0 ? void 0 : _this$topics$get.map(function (topic) {
+        var topicIds = (_this$topics$get$item = (_this$topics$get = this.topics.get(roomId)) === null || _this$topics$get === void 0 ? void 0 : _this$topics$get.items.map(function (topic) {
           return topic.id;
-        })) !== null && _this$topics$get$map !== void 0 ? _this$topics$get$map : [];
+        })) !== null && _this$topics$get$item !== void 0 ? _this$topics$get$item : [];
         (_this$messages = this.messages)._deleteByTopicIds.apply(_this$messages, [roomId].concat(RoomsManager_toConsumableArray(topicIds)));
       }
       (_this$topics = this.topics)["delete"].apply(_this$topics, roomIds);
@@ -2191,7 +2191,7 @@ var RoomsManager = /*#__PURE__*/function () {
   }, {
     key: "deleteRoomsBySpaceId",
     value: function deleteRoomsBySpaceId(spaceId) {
-      this.deleteRoom.apply(this, RoomsManager_toConsumableArray(this.list.findBy('spaceId', spaceId).map(function (room) {
+      this.deleteRoom.apply(this, RoomsManager_toConsumableArray(this.list.findBy('spaceId', spaceId).items.map(function (room) {
         return room.id;
       })));
     }
@@ -2828,10 +2828,10 @@ var SpacesManager = /*#__PURE__*/function () {
   }, {
     key: "handleSpaceDeleted",
     value: function handleSpaceDeleted(ev) {
-      var _this$rooms$get$map, _this$rooms$get3, _this$roomIdToSpaceId;
-      var roomIds = (_this$rooms$get$map = (_this$rooms$get3 = this.rooms.get(ev.id)) === null || _this$rooms$get3 === void 0 ? void 0 : _this$rooms$get3.map(function (item) {
+      var _this$rooms$get$items, _this$rooms$get3, _this$roomIdToSpaceId;
+      var roomIds = (_this$rooms$get$items = (_this$rooms$get3 = this.rooms.get(ev.id)) === null || _this$rooms$get3 === void 0 ? void 0 : _this$rooms$get3.items.map(function (item) {
         return item.id;
-      })) !== null && _this$rooms$get$map !== void 0 ? _this$rooms$get$map : [];
+      })) !== null && _this$rooms$get$items !== void 0 ? _this$rooms$get$items : [];
       (_this$roomIdToSpaceId = this.roomIdToSpaceId)["delete"].apply(_this$roomIdToSpaceId, SpacesManager_toConsumableArray(roomIds));
       this.roles["delete"](ev.id);
       this.members["delete"](ev.id);

@@ -184,7 +184,7 @@ export class SpacesManager {
     }
 
     private handleSpaceDeleted(ev: SpaceDeleted | SpaceLeft): void {
-        const roomIds = this.rooms.get(ev.id)?.map(item => item.id) ?? [];
+        const roomIds = this.rooms.get(ev.id)?.items.map(item => item.id) ?? [];
         this.roomIdToSpaceId.delete(...roomIds);
 
         this.roles.delete(ev.id);

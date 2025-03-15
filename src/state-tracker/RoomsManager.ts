@@ -124,7 +124,7 @@ export class RoomsManager {
         this.membersPromises.forget(...roomIds);
 
         for (const roomId of roomIds) {
-            const topicIds: string[] = this.topics.get(roomId)?.map(topic => topic.id) ?? [];
+            const topicIds: string[] = this.topics.get(roomId)?.items.map(topic => topic.id) ?? [];
             this.messages._deleteByTopicIds(roomId, ...topicIds);
         }
 
@@ -133,7 +133,7 @@ export class RoomsManager {
 
     private deleteRoomsBySpaceId(spaceId: string): void {
         this.deleteRoom(
-            ...this.list.findBy('spaceId', spaceId).map(room => room.id)
+            ...this.list.findBy('spaceId', spaceId).items.map(room => room.id)
         );
     }
 

@@ -2,9 +2,14 @@ import {EventTarget, ObservableInterface} from "./EventTarget";
 
 export class IndexedCollection<KeyT, ValueT> {
     protected _items: Map<KeyT, ValueT> = new Map();
+    protected _mutationCounter: number = 0;
 
     public constructor(items: [key: KeyT, value: ValueT][] = []) {
         this.set(...items);
+    }
+
+    public get mutationCounter(): number {
+        return this._mutationCounter;
     }
 
     public get items(): Map<KeyT, ValueT> {
@@ -16,6 +21,7 @@ export class IndexedCollection<KeyT, ValueT> {
     }
 
     public set(...items: [KeyT, ValueT][]): void {
+        this._mutationCounter++;
         for (const item of items) {
             this._items.set(item[0], item[1]);
         }
@@ -52,10 +58,6 @@ export class IndexedCollection<KeyT, ValueT> {
         }
         return result;
     }
-
-    public map<MapT = any>(callback: (item: ValueT, index: KeyT) => MapT): MapT[] {
-        return Array.from(this.items.entries()).map((entry) => callback(entry[1], entry[0]));
-    }
 }
 
 export class IndexedObjectCollection<T> {
@@ -75,6 +77,10 @@ export class IndexedObjectCollection<T> {
 
     public get length(): number {
         return this._items.length;
+    }
+
+    public get mutationCounter(): number {
+        return this._items.mutationCounter;
     }
 
     public set(...items: T[]): void {
@@ -112,10 +118,6 @@ export class IndexedObjectCollection<T> {
             }
         }
         return result;
-    }
-
-    public map<MapT = any>(callback: (item: T, index: number, array: T[]) => MapT): MapT[] {
-        return this.items.map(callback);
     }
 
     protected getId(item: T): any {

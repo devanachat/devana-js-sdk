@@ -1,7 +1,9 @@
 import { EventTarget, ObservableInterface } from "./EventTarget";
 export declare class IndexedCollection<KeyT, ValueT> {
     protected _items: Map<KeyT, ValueT>;
+    protected _mutationCounter: number;
     constructor(items?: [key: KeyT, value: ValueT][]);
+    get mutationCounter(): number;
     get items(): Map<KeyT, ValueT>;
     get length(): number;
     set(...items: [KeyT, ValueT][]): void;
@@ -10,7 +12,6 @@ export declare class IndexedCollection<KeyT, ValueT> {
     delete(...ids: KeyT[]): void;
     deleteAll(): void;
     findBy(field: keyof ValueT, valueToFind: any, limit?: number): IndexedCollection<KeyT, ValueT>;
-    map<MapT = any>(callback: (item: ValueT, index: KeyT) => MapT): MapT[];
 }
 export declare class IndexedObjectCollection<T> {
     readonly id: keyof T | ((item: T) => any);
@@ -18,6 +19,7 @@ export declare class IndexedObjectCollection<T> {
     constructor(id: keyof T | ((item: T) => any), items?: T[]);
     get items(): T[];
     get length(): number;
+    get mutationCounter(): number;
     set(...items: T[]): void;
     get(id: any): T | undefined;
     getAt(index: number): T | undefined;
@@ -25,7 +27,6 @@ export declare class IndexedObjectCollection<T> {
     delete(...ids: any[]): void;
     deleteAll(): void;
     findBy(field: keyof T, valueToFind: any, limit?: number): IndexedObjectCollection<T>;
-    map<MapT = any>(callback: (item: T, index: number, array: T[]) => MapT): MapT[];
     protected getId(item: T): any;
 }
 interface ObservableCollectionEvent<KeyT> {
