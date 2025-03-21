@@ -6,6 +6,7 @@ export type RoomType = 'Text' | 'ClassicText' | 'Pm';
 
 export enum RoomFlag {
     AllowSystemMessages = 1 << 0,
+    Private = 1 << 1,
 }
 
 export interface Room {

@@ -9,4 +9,5 @@ export interface UpdateSpace {
     icon?: string | null;
     banner?: string | null;
     discoverable?: SpaceDiscoverable;
+    flags?: number;
 }

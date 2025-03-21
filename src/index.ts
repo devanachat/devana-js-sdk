@@ -4,7 +4,7 @@ import {PermissionOverwritesValue} from "./schemes/PermissionOverwritesValue";
 import {Role} from "./schemes/Role";
 import {Room, RoomType, RoomFlag} from "./schemes/Room";
 import {RoomMember} from "./schemes/RoomMember";
-import {RoomSummary} from "./schemes/RoomSummary";
+import {RoomSummary, RoomSummaryExtras} from "./schemes/RoomSummary";
 import {Space, SpaceDiscoverable} from "./schemes/Space";
 import {SpaceMember} from "./schemes/SpaceMember";
 import {Topic} from "./schemes/Topic";
@@ -111,6 +111,11 @@ import {GetClientData} from "./schemes/commands/GetClientData";
 import {SetClientData} from "./schemes/commands/SetClientData";
 import {ClientData} from "./schemes/events/ClientData";
 import {RoomStream, RoomStreamType} from "./schemes/RoomStream";
+import {GetRoomSummary} from "./schemes/commands/GetRoomSummary";
+import {GetSpaceSummary} from "./schemes/commands/GetSpaceSummary";
+import {SpaceFlag} from "./schemes/Space";
+import {SpaceSummary as SpaceSummaryEvent} from "./schemes/events/SpaceSummary";
+import {RoomSummary as RoomSummaryEvent} from "./schemes/events/RoomSummary";
 
 export {
     // objects
@@ -123,7 +128,9 @@ export {
     RoomType,
     RoomMember,
     RoomSummary,
+    RoomSummaryExtras,
     Space,
+    SpaceFlag,
     SpaceMember,
     Topic,
     FollowedTopic,
@@ -186,6 +193,8 @@ export {
     NewEmoticon,
     Bans,
     ClientData,
+    SpaceSummaryEvent,
+    RoomSummaryEvent,
     // commands
     AssignRole,
     GetMessages,
@@ -234,4 +243,6 @@ export {
     Kick,
     GetClientData,
     SetClientData,
+    GetSpaceSummary,
+    GetRoomSummary,
 };
