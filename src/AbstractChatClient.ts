@@ -83,9 +83,12 @@ import {
     Emoticons,
     EmoticonDeleted,
     NewEmoticon, Bans, GetBans, Ban, Unban, Kick, ClientData, GetClientData, SetClientData,
+    GetRoomSummary,
+    GetSpaceSummary,
+    RoomSummaryEvent,
+    SpaceSummaryEvent,
 } from "./types/src/index";
 import {EventTarget} from "./EventTarget";
-import {ErrorObject} from "css-minimizer-webpack-plugin";
 
 type ArrayOfPromiseResolvers = [(value: any) => void, (reason?: any) => void];
 
@@ -175,6 +178,7 @@ export type EventsMap = {
     NewRole: NewRole,
     RoleDeleted: RoleDeleted,
     RoleUpdated: RoleUpdated,
+    SpaceSummaryEvent: SpaceSummaryEvent,
     // Room events
     RoomJoined: RoomJoined,
     RoomLeft: RoomLeft,
@@ -185,6 +189,7 @@ export type EventsMap = {
     NewRoom: NewRoom,
     RoomDeleted: RoomDeleted,
     RoomUpdated: RoomUpdated,
+    RoomSummaryEvent: RoomSummaryEvent,
     // Topic events
     NewTopic: NewTopic,
     TopicDeleted: TopicDeleted,
@@ -235,6 +240,7 @@ export type CommandsMap = {
     UpdateRole: [UpdateRole, EventsMap['RoleUpdated']],
     AssignRole: [AssignRole, EventsMap['SpaceMemberUpdated'] | EventsMap['RoomMemberUpdated']],
     DeassignRole: [DeassignRole, EventsMap['SpaceMemberUpdated'] | EventsMap['RoomMemberUpdated']],
+    GetSpaceSummary: [GetSpaceSummary, EventsMap['SpaceSummaryEvent']],
     // Room commands
     JoinRoom: [JoinRoom, EventsMap['RoomJoined']],
     LeaveRoom: [LeaveRoom, EventsMap['RoomLeft']],
@@ -242,6 +248,7 @@ export type CommandsMap = {
     DeleteRoom: [DeleteRoom, EventsMap['RoomDeleted']],
     UpdateRoom: [UpdateRoom, EventsMap['RoomUpdated']],
     GetRoomMembers: [GetRoomMembers, EventsMap['RoomMembers']],
+    GetRoomSummary: [GetRoomSummary, EventsMap['RoomSummaryEvent']],
     // Topic commands
     CreateTopic: [CreateTopic, EventsMap['NewTopic']],
     DeleteTopic: [DeleteTopic, EventsMap['TopicDeleted']],

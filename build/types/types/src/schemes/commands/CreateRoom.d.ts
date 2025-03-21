@@ -5,4 +5,5 @@ export interface CreateRoom {
     name?: string;
     description?: string;
     recipientIds?: string[];
+    flags?: number;
 }
