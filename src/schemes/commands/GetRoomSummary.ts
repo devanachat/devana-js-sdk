@@ -1,3 +1,5 @@
+import {ChatLocation} from "../ChatLocation";
+
 export interface GetRoomSummary {
-    id: string;
+    location: ChatLocation;
 }
