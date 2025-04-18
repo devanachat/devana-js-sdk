@@ -1,5 +1,5 @@
 import {Envelope} from "./schemes/Envelope";
-import {Message, MessageType} from "./schemes/Message";
+import {Message, MessageType, MessageAuthor} from "./schemes/Message";
 import {PermissionOverwritesValue} from "./schemes/PermissionOverwritesValue";
 import {Role} from "./schemes/Role";
 import {Room, RoomType, RoomFlag} from "./schemes/Room";
@@ -116,12 +116,14 @@ import {GetSpaceSummary} from "./schemes/commands/GetSpaceSummary";
 import {SpaceFlag} from "./schemes/Space";
 import {SpaceSummary as SpaceSummaryEvent} from "./schemes/events/SpaceSummary";
 import {RoomSummary as RoomSummaryEvent} from "./schemes/events/RoomSummary";
+import {SetCustomNick} from "./schemes/commands/SetCustomNick";
 
 export {
     // objects
     Envelope,
     Message,
     MessageType,
+    MessageAuthor,
     Role,
     Room,
     RoomFlag,
@@ -245,4 +247,5 @@ export {
     SetClientData,
     GetSpaceSummary,
     GetRoomSummary,
+    SetCustomNick,
 };
