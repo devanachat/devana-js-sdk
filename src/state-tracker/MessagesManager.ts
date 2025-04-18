@@ -215,7 +215,7 @@ export class MessagesManager {
             return;
         }
 
-        const isMe = ev.message.user.id === this.tracker.me?.id;
+        const isMe = ev.message.author.user.id === this.tracker.me?.id;
 
         let update: Partial<FollowedTopic>;
 

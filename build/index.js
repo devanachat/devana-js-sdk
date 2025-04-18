@@ -1824,7 +1824,7 @@ var MessagesManager = /*#__PURE__*/function () {
         // Skip if we don't follow this room or targeted topic
         return;
       }
-      var isMe = ev.message.user.id === ((_this$tracker$me = this.tracker.me) === null || _this$tracker$me === void 0 ? void 0 : _this$tracker$me.id);
+      var isMe = ev.message.author.user.id === ((_this$tracker$me = this.tracker.me) === null || _this$tracker$me === void 0 ? void 0 : _this$tracker$me.id);
       var update;
       if (isMe) {
         // Reset missed messages count if new message is authored by me
@@ -3059,6 +3059,10 @@ Permissions_defineProperty(Permissions, "list", {
   Kick: {
     value: 1 << 16,
     maxLayer: Layer.Room
+  },
+  ChangeOwnNick: {
+    value: 1 << 17,
+    maxLayer: Layer.Space
   }
 });
 ;// CONCATENATED MODULE: ./src/state-tracker/PermissionsManager.ts
@@ -3861,19 +3865,14 @@ var UsersManager = /*#__PURE__*/function () {
     UsersManager_classCallCheck(this, UsersManager);
     this.tracker = tracker;
     UsersManager_defineProperty(this, "users", new ObservableIndexedObjectCollection('id'));
+    // RoomMemberUpdated & SpaceMemberUpdated events are not contains user object
     tracker.client.on('UserUpdated', function (event) {
       return _this.handleUsers([event.user]);
     });
     tracker.client.on('RoomMemberJoined', function (event) {
       return _this.handleMembers([event.member]);
     });
-    tracker.client.on('RoomMemberUpdated', function (event) {
-      return _this.handleMembers([event.member]);
-    });
     tracker.client.on('SpaceMemberJoined', function (event) {
-      return _this.handleMembers([event.member]);
-    });
-    tracker.client.on('SpaceMemberUpdated', function (event) {
       return _this.handleMembers([event.member]);
     });
     tracker.client.on('SpaceMembers', function (event) {
@@ -3884,11 +3883,11 @@ var UsersManager = /*#__PURE__*/function () {
     });
     tracker.client.on('Messages', function (event) {
       return _this.handleUsers(event.messages.map(function (message) {
-        return message.user;
+        return message.author.user;
       }));
     });
     tracker.client.on('NewMessage', function (event) {
-      return _this.handleUsers([event.message.user]);
+      return _this.handleUsers([event.message.author.user]);
     });
     tracker.client.on('Session', function (event) {
       return _this.handleSession(event);

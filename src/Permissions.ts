@@ -29,6 +29,7 @@ export class Permissions {
         ManageEmoticon: {value: 1 << 14, maxLayer: Layer.Space},
         ManageBan: {value: 1 << 15, maxLayer: Layer.Room},
         Kick: {value: 1 << 16, maxLayer: Layer.Room},
+        ChangeOwnNick: {value: 1 << 17, maxLayer: Layer.Space},
     };
 
     public static getNames(): (keyof typeof this.list)[] {

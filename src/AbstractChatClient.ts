@@ -87,6 +87,7 @@ import {
     GetSpaceSummary,
     RoomSummaryEvent,
     SpaceSummaryEvent,
+    SetCustomNick,
 } from "./types/src/index";
 import {EventTarget} from "./EventTarget";
 
@@ -241,6 +242,7 @@ export type CommandsMap = {
     AssignRole: [AssignRole, EventsMap['SpaceMemberUpdated'] | EventsMap['RoomMemberUpdated']],
     DeassignRole: [DeassignRole, EventsMap['SpaceMemberUpdated'] | EventsMap['RoomMemberUpdated']],
     GetSpaceSummary: [GetSpaceSummary, EventsMap['SpaceSummaryEvent']],
+    SetCustomNick: [SetCustomNick, EventsMap['SpaceMemberUpdated']],
     // Room commands
     JoinRoom: [JoinRoom, EventsMap['RoomJoined']],
     LeaveRoom: [LeaveRoom, EventsMap['RoomLeft']],

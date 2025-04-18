@@ -7,15 +7,14 @@ export class UsersManager {
     private readonly users: ObservableIndexedObjectCollection<User> = new ObservableIndexedObjectCollection('id');
 
     public constructor(private tracker: ChatStateTracker) {
+        // RoomMemberUpdated & SpaceMemberUpdated events are not contains user object
         tracker.client.on('UserUpdated', event => this.handleUsers([event.user]));
         tracker.client.on('RoomMemberJoined', event => this.handleMembers([event.member]));
-        tracker.client.on('RoomMemberUpdated', event => this.handleMembers([event.member]));
         tracker.client.on('SpaceMemberJoined', event => this.handleMembers([event.member]));
-        tracker.client.on('SpaceMemberUpdated', event => this.handleMembers([event.member]));
         tracker.client.on('SpaceMembers', event => this.handleMembers(event.members));
         tracker.client.on('RoomMembers', event => this.handleMembers(event.members));
-        tracker.client.on('Messages', event => this.handleUsers(event.messages.map(message => message.user)));
-        tracker.client.on('NewMessage', event => this.handleUsers([event.message.user]));
+        tracker.client.on('Messages', event => this.handleUsers(event.messages.map(message => message.author.user)));
+        tracker.client.on('NewMessage', event => this.handleUsers([event.message.author.user]));
         tracker.client.on('Session', event => this.handleSession(event));
     }
 
