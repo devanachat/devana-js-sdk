@@ -17,9 +17,12 @@ export {
     IndexedObjectCollection, ObservableIndexedObjectCollection,
     Permissions, PermissionDefinition, Layer,
     WebSocketChatClient, WebApiChatClient,
-    AuthClient, MyAccountInterface, TokenInterface,
-    FilesClient, File,
+    AuthClient,
+    FilesClient,
     extractUserFromMember,
 };
 
-export type {ChatTypes};
+export type {
+    ChatTypes,
+    MyAccountInterface, TokenInterface, File,
+};
