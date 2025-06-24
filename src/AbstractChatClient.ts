@@ -246,7 +246,7 @@ export type CommandsMap = {
     // Room commands
     JoinRoom: [JoinRoom, EventsMap['RoomJoined']],
     LeaveRoom: [LeaveRoom, EventsMap['RoomLeft']],
-    CreateRoom: [CreateRoom, EventsMap['NewRoom']],
+    CreateRoom: [CreateRoom, EventsMap['RoomJoined']],
     DeleteRoom: [DeleteRoom, EventsMap['RoomDeleted']],
     UpdateRoom: [UpdateRoom, EventsMap['RoomUpdated']],
     GetRoomMembers: [GetRoomMembers, EventsMap['RoomMembers']],
