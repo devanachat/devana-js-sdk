@@ -1,6 +1,6 @@
 {
   "name": "polfan-server-js-client",
-  "version": "0.2.3",
+  "version": "0.2.31",
   "description": "JavaScript client library for handling communication with Polfan chat server.",
   "author": "Jarosław Żak",
   "license": "MIT",
@@ -9,6 +9,7 @@
   "types": "build/types/index.d.ts",
   "exports": {
     ".": {
+      "types": "./build/types/index.d.ts",
       "require": "./build/index.cjs.js",
       "browser": "./build/index.umd.js",
       "default": "./build/index.cjs.js"
