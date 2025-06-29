@@ -1,7 +1,7 @@
 import {User} from "./User";
 import {ChatLocation} from "./ChatLocation";
 
-export type MessageType = 'Text'|'RoomJoin'|'RoomLeave'|'SpaceJoin'|'SpaceLeave'|'TopicChange'|'CustomNickChange';
+export type MessageType = 'Text'|'RoomJoin'|'RoomLeave'|'SpaceJoin'|'SpaceLeave'|'TopicChange'|'CustomNickChange'|'System';
 
 export interface MessageAuthor {
     user: User;
