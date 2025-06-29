@@ -8,7 +8,7 @@ import {
     RoomDeleted,
     RoomLeft,
     TopicDeleted,
-    FollowedTopicUpdated, RoomJoined, NewTopic, Session, Room,
+    FollowedTopicUpdated, RoomJoined, NewTopic, Session, Room, MessageType,
 } from "../types/src";
 import {
     IndexedCollection,
@@ -209,9 +209,10 @@ export class MessagesManager {
     private updateLocallyFollowedTopicOnNewMessage(ev: NewMessage): void {
         const roomFollowedTopics = this.followedTopics.get(ev.message.location.roomId);
         const followedTopic = roomFollowedTopics?.get(ev.message.location.topicId);
+        const ephemeralMessageTypes = ['System'] as MessageType[];
 
-        if (! roomFollowedTopics || ! followedTopic) {
-            // Skip if we don't follow this room or targeted topic
+        if (!roomFollowedTopics || !followedTopic || ephemeralMessageTypes.includes(ev.message.type)) {
+            // Skip if we don't follow this room or targeted topic or message is ephemeral
             return;
         }
 
