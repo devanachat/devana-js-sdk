@@ -1860,9 +1860,11 @@ function UsersManager_toPropertyKey(arg) { var key = UsersManager_toPrimitive(ar
 function UsersManager_toPrimitive(input, hint) { if (typeof input !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (typeof res !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
 
 
+
 class UsersManager {
   constructor(tracker) {
     this.tracker = tracker;
+    UsersManager_defineProperty(this, "onlineStatus", new EventTarget());
     UsersManager_defineProperty(this, "users", new ObservableIndexedObjectCollection('id'));
     // RoomMemberUpdated & SpaceMemberUpdated events are not contains user object
     tracker.client.on('UserUpdated', event => this.handleUsers([event.user]));
@@ -1882,14 +1884,20 @@ class UsersManager {
     return this.users;
   }
   handleMembers(members) {
-    this.users.set(...members.map(extractUserFromMember));
-  }
-  handleUsers(users) {
-    this.users.set(...users);
+    this.handleUsers(members.map(extractUserFromMember));
   }
   handleSession(session) {
     this.users.deleteAll();
-    this.users.set(session.user);
+    this.handleUsers([session.user]);
+  }
+  handleUsers(users) {
+    users.forEach(newUser => {
+      const oldUser = this.users.get(newUser.id);
+      if (oldUser && oldUser.online !== newUser.online) {
+        this.onlineStatus.emit('changed', newUser);
+      }
+    });
+    this.users.set(...users);
   }
 }
 ;// CONCATENATED MODULE: ./src/state-tracker/ChatStateTracker.ts

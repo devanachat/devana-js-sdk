@@ -2,8 +2,11 @@ import {ChatStateTracker} from "./ChatStateTracker";
 import {ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
 import {RoomMember, Session, SpaceMember, User} from "../types/src";
 import {extractUserFromMember} from "./functions";
+import {EventTarget} from "../EventTarget";
 
 export class UsersManager {
+    public readonly onlineStatus = new EventTarget();
+
     private readonly users: ObservableIndexedObjectCollection<User> = new ObservableIndexedObjectCollection('id');
 
     public constructor(private tracker: ChatStateTracker) {
@@ -26,15 +29,22 @@ export class UsersManager {
     }
 
     private handleMembers(members: (RoomMember | SpaceMember)[]): void {
-        this.users.set(...members.map(extractUserFromMember));
-    }
-
-    private handleUsers(users: User[]): void {
-        this.users.set(...users);
+        this.handleUsers(members.map(extractUserFromMember));
     }
 
     private handleSession(session: Session): void {
         this.users.deleteAll();
-        this.users.set(session.user);
+        this.handleUsers([session.user]);
+    }
+
+    private handleUsers(users: User[]): void {
+        users.forEach(newUser => {
+            const oldUser = this.users.get(newUser.id);
+            if (oldUser && oldUser.online !== newUser.online) {
+                this.onlineStatus.emit('changed', newUser);
+            }
+        });
+
+        this.users.set(...users);
     }
 }
