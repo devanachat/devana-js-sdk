@@ -319,12 +319,21 @@ export class RoomsManager {
         const topics = this.topics.get(ev.message.location.roomId);
         const topic = topics?.get(ev.message.location.topicId);
 
-        if (topic) {
-            topics.set({
-                ...topic,
-                messageCount: topic.messageCount + 1,
-                lastMessage: ev.message,
-            });
+        if (!topic) {
+            return; // No topic found, nothing to update
+        }
+
+        const newTopic = {
+            ...topic,
+            messageCount: topic.messageCount + 1,
+            lastMessage: ev.message,
+        };
+
+        topics.set(newTopic);
+        const room = this.list.get(ev.message.location.roomId);
+
+        if (room.defaultTopic?.id === ev.message.location.topicId) {
+            this.list.set({ ...room, defaultTopic: newTopic });
         }
     }
 }
