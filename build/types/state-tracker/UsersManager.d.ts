@@ -1,8 +1,10 @@
 import { ChatStateTracker } from "./ChatStateTracker";
 import { ObservableIndexedObjectCollection } from "../IndexedObjectCollection";
 import { User } from "../types/src";
+import { EventTarget } from "../EventTarget";
 export declare class UsersManager {
     private tracker;
+    readonly onlineStatus: EventTarget<any>;
     private readonly users;
     constructor(tracker: ChatStateTracker);
     /**
@@ -10,6 +12,6 @@ export declare class UsersManager {
      */
     getAvailable(): Promise<ObservableIndexedObjectCollection<User>>;
     private handleMembers;
-    private handleUsers;
     private handleSession;
+    private handleUsers;
 }

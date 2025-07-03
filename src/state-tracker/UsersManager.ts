@@ -41,7 +41,7 @@ export class UsersManager {
         users.forEach(newUser => {
             const oldUser = this.users.get(newUser.id);
             if (oldUser && oldUser.online !== newUser.online) {
-                this.onlineStatus.emit('changed', newUser);
+                this.onlineStatus.emit('change', newUser);
             }
         });
 
