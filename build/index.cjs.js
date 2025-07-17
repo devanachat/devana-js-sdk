@@ -2235,7 +2235,7 @@ function FilesClient_toPrimitive(input, hint) { if (typeof input !== "object" ||
 class FilesClient extends AbstractRestClient {
   constructor(...args) {
     super(...args);
-    FilesClient_defineProperty(this, "defaultUrl", 'https://polfan.pl/webservice/api/files');
+    FilesClient_defineProperty(this, "defaultUrl", 'https://files.devana.pl/files');
   }
   async uploadFile(file) {
     const formData = new FormData();
@@ -2251,8 +2251,13 @@ class FilesClient extends AbstractRestClient {
     });
     return this.convertFetchResponse(response);
   }
-  async getFileMetadata(id) {
+  async getFileMeta(id) {
     return this.send('GET', '/' + id);
+  }
+  async getFileMetaBulk(ids) {
+    const searchParams = new URLSearchParams();
+    ids.forEach(id => searchParams.append('id[]', id));
+    return this.send('GET', '?' + searchParams);
   }
 }
 ;// CONCATENATED MODULE: ./src/index.ts
