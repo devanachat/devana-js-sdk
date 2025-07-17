@@ -2235,7 +2235,7 @@ function FilesClient_toPrimitive(input, hint) { if (typeof input !== "object" ||
 class FilesClient extends AbstractRestClient {
   constructor(...args) {
     super(...args);
-    FilesClient_defineProperty(this, "defaultUrl", 'https://files.devana.pl/files');
+    FilesClient_defineProperty(this, "defaultUrl", 'https://files.devana.pl');
   }
   async uploadFile(file) {
     const formData = new FormData();
@@ -2244,7 +2244,7 @@ class FilesClient extends AbstractRestClient {
       ...this.getAuthHeaders(),
       Accept: 'application/json'
     };
-    const response = await fetch(this.defaultUrl, {
+    const response = await fetch(this.getUrl('files'), {
       method: 'POST',
       body: formData,
       headers
@@ -2252,12 +2252,12 @@ class FilesClient extends AbstractRestClient {
     return this.convertFetchResponse(response);
   }
   async getFileMeta(id) {
-    return this.send('GET', '/' + id);
+    return this.send('GET', 'files/' + id);
   }
   async getFileMetaBulk(ids) {
     const searchParams = new URLSearchParams();
     ids.forEach(id => searchParams.append('id[]', id));
-    return this.send('GET', '?' + searchParams);
+    return this.send('GET', 'files?' + searchParams);
   }
 }
 ;// CONCATENATED MODULE: ./src/index.ts

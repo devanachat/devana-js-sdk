@@ -11,7 +11,7 @@ export interface File {
 }
 
 export class FilesClient extends AbstractRestClient {
-    protected defaultUrl: string = 'https://files.devana.pl/files';
+    protected defaultUrl: string = 'https://files.devana.pl';
 
     public async uploadFile(file: Parameters<typeof FormData.prototype.append>[1]): Promise<RestClientResponse<File>> {
         const formData = new FormData();
@@ -19,18 +19,18 @@ export class FilesClient extends AbstractRestClient {
 
         let headers = {...this.getAuthHeaders(), Accept: 'application/json'};
 
-        const response = await fetch(this.defaultUrl, {method: 'POST', body: formData, headers});
+        const response = await fetch(this.getUrl('files'), {method: 'POST', body: formData, headers});
 
         return this.convertFetchResponse<File>(response);
     }
 
     public async getFileMeta(id: string): Promise<RestClientResponse<File>> {
-        return this.send('GET', '/' + id);
+        return this.send('GET', 'files/' + id);
     }
 
     public async getFileMetaBulk(ids: string[]): Promise<RestClientResponse<File[]>> {
         const searchParams = new URLSearchParams();
         ids.forEach(id => searchParams.append('id[]', id));
-        return this.send('GET', '?' + searchParams);
+        return this.send('GET', 'files?' + searchParams);
     }
 }
