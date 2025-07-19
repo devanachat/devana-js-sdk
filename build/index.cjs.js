@@ -2238,15 +2238,16 @@ class FilesClient extends AbstractRestClient {
     FilesClient_defineProperty(this, "defaultUrl", 'https://files.devana.pl');
   }
   async uploadFile(file) {
-    const formData = new FormData();
-    formData.append('file', file);
+    const name = encodeURIComponent(file.name ?? '');
     let headers = {
       ...this.getAuthHeaders(),
-      Accept: 'application/json'
+      Accept: 'application/json',
+      'Content-Disposition': `attachment; filename="${name}"`,
+      'Content-Length': file.size
     };
     const response = await fetch(this.getUrl('files'), {
       method: 'POST',
-      body: formData,
+      body: file,
       headers
     });
     return this.convertFetchResponse(response);

@@ -10,7 +10,7 @@ export interface File {
 }
 export declare class FilesClient extends AbstractRestClient {
     protected defaultUrl: string;
-    uploadFile(file: Parameters<typeof FormData.prototype.append>[1]): Promise<RestClientResponse<File>>;
+    uploadFile(file: globalThis.File | Blob): Promise<RestClientResponse<File>>;
     getFileMeta(id: string): Promise<RestClientResponse<File>>;
     getFileMetaBulk(ids: string[]): Promise<RestClientResponse<File[]>>;
 }

@@ -13,13 +13,20 @@ export interface File {
 export class FilesClient extends AbstractRestClient {
     protected defaultUrl: string = 'https://files.devana.pl';
 
-    public async uploadFile(file: Parameters<typeof FormData.prototype.append>[1]): Promise<RestClientResponse<File>> {
-        const formData = new FormData();
-        formData.append('file', file);
+    public async uploadFile(file: globalThis.File | Blob): Promise<RestClientResponse<File>> {
+        const name = encodeURIComponent((file as globalThis.File).name ?? '');
+        let headers = {
+            ...this.getAuthHeaders(),
+            Accept: 'application/json',
+            'Content-Disposition': `attachment; filename="${name}"`,
+            'Content-Length': file.size
+        };
 
-        let headers = {...this.getAuthHeaders(), Accept: 'application/json'};
-
-        const response = await fetch(this.getUrl('files'), {method: 'POST', body: formData, headers});
+        const response = await fetch(this.getUrl('files'), {
+            method: 'POST',
+            body: file,
+            headers
+        });
 
         return this.convertFetchResponse<File>(response);
     }
