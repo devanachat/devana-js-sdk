@@ -1825,7 +1825,8 @@ class EmoticonsManager {
     this.tracker.client.on('Session', () => this.handleSession());
   }
   async get(spaceId) {
-    if (this.emoticonsPromises.notExist(spaceId)) {
+    const key = spaceId ?? GLOBAL_KEY;
+    if (this.emoticonsPromises.notExist(key)) {
       this.emoticonsPromises.registerByFunction(async () => {
         const result = await this.tracker.client.send('GetEmoticons', {
           spaceId
@@ -1834,10 +1835,10 @@ class EmoticonsManager {
           throw result.error;
         }
         this.handleEmoticons(result.data);
-      }, spaceId ?? GLOBAL_KEY);
+      }, key);
     }
-    await this.emoticonsPromises.get(spaceId);
-    return this.list.get(spaceId);
+    await this.emoticonsPromises.get(key);
+    return this.list.get(key);
   }
   handleEmoticons(event) {
     const spaceId = event.location.spaceId ?? GLOBAL_KEY;

@@ -21,18 +21,20 @@ export class EmoticonsManager {
     }
 
     public async get(spaceId?: string): Promise<ObservableIndexedObjectCollection<Emoticon>> {
-        if (this.emoticonsPromises.notExist(spaceId)) {
+        const key = spaceId ?? GLOBAL_KEY;
+
+        if (this.emoticonsPromises.notExist(key)) {
             this.emoticonsPromises.registerByFunction(async () => {
                 const result = await this.tracker.client.send('GetEmoticons', {spaceId});
                 if (result.error) {
                     throw result.error;
                 }
                 this.handleEmoticons(result.data);
-            }, spaceId ?? GLOBAL_KEY);
+            }, key);
         }
 
-        await this.emoticonsPromises.get(spaceId);
-        return this.list.get(spaceId);
+        await this.emoticonsPromises.get(key);
+        return this.list.get(key);
     }
 
     private handleEmoticons(event: Emoticons): void {
