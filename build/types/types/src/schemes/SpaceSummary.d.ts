@@ -4,4 +4,5 @@ export interface SpaceSummary {
     description: string;
     icon?: string;
     banner?: string;
+    memberCount: number;
 }
