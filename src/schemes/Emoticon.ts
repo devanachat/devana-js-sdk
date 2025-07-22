@@ -6,4 +6,5 @@ export interface Emoticon {
     name: string;
     fileId: string;
     user: User;
+    tag?: string;
 }
