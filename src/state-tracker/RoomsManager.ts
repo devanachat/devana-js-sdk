@@ -214,7 +214,7 @@ export class RoomsManager {
     }
 
     private handleRoomUpdated(ev: RoomUpdated): void {
-        if (this.list.has(ev.room)) {
+        if (this.list.has(ev.room.id)) {
             this.list.set(ev.room);
         }
     }
