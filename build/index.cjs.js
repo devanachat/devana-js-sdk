@@ -1094,7 +1094,9 @@ class RoomsManager {
     this.addJoinedRooms(ev.room);
   }
   handleRoomUpdated(ev) {
-    this.list.set(ev.room);
+    if (this.list.has(ev.room)) {
+      this.list.set(ev.room);
+    }
   }
   handleRoomDeleted(ev) {
     this.deleteRoom(ev.id);
