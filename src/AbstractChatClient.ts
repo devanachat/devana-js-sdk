@@ -87,9 +87,10 @@ import {
     GetSpaceSummary,
     RoomSummaryEvent,
     SpaceSummaryEvent,
-    SetCustomNick,
+    SetCustomNick, Relationships, RelationshipDeleted, NewRelationship, DeleteRelationship, CreateRelationship,
 } from "./types/src/index";
 import {EventTarget} from "./EventTarget";
+import {GetRelationships} from "./types/src/schemes/commands/GetRelationships";
 
 type ArrayOfPromiseResolvers = [(value: any) => void, (reason?: any) => void];
 
@@ -165,6 +166,9 @@ export type EventsMap = {
     Emoticons: Emoticons,
     Bans: Bans,
     ClientData: ClientData,
+    NewRelationship: NewRelationship,
+    RelationshipDeleted: RelationshipDeleted,
+    Relationships: Relationships,
     // Space events
     DiscoverableSpaces: DiscoverableSpaces,
     SpaceJoined: SpaceJoined,
@@ -227,6 +231,9 @@ export type CommandsMap = {
     Kick: [Kick, EventsMap['Ok']],
     GetClientData: [GetClientData, EventsMap['ClientData']],
     SetClientData: [SetClientData, EventsMap['Ok']],
+    DeleteRelationship: [DeleteRelationship, EventsMap['RelationshipDeleted']],
+    CreateRelationship: [CreateRelationship, EventsMap['NewRelationship']],
+    GetRelationships: [GetRelationships, EventsMap['Relationships']],
     // Space commands
     GetDiscoverableSpaces: [GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']],
     JoinSpace: [JoinSpace, EventsMap['SpaceJoined']],

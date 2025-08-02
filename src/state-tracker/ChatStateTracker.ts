@@ -6,6 +6,7 @@ import {PermissionsManager} from "./PermissionsManager";
 import {DeferredTask} from "./AsyncUtils";
 import {EmoticonsManager} from "./EmoticonsManager";
 import {UsersManager} from "./UsersManager";
+import {RelationshipsManager} from "./RelationshipsManager";
 
 export class ChatStateTracker {
     /**
@@ -32,6 +33,11 @@ export class ChatStateTracker {
      * Users related state.
      */
     public readonly users = new UsersManager(this);
+
+    /**
+     * State of relationships with other users.
+     */
+    public readonly relationships = new RelationshipsManager(this);
 
     private _me: User = null;
     private readonly deferredSession = new DeferredTask();

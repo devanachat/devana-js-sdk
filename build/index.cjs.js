@@ -1912,10 +1912,66 @@ class UsersManager {
     this.users.set(...users);
   }
 }
+;// CONCATENATED MODULE: ./src/state-tracker/RelationshipsManager.ts
+function RelationshipsManager_defineProperty(obj, key, value) { key = RelationshipsManager_toPropertyKey(key); if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+function RelationshipsManager_toPropertyKey(arg) { var key = RelationshipsManager_toPrimitive(arg, "string"); return typeof key === "symbol" ? key : String(key); }
+function RelationshipsManager_toPrimitive(input, hint) { if (typeof input !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (typeof res !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
+
+
+const getId = (refUserId, type) => `${refUserId}-${type}`;
+const getIdFromRelationship = relationship => getId(relationship.refUserId, relationship.type);
+class RelationshipsManager {
+  constructor(tracker) {
+    this.tracker = tracker;
+    RelationshipsManager_defineProperty(this, "relationships", new ObservableIndexedObjectCollection(getIdFromRelationship));
+    RelationshipsManager_defineProperty(this, "promises", new PromiseRegistry());
+    this.tracker.client.on('Relationships', ev => this.handleRelationships(ev));
+    this.tracker.client.on('NewRelationship', ev => this.handleNewRelationship(ev));
+    this.tracker.client.on('RelationshipDeleted', ev => this.handleRelationshipDeleted(ev));
+    this.tracker.client.on('Session', () => this.handleSession());
+  }
+  async get() {
+    if (this.promises.notExist('all')) {
+      this.promises.registerByFunction(async () => {
+        const result = await this.tracker.client.send('GetRelationships', {});
+        if (result.error) {
+          throw result.error;
+        }
+      }, 'all');
+    }
+    await this.promises.get('all');
+    return this.relationships;
+  }
+  async exists(refUserId, type) {
+    await this.get();
+    return this.relationships.has(getId(refUserId, type));
+  }
+  handleRelationships(ev) {
+    this.relationships.deleteAll();
+    ev.relationships.forEach(relationship => {
+      this.relationships.set(relationship);
+    });
+  }
+  handleNewRelationship(ev) {
+    if (this.promises.has('all')) {
+      this.relationships.set(ev.relationship);
+    }
+  }
+  handleRelationshipDeleted(ev) {
+    if (this.promises.has('all')) {
+      this.relationships.delete(getIdFromRelationship(ev.relationship));
+    }
+  }
+  handleSession() {
+    this.promises.forgetAll();
+    this.relationships.deleteAll();
+  }
+}
 ;// CONCATENATED MODULE: ./src/state-tracker/ChatStateTracker.ts
 function ChatStateTracker_defineProperty(obj, key, value) { key = ChatStateTracker_toPropertyKey(key); if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 function ChatStateTracker_toPropertyKey(arg) { var key = ChatStateTracker_toPrimitive(arg, "string"); return typeof key === "symbol" ? key : String(key); }
 function ChatStateTracker_toPrimitive(input, hint) { if (typeof input !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (typeof res !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
+
 
 
 
@@ -1945,6 +2001,10 @@ class ChatStateTracker {
      * Users related state.
      */
     ChatStateTracker_defineProperty(this, "users", new UsersManager(this));
+    /**
+     * State of relationships with other users.
+     */
+    ChatStateTracker_defineProperty(this, "relationships", new RelationshipsManager(this));
     ChatStateTracker_defineProperty(this, "_me", null);
     ChatStateTracker_defineProperty(this, "deferredSession", new DeferredTask());
     this.client.on('Session', ev => this.handleSession(ev));

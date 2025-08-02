@@ -1,5 +1,6 @@
-import { Bye, GetSession, JoinSpace, Session, SpaceJoined, Error as ErrorType, SpaceLeft, SpaceMemberJoined, SpaceMemberLeft, SpaceMemberUpdated, SpaceDeleted, SpaceMembers, SpaceRooms, NewRole, RoomDeleted, RoomJoined, RoomLeft, RoomMemberLeft, RoomMemberJoined, RoomMembers, NewRoom, NewTopic, TopicDeleted, NewMessage, GetPermissionOverwrites, GetComputedPermissions, LeaveSpace, CreateSpace, DeleteSpace, GetSpaceMembers, GetSpaceRooms, CreateRole, DeleteRole, AssignRole, DeassignRole, SetPermissionOverwrites, JoinRoom, LeaveRoom, CreateRoom, DeleteRoom, GetRoomMembers, CreateTopic, DeleteTopic, CreateMessage, Envelope, PermissionOverwrites, PermissionOverwritesUpdated, RoomMemberUpdated, UpdateRole, RoleUpdated, Ack, UserUpdated, UpdateRoom, RoomUpdated, UpdateSpace, SpaceUpdated, PermissionOverwriteTargets, GetPermissionOverwriteTargets, Owners, Ok, GetOwners, CreateOwner, RoleDeleted, FollowedTopicUpdated, TopicFollowed, TopicUnfollowed, FollowedTopics, FollowTopic, UnfollowTopic, GetFollowedTopics, Messages, GetMessages, Topics, GetTopics, TopicUpdated, UpdateTopic, GetDiscoverableSpaces, DiscoverableSpaces, CreateEmoticon, DeleteEmoticon, GetEmoticons, Emoticons, EmoticonDeleted, NewEmoticon, Bans, GetBans, Ban, Unban, Kick, ClientData, GetClientData, SetClientData, GetRoomSummary, GetSpaceSummary, RoomSummaryEvent, SpaceSummaryEvent, SetCustomNick } from "./types/src/index";
+import { Bye, GetSession, JoinSpace, Session, SpaceJoined, Error as ErrorType, SpaceLeft, SpaceMemberJoined, SpaceMemberLeft, SpaceMemberUpdated, SpaceDeleted, SpaceMembers, SpaceRooms, NewRole, RoomDeleted, RoomJoined, RoomLeft, RoomMemberLeft, RoomMemberJoined, RoomMembers, NewRoom, NewTopic, TopicDeleted, NewMessage, GetPermissionOverwrites, GetComputedPermissions, LeaveSpace, CreateSpace, DeleteSpace, GetSpaceMembers, GetSpaceRooms, CreateRole, DeleteRole, AssignRole, DeassignRole, SetPermissionOverwrites, JoinRoom, LeaveRoom, CreateRoom, DeleteRoom, GetRoomMembers, CreateTopic, DeleteTopic, CreateMessage, Envelope, PermissionOverwrites, PermissionOverwritesUpdated, RoomMemberUpdated, UpdateRole, RoleUpdated, Ack, UserUpdated, UpdateRoom, RoomUpdated, UpdateSpace, SpaceUpdated, PermissionOverwriteTargets, GetPermissionOverwriteTargets, Owners, Ok, GetOwners, CreateOwner, RoleDeleted, FollowedTopicUpdated, TopicFollowed, TopicUnfollowed, FollowedTopics, FollowTopic, UnfollowTopic, GetFollowedTopics, Messages, GetMessages, Topics, GetTopics, TopicUpdated, UpdateTopic, GetDiscoverableSpaces, DiscoverableSpaces, CreateEmoticon, DeleteEmoticon, GetEmoticons, Emoticons, EmoticonDeleted, NewEmoticon, Bans, GetBans, Ban, Unban, Kick, ClientData, GetClientData, SetClientData, GetRoomSummary, GetSpaceSummary, RoomSummaryEvent, SpaceSummaryEvent, SetCustomNick, Relationships, RelationshipDeleted, NewRelationship, DeleteRelationship, CreateRelationship } from "./types/src/index";
 import { EventTarget } from "./EventTarget";
+import { GetRelationships } from "./types/src/schemes/commands/GetRelationships";
 type ArrayOfPromiseResolvers = [(value: any) => void, (reason?: any) => void];
 export declare abstract class AbstractChatClient extends EventTarget {
     protected awaitingResponse: Map<string, ArrayOfPromiseResolvers>;
@@ -34,6 +35,9 @@ export type EventsMap = {
     Emoticons: Emoticons;
     Bans: Bans;
     ClientData: ClientData;
+    NewRelationship: NewRelationship;
+    RelationshipDeleted: RelationshipDeleted;
+    Relationships: Relationships;
     DiscoverableSpaces: DiscoverableSpaces;
     SpaceJoined: SpaceJoined;
     SpaceLeft: SpaceLeft;
@@ -91,6 +95,9 @@ export type CommandsMap = {
     Kick: [Kick, EventsMap['Ok']];
     GetClientData: [GetClientData, EventsMap['ClientData']];
     SetClientData: [SetClientData, EventsMap['Ok']];
+    DeleteRelationship: [DeleteRelationship, EventsMap['RelationshipDeleted']];
+    CreateRelationship: [CreateRelationship, EventsMap['NewRelationship']];
+    GetRelationships: [GetRelationships, EventsMap['Relationships']];
     GetDiscoverableSpaces: [GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']];
     JoinSpace: [JoinSpace, EventsMap['SpaceJoined']];
     LeaveSpace: [LeaveSpace, EventsMap['SpaceLeft']];
