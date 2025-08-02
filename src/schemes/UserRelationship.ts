@@ -1,9 +1,10 @@
+import {User} from "./User";
+
 export enum UserRelationshipType {
     Ignore = 'Ignore',
 }
 
 export interface UserRelationship {
-    userId: string;
-    refUserId: string;
+    refUser: User;
     type: UserRelationshipType;
 }
