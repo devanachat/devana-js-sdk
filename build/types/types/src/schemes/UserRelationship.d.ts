@@ -1,7 +1,5 @@
 import { User } from "./User";
-export declare enum UserRelationshipType {
-    Ignore = "Ignore"
-}
+export type UserRelationshipType = 'Ignore';
 export interface UserRelationship {
     refUser: User;
     type: UserRelationshipType;
