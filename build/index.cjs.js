@@ -183,9 +183,11 @@ class IndexedCollection {
     for (const id of ids) {
       this.items.delete(id);
     }
+    this._mutationCounter++;
   }
   deleteAll() {
     this.items.clear();
+    this._mutationCounter++;
   }
   findBy(field, valueToFind, limit = null) {
     const result = new IndexedCollection();

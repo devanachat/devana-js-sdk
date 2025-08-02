@@ -39,10 +39,12 @@ export class IndexedCollection<KeyT, ValueT> {
         for (const id of ids) {
             this.items.delete(id);
         }
+        this._mutationCounter++;
     }
 
     public deleteAll(): void {
         this.items.clear();
+        this._mutationCounter++;
     }
 
     public findBy(field: keyof ValueT, valueToFind: any, limit: number = null): IndexedCollection<KeyT, ValueT> {
