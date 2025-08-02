@@ -117,6 +117,12 @@ import {SpaceFlag} from "./schemes/Space";
 import {SpaceSummary as SpaceSummaryEvent} from "./schemes/events/SpaceSummary";
 import {RoomSummary as RoomSummaryEvent} from "./schemes/events/RoomSummary";
 import {SetCustomNick} from "./schemes/commands/SetCustomNick";
+import {NewRelationship} from "./schemes/events/NewRelationship";
+import {RelationshipDeleted} from "./schemes/events/RelationshipDeleted";
+import {UserRelationship, UserRelationshipType} from "./schemes/UserRelationship";
+import {DeleteRelationship} from "./schemes/commands/DeleteRelationship";
+import {Relationships} from "./schemes/events/Relationships";
+import {CreateRelationship} from "./schemes/commands/CreateRelationship";
 
 export {
     // objects
@@ -148,6 +154,8 @@ export {
     LeaveReason,
     RoomStream,
     RoomStreamType,
+    UserRelationship,
+    UserRelationshipType,
     // events
     Bye,
     Error,
@@ -197,6 +205,9 @@ export {
     ClientData,
     SpaceSummaryEvent,
     RoomSummaryEvent,
+    NewRelationship,
+    RelationshipDeleted,
+    Relationships,
     // commands
     AssignRole,
     GetMessages,
@@ -248,4 +259,6 @@ export {
     GetSpaceSummary,
     GetRoomSummary,
     SetCustomNick,
+    CreateRelationship,
+    DeleteRelationship
 };
