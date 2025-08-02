@@ -1919,7 +1919,7 @@ function RelationshipsManager_toPrimitive(input, hint) { if (typeof input !== "o
 
 
 const getId = (refUserId, type) => `${refUserId}-${type}`;
-const getIdFromRelationship = relationship => getId(relationship.refUserId, relationship.type);
+const getIdFromRelationship = relationship => getId(relationship.refUser.id, relationship.type);
 class RelationshipsManager {
   constructor(tracker) {
     this.tracker = tracker;

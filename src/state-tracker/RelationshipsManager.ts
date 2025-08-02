@@ -10,7 +10,7 @@ import {PromiseRegistry} from "./AsyncUtils";
 import {ChatStateTracker} from "./ChatStateTracker";
 
 const getId = (refUserId: string, type: UserRelationshipType): string => `${refUserId}-${type}`;
-const getIdFromRelationship = (relationship: UserRelationship): string => getId(relationship.refUserId, relationship.type);
+const getIdFromRelationship = (relationship: UserRelationship): string => getId(relationship.refUser.id, relationship.type);
 
 export class RelationshipsManager {
     private relationships: ObservableIndexedObjectCollection<UserRelationship> = new ObservableIndexedObjectCollection<UserRelationship>(getIdFromRelationship);
