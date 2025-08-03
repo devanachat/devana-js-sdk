@@ -57,7 +57,7 @@ import {LeaveRoom} from "./schemes/commands/LeaveRoom";
 import {CreateRoom} from "./schemes/commands/CreateRoom";
 import {DeleteRoom} from "./schemes/commands/DeleteRoom";
 import {GetRoomMembers} from "./schemes/commands/GetRoomMembers";
-import {CreateTopic} from "./schemes/commands/CreateTopic";
+import {CreateTopic, CreateTopicInitialMessage} from "./schemes/commands/CreateTopic";
 import {DeleteTopic} from "./schemes/commands/DeleteTopic";
 import {CreateMessage} from "./schemes/commands/CreateMessage";
 import {UpdateRole} from "./schemes/commands/UpdateRole";
@@ -111,6 +111,7 @@ import {GetClientData} from "./schemes/commands/GetClientData";
 import {SetClientData} from "./schemes/commands/SetClientData";
 import {ClientData} from "./schemes/events/ClientData";
 import {RoomStream, RoomStreamType} from "./schemes/RoomStream";
+import {RoomHistory, RoomHistoryMode} from "./schemes/RoomHistory";
 import {GetRoomSummary} from "./schemes/commands/GetRoomSummary";
 import {GetSpaceSummary} from "./schemes/commands/GetSpaceSummary";
 import {SpaceFlag} from "./schemes/Space";
@@ -134,6 +135,10 @@ export {
     Room,
     RoomFlag,
     RoomType,
+    RoomStream,
+    RoomStreamType,
+    RoomHistory,
+    RoomHistoryMode,
     RoomMember,
     RoomSummary,
     RoomSummaryExtras,
@@ -152,10 +157,9 @@ export {
     PermissionOverwritesTarget,
     BanObject,
     LeaveReason,
-    RoomStream,
-    RoomStreamType,
     UserRelationship,
     UserRelationshipType,
+    CreateTopicInitialMessage,
     // events
     Bye,
     Error,

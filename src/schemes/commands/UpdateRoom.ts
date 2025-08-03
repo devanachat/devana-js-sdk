@@ -1,4 +1,5 @@
 import {RoomStream} from "../RoomStream";
+import {RoomHistory} from "../RoomHistory";
 
 export interface UpdateRoom {
     id: string;
@@ -6,4 +7,5 @@ export interface UpdateRoom {
     description?: string;
     flags?: number;
     stream?: RoomStream | null;
+    history?: RoomHistory;
 }
