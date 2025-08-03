@@ -1,6 +1,7 @@
 import { Topic } from "./Topic";
 import { User } from "./User";
 import { RoomStream } from "./RoomStream";
+import { RoomHistory } from "./RoomHistory";
 export type RoomType = 'Text' | 'ClassicText' | 'Pm';
 export declare enum RoomFlag {
     AllowSystemMessages = 1,
@@ -16,4 +17,5 @@ export interface Room {
     recipients: User[] | null;
     flags: number;
     stream: RoomStream | null;
+    history: RoomHistory | null;
 }

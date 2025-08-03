@@ -209,10 +209,9 @@ export class MessagesManager {
     private updateLocallyFollowedTopicOnNewMessage(ev: NewMessage): void {
         const roomFollowedTopics = this.followedTopics.get(ev.message.location.roomId);
         const followedTopic = roomFollowedTopics?.get(ev.message.location.topicId);
-        const ephemeralMessageTypes = ['System'] as MessageType[];
 
-        if (!roomFollowedTopics || !followedTopic || ephemeralMessageTypes.includes(ev.message.type)) {
-            // Skip if we don't follow this room or targeted topic or message is ephemeral
+        if (!roomFollowedTopics || !followedTopic || ev.message.type === 'Ephemeral') {
+            // Skip if we don't follow this room or targeted topic or the message is ephemeral
             return;
         }
 
