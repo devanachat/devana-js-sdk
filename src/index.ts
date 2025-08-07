@@ -124,6 +124,7 @@ import {UserRelationship, UserRelationshipType} from "./schemes/UserRelationship
 import {DeleteRelationship} from "./schemes/commands/DeleteRelationship";
 import {Relationships} from "./schemes/events/Relationships";
 import {CreateRelationship} from "./schemes/commands/CreateRelationship";
+import {RoomSummaryUpdated} from "./schemes/events/RoomSummaryUpdated";
 
 export {
     // objects
@@ -212,6 +213,7 @@ export {
     NewRelationship,
     RelationshipDeleted,
     Relationships,
+    RoomSummaryUpdated,
     // commands
     AssignRole,
     GetMessages,
