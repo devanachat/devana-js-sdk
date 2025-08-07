@@ -45,6 +45,7 @@ export declare class SpacesManager {
     private handleSpaceMemberLeft;
     private handleSpaceMembers;
     private handleSpaceRooms;
+    private handleRoomSummaryUpdated;
     private handleSpaceMemberUpdated;
     private handleRoleUpdated;
     private handleSession;

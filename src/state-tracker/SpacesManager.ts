@@ -8,6 +8,7 @@ import {
     RoleUpdated,
     RoomDeleted,
     RoomSummary,
+    RoomSummaryUpdated,
     RoomUpdated,
     Session,
     Space,
@@ -48,6 +49,7 @@ export class SpacesManager {
         this.tracker.client.on('SpaceMemberLeft', ev => this.handleSpaceMemberLeft(ev));
         this.tracker.client.on('SpaceMembers', ev => this.handleSpaceMembers(ev));
         this.tracker.client.on('SpaceRooms', ev => this.handleSpaceRooms(ev));
+        this.tracker.client.on('RoomSummaryUpdated', ev => this.handleRoomSummaryUpdated(ev));
         this.tracker.client.on('SpaceMemberUpdated', ev => this.handleSpaceMemberUpdated(ev));
         this.tracker.client.on('UserUpdated', ev => this.handleUserUpdated(ev));
         this.tracker.client.on('NewRole', ev => this.handleNewRole(ev));
@@ -229,9 +231,34 @@ export class SpacesManager {
     }
 
     private handleSpaceRooms(ev: SpaceRooms): void {
-        if (! this.rooms.has(ev.id)) {
+        if (!this.rooms.has(ev.id)) {
             this.rooms.set([ev.id, new ObservableIndexedObjectCollection('id', ev.summaries)]);
             ev.summaries.forEach(summary => this.roomIdToSpaceId.set([summary.id, ev.id]));
+        }
+    }
+
+    private async handleRoomSummaryUpdated(ev: RoomSummaryUpdated): Promise<void> {
+        const spaceId = this.roomIdToSpaceId.get(ev.summary.id);
+        const summariesPromise = this.roomsPromises.get(spaceId);
+
+        /**
+         * Update summary only if the list was already loaded.
+         * RoomSummaryUpdated event has a partial summary, so we need to update the existing summary by merging it.
+         */
+        if (spaceId && summariesPromise) {
+            await summariesPromise;
+
+            const summaries = this.rooms.get(spaceId);
+            const oldSummary = summaries.get(ev.summary.id);
+            let newSummary: RoomSummary;
+
+            if (oldSummary) {
+                newSummary = {...oldSummary, ...ev.summary};
+            } else {
+                newSummary = ev.summary;
+            }
+
+            summaries.set(newSummary);
         }
     }
 
