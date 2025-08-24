@@ -5,6 +5,7 @@ import {TopicHistoryWindow} from "./TopicHistoryWindow";
 
 export class RoomMessagesHistory {
     private historyWindows = new IndexedCollection<string, TopicHistoryWindow>();
+    private traverseLock: boolean = false;
 
     public constructor(
         private room: Room,
@@ -13,6 +14,8 @@ export class RoomMessagesHistory {
         this.tracker.client.on('RoomUpdated', ev => this.handleRoomUpdated(ev));
         this.tracker.client.on('NewTopic', ev => this.handleNewTopic(ev));
         this.tracker.client.on('TopicDeleted', ev => this.handleTopicDeleted(ev));
+
+        this.updateTraverseLock(this.room);
 
         if (this.room.defaultTopic) {
             this.createHistoryWindowForTopic(this.room.defaultTopic);
@@ -25,7 +28,7 @@ export class RoomMessagesHistory {
     public async getMessagesWindow(topicId: string): Promise<TopicHistoryWindow | undefined> {
         let historyWindow = this.historyWindows.get(topicId);
 
-        if (! historyWindow) {
+        if (!historyWindow) {
             const topic = (await this.tracker.rooms.getTopics(this.room.id, [topicId])).get(topicId);
 
             if (topic) {
@@ -36,12 +39,18 @@ export class RoomMessagesHistory {
         return this.historyWindows.get(topicId);
     }
 
-    private handleRoomUpdated(ev: RoomUpdated): void {
+    private async handleRoomUpdated(ev: RoomUpdated): Promise<void> {
         if (this.room.id === ev.room.id) {
             this.room = ev.room;
 
+            this.updateTraverseLock(ev.room);
+
             if (ev.room.defaultTopic) {
                 this.createHistoryWindowForTopic(ev.room.defaultTopic);
+            }
+
+            for (const [, window] of Array.from(this.historyWindows.items)) {
+                await window.setTraverseLock(this.traverseLock);
             }
         }
     }
@@ -63,12 +72,20 @@ export class RoomMessagesHistory {
             return;
         }
 
-        this.historyWindows.set([topic.id, new TopicHistoryWindow(this.room.id, topic.id, this.tracker)]);
+        const historyWindow = new TopicHistoryWindow(this.room.id, topic.id, this.tracker);
+
+        historyWindow.setTraverseLock(this.traverseLock);
+
+        this.historyWindows.set([topic.id, historyWindow]);
 
         // If new topic refers to some message from this room, update other structures
         if (topic.refMessage) {
             const refHistoryWindow = this.historyWindows.get(topic.refMessage.location.topicId);
             refHistoryWindow?._updateMessageReference(topic);
         }
+    }
+
+    private updateTraverseLock(room: Room): void {
+        this.traverseLock = room.history.mode === 'Ephemeral';
     }
 }

@@ -58,7 +58,13 @@ export declare class TopicHistoryWindow extends TraversableRemoteCollection<Mess
      * Reexported available window modes enum.
      */
     readonly WindowState: typeof WindowState;
+    private traverseLock;
     constructor(roomId: string, topicId: string, tracker: ChatStateTracker);
+    get isTraverseLocked(): boolean;
+    setTraverseLock(lock: boolean): Promise<void>;
+    resetToLatest(): Promise<void>;
+    fetchNext(): Promise<void>;
+    fetchPrevious(): Promise<void>;
     /**
      * For internal use.
      * @internal

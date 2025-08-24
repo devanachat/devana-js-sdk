@@ -187,6 +187,8 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
      */
     public readonly WindowState: typeof WindowState = WindowState;
 
+    private traverseLock: boolean = false;
+
     public constructor(
         private roomId: string,
         private topicId: string,
@@ -195,6 +197,39 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
         super('id');
         this.tracker.client.on('Session', ev => this.handleSession(ev));
         this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
+    }
+
+    public get isTraverseLocked(): boolean {
+        return this.traverseLock;
+    }
+
+    public async setTraverseLock(lock: boolean): Promise<void> {
+        this.traverseLock = lock;
+
+        if (lock && (this.state !== WindowState.LIVE && this.state !== WindowState.LATEST)) {
+            await super.resetToLatest();
+        }
+    }
+
+    public async resetToLatest(): Promise<void> {
+        if (this.traverseLock) {
+            return;
+        }
+        return super.resetToLatest();
+    }
+
+    public async fetchNext(): Promise<void> {
+        if (this.traverseLock) {
+            return;
+        }
+        return super.fetchNext();
+    }
+
+    public async fetchPrevious(): Promise<void> {
+        if (this.traverseLock) {
+            return;
+        }
+        return super.fetchPrevious();
     }
 
     /**

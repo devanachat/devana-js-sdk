@@ -536,8 +536,36 @@ class TopicHistoryWindow extends TraversableRemoteCollection {
      * Reexported available window modes enum.
      */
     TopicHistoryWindow_defineProperty(this, "WindowState", WindowState);
+    TopicHistoryWindow_defineProperty(this, "traverseLock", false);
     this.tracker.client.on('Session', ev => this.handleSession(ev));
     this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
+  }
+  get isTraverseLocked() {
+    return this.traverseLock;
+  }
+  async setTraverseLock(lock) {
+    this.traverseLock = lock;
+    if (lock && this.state !== WindowState.LIVE && this.state !== WindowState.LATEST) {
+      await super.resetToLatest();
+    }
+  }
+  async resetToLatest() {
+    if (this.traverseLock) {
+      return;
+    }
+    return super.resetToLatest();
+  }
+  async fetchNext() {
+    if (this.traverseLock) {
+      return;
+    }
+    return super.fetchNext();
+  }
+  async fetchPrevious() {
+    if (this.traverseLock) {
+      return;
+    }
+    return super.fetchPrevious();
   }
 
   /**
@@ -637,9 +665,11 @@ class RoomMessagesHistory {
     this.room = room;
     this.tracker = tracker;
     RoomMessagesHistory_defineProperty(this, "historyWindows", new IndexedCollection());
+    RoomMessagesHistory_defineProperty(this, "traverseLock", false);
     this.tracker.client.on('RoomUpdated', ev => this.handleRoomUpdated(ev));
     this.tracker.client.on('NewTopic', ev => this.handleNewTopic(ev));
     this.tracker.client.on('TopicDeleted', ev => this.handleTopicDeleted(ev));
+    this.updateTraverseLock(this.room);
     if (this.room.defaultTopic) {
       this.createHistoryWindowForTopic(this.room.defaultTopic);
     }
@@ -658,11 +688,15 @@ class RoomMessagesHistory {
     }
     return this.historyWindows.get(topicId);
   }
-  handleRoomUpdated(ev) {
+  async handleRoomUpdated(ev) {
     if (this.room.id === ev.room.id) {
       this.room = ev.room;
+      this.updateTraverseLock(ev.room);
       if (ev.room.defaultTopic) {
         this.createHistoryWindowForTopic(ev.room.defaultTopic);
+      }
+      for (const [, window] of Array.from(this.historyWindows.items)) {
+        await window.setTraverseLock(this.traverseLock);
       }
     }
   }
@@ -680,13 +714,18 @@ class RoomMessagesHistory {
     if (this.historyWindows.has(topic.id)) {
       return;
     }
-    this.historyWindows.set([topic.id, new TopicHistoryWindow(this.room.id, topic.id, this.tracker)]);
+    const historyWindow = new TopicHistoryWindow(this.room.id, topic.id, this.tracker);
+    historyWindow.setTraverseLock(this.traverseLock);
+    this.historyWindows.set([topic.id, historyWindow]);
 
     // If new topic refers to some message from this room, update other structures
     if (topic.refMessage) {
       const refHistoryWindow = this.historyWindows.get(topic.refMessage.location.topicId);
       refHistoryWindow?._updateMessageReference(topic);
     }
+  }
+  updateTraverseLock(room) {
+    this.traverseLock = room.history.mode === 'Ephemeral';
   }
 }
 ;// CONCATENATED MODULE: ./src/state-tracker/MessagesManager.ts

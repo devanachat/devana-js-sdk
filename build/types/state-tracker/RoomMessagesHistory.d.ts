@@ -5,6 +5,7 @@ export declare class RoomMessagesHistory {
     private room;
     private tracker;
     private historyWindows;
+    private traverseLock;
     constructor(room: Room, tracker: ChatStateTracker);
     /**
      * Returns a history window object for the given topic ID, allowing you to view message history.
@@ -14,4 +15,5 @@ export declare class RoomMessagesHistory {
     private handleNewTopic;
     private handleTopicDeleted;
     private createHistoryWindowForTopic;
+    private updateTraverseLock;
 }
