@@ -174,6 +174,7 @@ export class RoomsManager {
         const newMember = ev.member;
         const user = member.spaceMember?.user ?? member.user;
 
+        // Preserving user object, because it's not included in event
         if (newMember.spaceMember) {
             newMember.spaceMember.user = user;
         } else {
@@ -297,6 +298,7 @@ export class RoomsManager {
     }
 
     private handleUserUpdated(ev: UserUpdated): void {
+        // Update room members users
         this.members.items.forEach((members) => {
             const member = members.get(ev.user.id);
 
@@ -315,6 +317,16 @@ export class RoomsManager {
 
             members.set(newMember);
         });
+
+        // Update recipients users
+        const newRooms: Room[] = [];
+        this.list.items.forEach(room => {
+            if (room.recipients?.some(user => user.id === ev.user.id)) {
+                room.recipients = room.recipients.map(user => user.id === ev.user.id ? ev.user : user);
+                newRooms.push({...room});
+            }
+        });
+        this.list.set(...newRooms);
     }
 
     private handleNewMessage(ev: NewMessage): void {

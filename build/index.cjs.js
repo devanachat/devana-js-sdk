@@ -1099,6 +1099,8 @@ class RoomsManager {
     const member = members.get(ev.userId);
     const newMember = ev.member;
     const user = member.spaceMember?.user ?? member.user;
+
+    // Preserving user object, because it's not included in event
     if (newMember.spaceMember) {
       newMember.spaceMember.user = user;
     } else {
@@ -1201,6 +1203,7 @@ class RoomsManager {
     this.deferredSession.resolve();
   }
   handleUserUpdated(ev) {
+    // Update room members users
     this.members.items.forEach(members => {
       const member = members.get(ev.user.id);
       if (!member) {
@@ -1217,6 +1220,18 @@ class RoomsManager {
       }
       members.set(newMember);
     });
+
+    // Update recipients users
+    const newRooms = [];
+    this.list.items.forEach(room => {
+      if (room.recipients?.some(user => user.id === ev.user.id)) {
+        room.recipients = room.recipients.map(user => user.id === ev.user.id ? ev.user : user);
+        newRooms.push({
+          ...room
+        });
+      }
+    });
+    this.list.set(...newRooms);
   }
   handleNewMessage(ev) {
     const topics = this.topics.get(ev.message.location.roomId);
