@@ -60,20 +60,12 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
 
     public async send<CommandType extends keyof CommandsMap>(commandType: CommandType, commandData: CommandsMap[CommandType][0]):
        Promise<CommandResult<CommandsMap[CommandType][1]>> {
-        if (!this.ws || [this.ws.CLOSED, this.ws.CLOSING].includes(this.ws.readyState)) {
-            throw new Error('Cannot send; close or closing connection state');
-        }
-
         const envelope = this.createEnvelope<CommandsMap[CommandType][0]>(commandType, commandData);
         const promise = this.createPromiseFromCommandEnvelope<CommandType>(envelope);
 
-        if (this.ws.readyState === this.ws.CONNECTING || !this.authenticated) {
+        if (this.isPendingReadyWsState()) {
             this.sendQueue.push(envelope);
             return promise;
-        }
-
-        if (this.ws.readyState !== this.ws.OPEN) {
-            throw new Error(`Invalid websocket state=${this.ws.readyState}`);
         }
 
         this.sendEnvelope(envelope);
@@ -81,7 +73,15 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
     }
 
     private sendEnvelope(envelope: Envelope): void {
-        this.ws.send(JSON.stringify(envelope));
+        if (this.isReadyToSendWsState()) {
+            this.ws.send(JSON.stringify(envelope));
+            return;
+        }
+
+        this.handleEnvelopeSendError(
+            envelope,
+            new Error(`Cannot send; invalid websocket state=${this.ws?.readyState ?? '[no connection]'}`)
+        );
     }
 
     private onMessage(event: MessageEvent): void {
@@ -108,7 +108,7 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
         clearTimeout(this.connectingTimeoutId);
         const reconnect = event.code !== 1000; // Connection was closed because of error
         if (reconnect) {
-            this.connect();
+            void this.connect();
         }
         this.emit(this.Event.disconnect, reconnect);
     }
@@ -128,5 +128,13 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
     private triggerConnectionTimeout(): void {
         this.disconnect();
         this.emit(this.Event.error, new Error('Connection timeout'));
+    }
+
+    private isPendingReadyWsState(): boolean {
+        return this.ws && this.ws.readyState === this.ws.CONNECTING || !this.authenticated;
+    }
+
+    private isReadyToSendWsState(): boolean {
+        return this.ws && this.ws.readyState === this.ws.OPEN && this.authenticated;
     }
 }

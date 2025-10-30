@@ -135,7 +135,7 @@ class AbstractChatClient extends EventTarget {
     if (!this.awaitingResponse.has(envelope.ref)) {
       return;
     }
-    this.awaitingResponse.get(envelope.ref)[0](error);
+    this.awaitingResponse.get(envelope.ref)[1](error);
     this.awaitingResponse.delete(envelope.ref);
   }
 }
@@ -2145,23 +2145,21 @@ class WebSocketChatClient extends AbstractChatClient {
     this.ws = null;
   }
   async send(commandType, commandData) {
-    if (!this.ws || [this.ws.CLOSED, this.ws.CLOSING].includes(this.ws.readyState)) {
-      throw new Error('Cannot send; close or closing connection state');
-    }
     const envelope = this.createEnvelope(commandType, commandData);
     const promise = this.createPromiseFromCommandEnvelope(envelope);
-    if (this.ws.readyState === this.ws.CONNECTING || !this.authenticated) {
+    if (this.isPendingReadyWsState()) {
       this.sendQueue.push(envelope);
       return promise;
-    }
-    if (this.ws.readyState !== this.ws.OPEN) {
-      throw new Error(`Invalid websocket state=${this.ws.readyState}`);
     }
     this.sendEnvelope(envelope);
     return promise;
   }
   sendEnvelope(envelope) {
-    this.ws.send(JSON.stringify(envelope));
+    if (this.isReadyToSendWsState()) {
+      this.ws.send(JSON.stringify(envelope));
+      return;
+    }
+    this.handleEnvelopeSendError(envelope, new Error(`Cannot send; invalid websocket state=${this.ws?.readyState ?? '[no connection]'}`));
   }
   onMessage(event) {
     const envelope = JSON.parse(event.data);
@@ -2186,7 +2184,7 @@ class WebSocketChatClient extends AbstractChatClient {
     clearTimeout(this.connectingTimeoutId);
     const reconnect = event.code !== 1000; // Connection was closed because of error
     if (reconnect) {
-      this.connect();
+      void this.connect();
     }
     this.emit(this.Event.disconnect, reconnect);
   }
@@ -2204,6 +2202,12 @@ class WebSocketChatClient extends AbstractChatClient {
   triggerConnectionTimeout() {
     this.disconnect();
     this.emit(this.Event.error, new Error('Connection timeout'));
+  }
+  isPendingReadyWsState() {
+    return this.ws && this.ws.readyState === this.ws.CONNECTING || !this.authenticated;
+  }
+  isReadyToSendWsState() {
+    return this.ws && this.ws.readyState === this.ws.OPEN && this.authenticated;
   }
 }
 ;// CONCATENATED MODULE: ./src/WebApiChatClient.ts

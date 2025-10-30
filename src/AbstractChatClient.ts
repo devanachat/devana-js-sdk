@@ -154,7 +154,7 @@ export abstract class AbstractChatClient extends EventTarget {
         if (!this.awaitingResponse.has(envelope.ref)) {
             return;
         }
-        this.awaitingResponse.get(envelope.ref)[0](error);
+        this.awaitingResponse.get(envelope.ref)[1](error);
         this.awaitingResponse.delete(envelope.ref);
     }
 }

@@ -34,5 +34,7 @@ export declare class WebSocketChatClient extends AbstractChatClient implements O
     private onClose;
     private sendFromQueue;
     private triggerConnectionTimeout;
+    private isPendingReadyWsState;
+    private isReadyToSendWsState;
 }
 export {};
