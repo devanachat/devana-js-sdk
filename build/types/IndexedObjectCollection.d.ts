@@ -1,9 +1,7 @@
 import { EventTarget, ObservableInterface } from "./EventTarget";
 export declare class IndexedCollection<KeyT, ValueT> {
     protected _items: Map<KeyT, ValueT>;
-    protected _mutationCounter: number;
     constructor(items?: [key: KeyT, value: ValueT][]);
-    get mutationCounter(): number;
     get items(): Map<KeyT, ValueT>;
     get length(): number;
     set(...items: [KeyT, ValueT][]): void;
@@ -12,6 +10,7 @@ export declare class IndexedCollection<KeyT, ValueT> {
     delete(...ids: KeyT[]): void;
     deleteAll(): void;
     findBy(field: keyof ValueT, valueToFind: any, limit?: number): IndexedCollection<KeyT, ValueT>;
+    shallowCopy(): IndexedCollection<KeyT, ValueT>;
 }
 export declare class IndexedObjectCollection<T> {
     readonly id: keyof T | ((item: T) => any);
@@ -19,7 +18,6 @@ export declare class IndexedObjectCollection<T> {
     constructor(id: keyof T | ((item: T) => any), items?: T[]);
     get items(): T[];
     get length(): number;
-    get mutationCounter(): number;
     set(...items: T[]): void;
     get(id: any): T | undefined;
     getAt(index: number): T | undefined;
@@ -27,6 +25,7 @@ export declare class IndexedObjectCollection<T> {
     delete(...ids: any[]): void;
     deleteAll(): void;
     findBy(field: keyof T, valueToFind: any, limit?: number): IndexedObjectCollection<T>;
+    shallowCopy(): IndexedObjectCollection<T>;
     protected getId(item: T): any;
 }
 interface ObservableCollectionEvent<KeyT> {
@@ -39,6 +38,7 @@ export declare class ObservableIndexedCollection<KeyT, ValueT> extends IndexedCo
     set(...items: [KeyT, ValueT][]): void;
     delete(...ids: KeyT[]): void;
     deleteAll(): void;
+    shallowCopy(): ObservableIndexedCollection<KeyT, ValueT>;
     on(eventName: 'change', handler: (ev?: ObservableCollectionEvent<KeyT>) => void): this;
     once(eventName: 'change', handler: (ev?: ObservableCollectionEvent<KeyT>) => void): this;
     off(eventName: string, handler: (ev?: ObservableCollectionEvent<KeyT>) => void): this;
@@ -50,6 +50,7 @@ export declare class ObservableIndexedObjectCollection<T> extends IndexedObjectC
     set(...items: T[]): void;
     delete(...ids: string[]): void;
     deleteAll(): void;
+    shallowCopy(): IndexedObjectCollection<T>;
     on(eventName: 'change', handler: (ev?: ObservableCollectionEvent<string>) => void): this;
     once(eventName: 'change', handler: (ev?: ObservableCollectionEvent<string>) => void): this;
     off(eventName: string, handler: (ev?: ObservableCollectionEvent<string>) => void): this;

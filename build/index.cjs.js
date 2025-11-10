@@ -155,11 +155,7 @@ function IndexedObjectCollection_toPrimitive(input, hint) { if (typeof input !==
 class IndexedCollection {
   constructor(items = []) {
     IndexedObjectCollection_defineProperty(this, "_items", new Map());
-    IndexedObjectCollection_defineProperty(this, "_mutationCounter", 0);
     this.set(...items);
-  }
-  get mutationCounter() {
-    return this._mutationCounter;
   }
   get items() {
     return this._items;
@@ -168,7 +164,6 @@ class IndexedCollection {
     return this._items.size;
   }
   set(...items) {
-    this._mutationCounter++;
     for (const item of items) {
       this._items.set(item[0], item[1]);
     }
@@ -183,11 +178,9 @@ class IndexedCollection {
     for (const id of ids) {
       this.items.delete(id);
     }
-    this._mutationCounter++;
   }
   deleteAll() {
     this.items.clear();
-    this._mutationCounter++;
   }
   findBy(field, valueToFind, limit = null) {
     const result = new IndexedCollection();
@@ -202,6 +195,11 @@ class IndexedCollection {
     }
     return result;
   }
+  shallowCopy() {
+    const copy = new IndexedCollection();
+    copy._items = this._items;
+    return copy;
+  }
 }
 class IndexedObjectCollection {
   constructor(id, items = []) {
@@ -215,9 +213,6 @@ class IndexedObjectCollection {
   }
   get length() {
     return this._items.length;
-  }
-  get mutationCounter() {
-    return this._items.mutationCounter;
   }
   set(...items) {
     this._items.set(...items.map(item => [this.getId(item), item]));
@@ -248,6 +243,11 @@ class IndexedObjectCollection {
       }
     }
     return result;
+  }
+  shallowCopy() {
+    const copy = new IndexedObjectCollection(this.id);
+    copy._items = this._items;
+    return copy;
   }
   getId(item) {
     return typeof this.id === 'function' ? this.id(item) : item[this.id];
@@ -284,6 +284,12 @@ class ObservableIndexedCollection extends IndexedCollection {
         deletedItems: Array.from(ids)
       });
     }
+  }
+  shallowCopy() {
+    const copy = new ObservableIndexedCollection();
+    copy.eventTarget = this.eventTarget;
+    copy._items = this._items;
+    return copy;
   }
   on(eventName, handler) {
     this.eventTarget.on(eventName, handler);
@@ -330,6 +336,12 @@ class ObservableIndexedObjectCollection extends IndexedObjectCollection {
         deletedItems: Array.from(ids)
       });
     }
+  }
+  shallowCopy() {
+    const copy = new ObservableIndexedObjectCollection(this.id);
+    copy.eventTarget = this.eventTarget;
+    copy._items = this._items;
+    return copy;
   }
   on(eventName, handler) {
     this.eventTarget.on(eventName, handler);

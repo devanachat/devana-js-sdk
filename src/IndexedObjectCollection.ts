@@ -2,14 +2,9 @@ import {EventTarget, ObservableInterface} from "./EventTarget";
 
 export class IndexedCollection<KeyT, ValueT> {
     protected _items: Map<KeyT, ValueT> = new Map();
-    protected _mutationCounter: number = 0;
 
     public constructor(items: [key: KeyT, value: ValueT][] = []) {
         this.set(...items);
-    }
-
-    public get mutationCounter(): number {
-        return this._mutationCounter;
     }
 
     public get items(): Map<KeyT, ValueT> {
@@ -21,7 +16,6 @@ export class IndexedCollection<KeyT, ValueT> {
     }
 
     public set(...items: [KeyT, ValueT][]): void {
-        this._mutationCounter++;
         for (const item of items) {
             this._items.set(item[0], item[1]);
         }
@@ -39,12 +33,10 @@ export class IndexedCollection<KeyT, ValueT> {
         for (const id of ids) {
             this.items.delete(id);
         }
-        this._mutationCounter++;
     }
 
     public deleteAll(): void {
         this.items.clear();
-        this._mutationCounter++;
     }
 
     public findBy(field: keyof ValueT, valueToFind: any, limit: number = null): IndexedCollection<KeyT, ValueT> {
@@ -59,6 +51,12 @@ export class IndexedCollection<KeyT, ValueT> {
             }
         }
         return result;
+    }
+
+    public shallowCopy(): IndexedCollection<KeyT, ValueT> {
+        const copy = new IndexedCollection<KeyT, ValueT>();
+        copy._items = this._items;
+        return copy;
     }
 }
 
@@ -79,10 +77,6 @@ export class IndexedObjectCollection<T> {
 
     public get length(): number {
         return this._items.length;
-    }
-
-    public get mutationCounter(): number {
-        return this._items.mutationCounter;
     }
 
     public set(...items: T[]): void {
@@ -120,6 +114,12 @@ export class IndexedObjectCollection<T> {
             }
         }
         return result;
+    }
+
+    public shallowCopy(): IndexedObjectCollection<T> {
+        const copy = new IndexedObjectCollection<T>(this.id);
+        copy._items = this._items;
+        return copy;
     }
 
     protected getId(item: T): any {
@@ -161,6 +161,13 @@ export class ObservableIndexedCollection<KeyT, ValueT> extends IndexedCollection
             super.deleteAll();
             this.eventTarget.emit('change', {deletedItems: Array.from(ids)});
         }
+    }
+
+    public shallowCopy(): ObservableIndexedCollection<KeyT, ValueT> {
+        const copy = new ObservableIndexedCollection<KeyT, ValueT>();
+        copy.eventTarget = this.eventTarget;
+        copy._items = this._items;
+        return copy;
     }
 
     public on(eventName: 'change', handler: (ev?: ObservableCollectionEvent<KeyT>) => void): this {
@@ -211,6 +218,13 @@ export class ObservableIndexedObjectCollection<T> extends IndexedObjectCollectio
             super.deleteAll();
             this.eventTarget.emit('change', {deletedItems: Array.from(ids)});
         }
+    }
+
+    public shallowCopy(): IndexedObjectCollection<T> {
+        const copy = new ObservableIndexedObjectCollection<T>(this.id);
+        copy.eventTarget = this.eventTarget;
+        copy._items = this._items;
+        return copy;
     }
 
     public on(eventName: 'change', handler: (ev?: ObservableCollectionEvent<string>) => void): this {
