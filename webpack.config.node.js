@@ -24,24 +24,12 @@ module.exports = {
                 test: /\.(m|j|t)s$/,
                 exclude: /(node_modules|bower_components)/,
                 use: {
-                    loader: 'babel-loader',
-                    options: {
-                        presets: [
-                            ['@babel/preset-env', { targets: { node: 'current' } }],
-                            '@babel/preset-typescript'
-                        ],
-                        plugins: [
-
-                        ]
-                    }
+                    loader: 'babel-loader'
                 }
             },
         ]
     },
     resolve: {
         extensions: ['.ts', '.js', '.json']
-    },
-    externals: [
-
-    ]
+    }
 };

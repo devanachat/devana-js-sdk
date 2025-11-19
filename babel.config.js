@@ -1,7 +1,6 @@
 module.exports = {
-  presets: [["@babel/env"]],
-  plugins: [
-    ["@babel/plugin-proposal-class-properties"],
-    ["@babel/plugin-transform-typescript"],
+  presets: [
+    ["@babel/preset-env"],
+    ["@babel/preset-typescript", { allowDeclareFields: true }],
   ],
 };
