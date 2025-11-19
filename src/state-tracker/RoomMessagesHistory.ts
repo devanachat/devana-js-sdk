@@ -74,7 +74,7 @@ export class RoomMessagesHistory {
 
         const historyWindow = new TopicHistoryWindow(this.room.id, topic.id, this.tracker);
 
-        historyWindow.setTraverseLock(this.traverseLock);
+        void historyWindow.setTraverseLock(this.traverseLock);
 
         this.historyWindows.set([topic.id, historyWindow]);
 

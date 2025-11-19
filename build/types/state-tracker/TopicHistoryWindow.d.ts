@@ -26,16 +26,25 @@ export declare abstract class TraversableRemoteCollection<T> extends ObservableI
      * Current mode od collection window. To change mode, call one of available fetch methods.
      */
     get state(): WindowState;
+    protected internalState: {
+        current: WindowState;
+        ongoing?: WindowState;
+        limit: number | null;
+        oldestId: string | null;
+    };
     /**
      * Maximum numer of items stored in window.
      * Null for unlimited.
      */
-    limit: number | null;
-    private currentState;
-    private fetchingState;
-    oldestId: string;
+    get limit(): number | null;
+    /**
+     * Maximum numer of items stored in window.
+     * Null for unlimited.
+     */
+    set limit(value: number | null);
     get hasLatest(): boolean;
     get hasOldest(): boolean;
+    abstract createMirror(): TraversableRemoteCollection<T>;
     resetToLatest(): Promise<void>;
     fetchPrevious(): Promise<void>;
     fetchNext(): Promise<void>;
@@ -58,8 +67,11 @@ export declare class TopicHistoryWindow extends TraversableRemoteCollection<Mess
      * Reexported available window modes enum.
      */
     readonly WindowState: typeof WindowState;
-    private traverseLock;
-    constructor(roomId: string, topicId: string, tracker: ChatStateTracker);
+    protected internalState: typeof TraversableRemoteCollection<Message>['prototype']['internalState'] & {
+        traverseLock: boolean;
+    };
+    constructor(roomId: string, topicId: string, tracker: ChatStateTracker, bindEvents?: boolean);
+    createMirror(): TopicHistoryWindow;
     get isTraverseLocked(): boolean;
     setTraverseLock(lock: boolean): Promise<void>;
     resetToLatest(): Promise<void>;

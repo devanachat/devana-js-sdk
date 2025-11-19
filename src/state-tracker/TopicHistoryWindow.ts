@@ -31,60 +31,80 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
      * Current mode od collection window. To change mode, call one of available fetch methods.
      */
     public get state(): WindowState {
-        return this.currentState;
+        return this.internalState.current;
+    }
+
+    protected internalState: {
+        current: WindowState,
+        ongoing?: WindowState,
+        limit: number | null,
+        oldestId: string | null,
+    } = {
+        current: WindowState.LIVE,
+        ongoing: undefined,
+        limit: 50,
+        oldestId: null,
+    };
+
+    /**
+     * Maximum numer of items stored in window.
+     * Null for unlimited.
+     */
+    public get limit(): number | null {
+        return this.internalState.limit;
     }
 
     /**
      * Maximum numer of items stored in window.
      * Null for unlimited.
      */
-    public limit: number | null = 50;
-
-    private currentState: WindowState = WindowState.LIVE;
-    private fetchingState: WindowState = undefined;
-    public oldestId: string = null;
+    public set limit(value: number | null) {
+        this.internalState.limit = value;
+    }
 
     public get hasLatest(): boolean {
         return [WindowState.LATEST, WindowState.LIVE].includes(this.state);
     }
 
     public get hasOldest(): boolean {
-        return this.state === WindowState.OLDEST || this.oldestId !== null && this.has(this.oldestId);
+        return this.state === WindowState.OLDEST || this.internalState.oldestId !== null && this.has(this.internalState.oldestId);
     }
 
+    public abstract createMirror(): TraversableRemoteCollection<T>;
+
     public async resetToLatest(): Promise<void> {
-        if (this.fetchingState || this.currentState === WindowState.LATEST) {
+        if (this.internalState.ongoing || this.internalState.current === WindowState.LATEST) {
             return;
         }
 
-        this.fetchingState = WindowState.LATEST;
+        this.internalState.ongoing = WindowState.LATEST;
 
         let result;
 
         try {
             result = await this.fetchLatestItems();
         } finally {
-            this.fetchingState = undefined;
+            this.internalState.ongoing = undefined;
         }
 
         this.deleteAll();
         this.addItems(result, 'tail');
-        this.currentState = WindowState.LATEST;
+        this.internalState.current = WindowState.LATEST;
     }
 
     public async fetchPrevious(): Promise<void> {
-        if (this.fetchingState || this.hasOldest) {
+        if (this.internalState.ongoing || this.hasOldest) {
             return;
         }
 
-        this.fetchingState = WindowState.PAST;
+        this.internalState.ongoing = WindowState.PAST;
 
         let result;
 
         try {
             result = await this.fetchItemsBefore();
         } finally {
-            this.fetchingState = undefined;
+            this.internalState.ongoing = undefined;
         }
 
         if (! result) {
@@ -93,13 +113,13 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
 
         if (! result.length) {
             const firstItem = this.getAt(0);
-            this.oldestId = firstItem ? this.getId(firstItem) : null;
+            this.internalState.oldestId = firstItem ? this.getId(firstItem) : null;
 
             await this.refreshFetchedState();
 
             // LATEST state has priority over OLDEST
-            if (this.currentState === WindowState.PAST) {
-                this.currentState = WindowState.OLDEST;
+            if (this.internalState.current === WindowState.PAST) {
+                this.internalState.current = WindowState.OLDEST;
             }
 
             return;
@@ -110,18 +130,18 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
     }
 
     public async fetchNext(): Promise<void> {
-        if (this.fetchingState || this.hasLatest) {
+        if (this.internalState.ongoing || this.hasLatest) {
             return;
         }
 
-        this.fetchingState = WindowState.PAST;
+        this.internalState.ongoing = WindowState.PAST;
 
         let result;
 
         try {
             result = await this.fetchItemsAfter();
         } finally {
-            this.fetchingState = undefined;
+            this.internalState.ongoing = undefined;
         }
 
         if (! result) {
@@ -145,7 +165,7 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
     protected abstract isLatestItemLoaded(): Promise<boolean>;
 
     protected async refreshFetchedState(): Promise<void> {
-        this.currentState = (await this.isLatestItemLoaded()) ? WindowState.LATEST : WindowState.PAST;
+        this.internalState.current = (await this.isLatestItemLoaded()) ? WindowState.LATEST : WindowState.PAST;
     }
 
     protected addItems(newItems: T[], to: 'head' | 'tail'): void {
@@ -187,24 +207,40 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
      */
     public readonly WindowState: typeof WindowState = WindowState;
 
-    private traverseLock: boolean = false;
+    declare protected internalState: typeof TraversableRemoteCollection<Message>['prototype']['internalState'] & {
+        traverseLock: boolean,
+    };
 
     public constructor(
         private roomId: string,
         private topicId: string,
         private tracker: ChatStateTracker,
+        bindEvents: boolean = true,
     ) {
         super('id');
-        this.tracker.client.on('Session', ev => this.handleSession(ev));
-        this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
+
+        this.internalState.traverseLock = false;
+
+        if (bindEvents) {
+            this.tracker.client.on('Session', ev => this.handleSession(ev));
+            this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
+        }
+    }
+
+    public createMirror(): TopicHistoryWindow {
+        const copy = new TopicHistoryWindow(this.roomId, this.topicId, this.tracker, false);
+        copy.eventTarget = this.eventTarget;
+        copy._items = this._items;
+        copy.internalState = this.internalState;
+        return copy;
     }
 
     public get isTraverseLocked(): boolean {
-        return this.traverseLock;
+        return this.internalState.traverseLock;
     }
 
     public async setTraverseLock(lock: boolean): Promise<void> {
-        this.traverseLock = lock;
+        this.internalState.traverseLock = lock;
 
         if (lock && (this.state !== WindowState.LIVE && this.state !== WindowState.LATEST)) {
             await super.resetToLatest();
@@ -212,21 +248,21 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
     }
 
     public async resetToLatest(): Promise<void> {
-        if (this.traverseLock) {
+        if (this.internalState.traverseLock) {
             return;
         }
         return super.resetToLatest();
     }
 
     public async fetchNext(): Promise<void> {
-        if (this.traverseLock) {
+        if (this.internalState.traverseLock) {
             return;
         }
         return super.fetchNext();
     }
 
     public async fetchPrevious(): Promise<void> {
-        if (this.traverseLock) {
+        if (this.internalState.traverseLock) {
             return;
         }
         return super.fetchPrevious();
@@ -259,7 +295,7 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
         const rooms = ev.state.rooms;
 
         if (rooms.find(room => room.id === this.roomId)) {
-            this.resetToLatest();
+            void this.resetToLatest();
         } else {
             this.deleteAll();
         }

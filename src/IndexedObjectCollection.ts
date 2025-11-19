@@ -53,7 +53,7 @@ export class IndexedCollection<KeyT, ValueT> {
         return result;
     }
 
-    public shallowCopy(): IndexedCollection<KeyT, ValueT> {
+    public createMirror(): IndexedCollection<KeyT, ValueT> {
         const copy = new IndexedCollection<KeyT, ValueT>();
         copy._items = this._items;
         return copy;
@@ -116,7 +116,7 @@ export class IndexedObjectCollection<T> {
         return result;
     }
 
-    public shallowCopy(): IndexedObjectCollection<T> {
+    public createMirror(): IndexedObjectCollection<T> {
         const copy = new IndexedObjectCollection<T>(this.id);
         copy._items = this._items;
         return copy;
@@ -163,7 +163,7 @@ export class ObservableIndexedCollection<KeyT, ValueT> extends IndexedCollection
         }
     }
 
-    public shallowCopy(): ObservableIndexedCollection<KeyT, ValueT> {
+    public createMirror(): ObservableIndexedCollection<KeyT, ValueT> {
         const copy = new ObservableIndexedCollection<KeyT, ValueT>();
         copy.eventTarget = this.eventTarget;
         copy._items = this._items;
@@ -220,7 +220,7 @@ export class ObservableIndexedObjectCollection<T> extends IndexedObjectCollectio
         }
     }
 
-    public shallowCopy(): IndexedObjectCollection<T> {
+    public createMirror(): IndexedObjectCollection<T> {
         const copy = new ObservableIndexedObjectCollection<T>(this.id);
         copy.eventTarget = this.eventTarget;
         copy._items = this._items;

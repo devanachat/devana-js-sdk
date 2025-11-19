@@ -10,7 +10,7 @@ export declare class IndexedCollection<KeyT, ValueT> {
     delete(...ids: KeyT[]): void;
     deleteAll(): void;
     findBy(field: keyof ValueT, valueToFind: any, limit?: number): IndexedCollection<KeyT, ValueT>;
-    shallowCopy(): IndexedCollection<KeyT, ValueT>;
+    createMirror(): IndexedCollection<KeyT, ValueT>;
 }
 export declare class IndexedObjectCollection<T> {
     readonly id: keyof T | ((item: T) => any);
@@ -25,7 +25,7 @@ export declare class IndexedObjectCollection<T> {
     delete(...ids: any[]): void;
     deleteAll(): void;
     findBy(field: keyof T, valueToFind: any, limit?: number): IndexedObjectCollection<T>;
-    shallowCopy(): IndexedObjectCollection<T>;
+    createMirror(): IndexedObjectCollection<T>;
     protected getId(item: T): any;
 }
 interface ObservableCollectionEvent<KeyT> {
@@ -38,7 +38,7 @@ export declare class ObservableIndexedCollection<KeyT, ValueT> extends IndexedCo
     set(...items: [KeyT, ValueT][]): void;
     delete(...ids: KeyT[]): void;
     deleteAll(): void;
-    shallowCopy(): ObservableIndexedCollection<KeyT, ValueT>;
+    createMirror(): ObservableIndexedCollection<KeyT, ValueT>;
     on(eventName: 'change', handler: (ev?: ObservableCollectionEvent<KeyT>) => void): this;
     once(eventName: 'change', handler: (ev?: ObservableCollectionEvent<KeyT>) => void): this;
     off(eventName: string, handler: (ev?: ObservableCollectionEvent<KeyT>) => void): this;
@@ -50,7 +50,7 @@ export declare class ObservableIndexedObjectCollection<T> extends IndexedObjectC
     set(...items: T[]): void;
     delete(...ids: string[]): void;
     deleteAll(): void;
-    shallowCopy(): IndexedObjectCollection<T>;
+    createMirror(): IndexedObjectCollection<T>;
     on(eventName: 'change', handler: (ev?: ObservableCollectionEvent<string>) => void): this;
     once(eventName: 'change', handler: (ev?: ObservableCollectionEvent<string>) => void): this;
     off(eventName: string, handler: (ev?: ObservableCollectionEvent<string>) => void): this;

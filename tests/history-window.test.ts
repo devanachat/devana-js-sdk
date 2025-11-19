@@ -1,4 +1,5 @@
-import {TraversableRemoteCollection, WindowState} from "../src/state-tracker/TopicHistoryWindow";
+import { IndexedObjectCollection } from "../src";
+import {TopicHistoryWindow, TraversableRemoteCollection, WindowState} from "../src/state-tracker/TopicHistoryWindow";
 
 interface SimpleMessage {
     id: number;
@@ -18,6 +19,10 @@ const messages: SimpleMessage[] = [
 ];
 
 class TestableHistoryWindow extends TraversableRemoteCollection<SimpleMessage> {
+    public createMirror(): TraversableRemoteCollection<SimpleMessage> {
+        throw new Error('Method not implemented.');
+    }
+
     public constructor() {
         super('id');
     }
