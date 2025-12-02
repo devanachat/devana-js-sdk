@@ -30,6 +30,7 @@ export class Permissions {
         ManageBan: {value: 1 << 15, maxLayer: Layer.Room},
         Kick: {value: 1 << 16, maxLayer: Layer.Room},
         ChangeOwnNick: {value: 1 << 17, maxLayer: Layer.Space},
+        ChangeOwnColor: {value: 1 << 18, maxLayer: Layer.Room},
     };
 
     public static getNames(): (keyof typeof this.list)[] {

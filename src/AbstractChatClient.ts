@@ -95,7 +95,7 @@ import {
     GetSpaceSummary,
     RoomSummaryEvent,
     SpaceSummaryEvent,
-    SetCustomNick,
+    UpdateSpaceMember,
     Relationships,
     RelationshipDeleted,
     NewRelationship,
@@ -105,6 +105,7 @@ import {
 } from "./types/src/index";
 import {EventTarget} from "./EventTarget";
 import {GetRelationships} from "./types/src/schemes/commands/GetRelationships";
+import {UpdateRoomMember} from "./types/src/schemes/commands/UpdateRoomMember";
 
 type ArrayOfPromiseResolvers = [(value: any) => void, (reason?: any) => void];
 
@@ -264,7 +265,7 @@ export type CommandsMap = {
     AssignRole: [AssignRole, EventsMap['SpaceMemberUpdated'] | EventsMap['RoomMemberUpdated']],
     DeassignRole: [DeassignRole, EventsMap['SpaceMemberUpdated'] | EventsMap['RoomMemberUpdated']],
     GetSpaceSummary: [GetSpaceSummary, EventsMap['SpaceSummaryEvent']],
-    SetCustomNick: [SetCustomNick, EventsMap['SpaceMemberUpdated']],
+    UpdateSpaceMember: [UpdateSpaceMember, EventsMap['SpaceMemberUpdated']],
     // Room commands
     JoinRoom: [JoinRoom, EventsMap['RoomJoined']],
     LeaveRoom: [LeaveRoom, EventsMap['RoomLeft']],
@@ -273,6 +274,7 @@ export type CommandsMap = {
     UpdateRoom: [UpdateRoom, EventsMap['RoomUpdated']],
     GetRoomMembers: [GetRoomMembers, EventsMap['RoomMembers']],
     GetRoomSummary: [GetRoomSummary, EventsMap['RoomSummaryEvent']],
+    UpdateRoomMember: [UpdateRoomMember, EventsMap['RoomMemberUpdated']],
     // Topic commands
     CreateTopic: [CreateTopic, EventsMap['NewTopic']],
     DeleteTopic: [DeleteTopic, EventsMap['TopicDeleted']],

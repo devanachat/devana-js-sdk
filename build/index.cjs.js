@@ -3188,6 +3188,10 @@ Permissions_defineProperty(Permissions, "list", {
   ChangeOwnNick: {
     value: 1 << 17,
     maxLayer: Layer.Space
+  },
+  ChangeOwnColor: {
+    value: 1 << 18,
+    maxLayer: Layer.Room
   }
 });
 ;// ./src/state-tracker/PermissionsManager.ts
