@@ -2428,7 +2428,10 @@ var RoomsManager = /*#__PURE__*/function () {
               return {
                 user: user,
                 spaceMember: null,
-                roles: null
+                roles: null,
+                customColor: null,
+                customNick: null,
+                extras: ''
               };
             })
           });

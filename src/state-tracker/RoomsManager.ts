@@ -249,7 +249,14 @@ export class RoomsManager {
                 // because GetMembers are not supported for PM rooms.
                 this.handleRoomMembers({
                     id: room.id,
-                    members: room.recipients.map(user => ({user, spaceMember: null, roles: null})),
+                    members: room.recipients.map(user => ({
+                        user,
+                        spaceMember: null,
+                        roles: null,
+                        customColor: null,
+                        customNick: null,
+                        extras: '',
+                    })),
                 });
                 this.membersPromises.register(Promise.resolve(), room.id);
             }
