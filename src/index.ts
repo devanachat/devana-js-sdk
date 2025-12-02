@@ -117,7 +117,7 @@ import {GetSpaceSummary} from "./schemes/commands/GetSpaceSummary";
 import {SpaceFlag} from "./schemes/Space";
 import {SpaceSummary as SpaceSummaryEvent} from "./schemes/events/SpaceSummary";
 import {RoomSummary as RoomSummaryEvent} from "./schemes/events/RoomSummary";
-import {SetCustomNick} from "./schemes/commands/SetCustomNick";
+import {UpdateSpaceMember} from "./schemes/commands/UpdateSpaceMember";
 import {NewRelationship} from "./schemes/events/NewRelationship";
 import {RelationshipDeleted} from "./schemes/events/RelationshipDeleted";
 import {UserRelationship, UserRelationshipType} from "./schemes/UserRelationship";
@@ -125,6 +125,7 @@ import {DeleteRelationship} from "./schemes/commands/DeleteRelationship";
 import {Relationships} from "./schemes/events/Relationships";
 import {CreateRelationship} from "./schemes/commands/CreateRelationship";
 import {RoomSummaryUpdated} from "./schemes/events/RoomSummaryUpdated";
+import {UpdateRoomMember} from "./schemes/commands/UpdateRoomMember";
 
 export {
     // objects
@@ -264,7 +265,8 @@ export {
     SetClientData,
     GetSpaceSummary,
     GetRoomSummary,
-    SetCustomNick,
+    UpdateSpaceMember,
     CreateRelationship,
-    DeleteRelationship
+    DeleteRelationship,
+    UpdateRoomMember,
 };
