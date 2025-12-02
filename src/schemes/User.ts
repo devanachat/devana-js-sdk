@@ -1,4 +1,4 @@
-export type UserTags = 'bot' | 'temp';
+export type UserTags = 'bot' | 'temp' | string;
 
 export interface User {
     id: string;
