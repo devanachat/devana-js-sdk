@@ -29,12 +29,13 @@ export declare class WebSocketChatClient extends AbstractChatClient implements O
     connect(): Promise<void>;
     disconnect(): void;
     send<CommandType extends keyof CommandsMap>(commandType: CommandType, commandData: CommandsMap[CommandType][0]): Promise<CommandResult<CommandsMap[CommandType][1]>>;
+    get isReady(): boolean;
     private sendEnvelope;
     private onMessage;
     private onClose;
     private sendFromQueue;
     private triggerConnectionTimeout;
-    private isPendingReadyWsState;
-    private isReadyToSendWsState;
+    private isConnectingWsState;
+    private isOpenWsState;
 }
 export {};

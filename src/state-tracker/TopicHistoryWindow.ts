@@ -222,7 +222,6 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
         this.internalState.traverseLock = false;
 
         if (bindEvents) {
-            this.tracker.client.on('Session', ev => this.handleSession(ev));
             this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
         }
     }
@@ -288,16 +287,6 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
             && ev.message.location.topicId === this.topicId
         ) {
             this.addItems([ev.message], 'tail');
-        }
-    }
-
-    private handleSession(ev: Session): void {
-        const rooms = ev.state.rooms;
-
-        if (rooms.find(room => room.id === this.roomId)) {
-            void this.resetToLatest();
-        } else {
-            this.deleteAll();
         }
     }
 

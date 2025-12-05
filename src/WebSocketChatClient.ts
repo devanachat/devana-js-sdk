@@ -37,6 +37,10 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
     }
 
     public async connect(): Promise<void> {
+        if (this.isOpenWsState() || this.isConnectingWsState()) {
+            return;
+        }
+
         const params = new URLSearchParams(this.options.queryParams ?? {});
         params.set('token', this.options.token);
 
@@ -63,7 +67,7 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
         const envelope = this.createEnvelope<CommandsMap[CommandType][0]>(commandType, commandData);
         const promise = this.createPromiseFromCommandEnvelope<CommandType>(envelope);
 
-        if (this.isPendingReadyWsState()) {
+        if (this.isConnectingWsState() || !this.authenticated && this.isOpenWsState()) {
             this.sendQueue.push(envelope);
             return promise;
         }
@@ -72,15 +76,19 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
         return promise;
     }
 
+    public get isReady(): boolean {
+        return this.isOpenWsState() && this.authenticated;
+    }
+
     private sendEnvelope(envelope: Envelope): void {
-        if (this.isReadyToSendWsState()) {
+        if (this.isReady) {
             this.ws.send(JSON.stringify(envelope));
             return;
         }
 
         this.handleEnvelopeSendError(
             envelope,
-            new Error(`Cannot send; invalid websocket state=${this.ws?.readyState ?? '[no connection]'}`)
+            new Error(`Cannot send - client is not ready (state=${this.ws?.readyState ?? '[no connection]'}; authenticated=${this.authenticated})`)
         );
     }
 
@@ -130,11 +138,11 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
         this.emit(this.Event.error, new Error('Connection timeout'));
     }
 
-    private isPendingReadyWsState(): boolean {
-        return this.ws && this.ws.readyState === this.ws.CONNECTING || !this.authenticated;
+    private isConnectingWsState(): boolean {
+        return this.ws && this.ws.readyState === this.ws.CONNECTING;
     }
 
-    private isReadyToSendWsState(): boolean {
-        return this.ws && this.ws.readyState === this.ws.OPEN && this.authenticated;
+    private isOpenWsState(): boolean {
+        return this.ws && this.ws.readyState === this.ws.OPEN;
     }
 }

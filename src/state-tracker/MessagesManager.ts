@@ -1,6 +1,5 @@
 import {ChatStateTracker} from "./ChatStateTracker";
 import {
-    ChatLocation,
     NewMessage,
     FollowedTopic,
     TopicFollowed,

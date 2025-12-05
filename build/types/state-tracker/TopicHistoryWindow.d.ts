@@ -83,7 +83,6 @@ export declare class TopicHistoryWindow extends TraversableRemoteCollection<Mess
      */
     _updateMessageReference(refTopic: Topic): void;
     private handleNewMessage;
-    private handleSession;
     protected fetchItemsAfter(): Promise<Message[] | null>;
     protected fetchItemsBefore(): Promise<Message[] | null>;
     protected fetchLatestItems(): Promise<Message[]>;

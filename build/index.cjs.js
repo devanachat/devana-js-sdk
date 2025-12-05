@@ -968,9 +968,6 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
     _this2.tracker = tracker;
     _this2.internalState.traverseLock = false;
     if (bindEvents) {
-      _this2.tracker.client.on('Session', function (ev) {
-        return _this2.handleSession(ev);
-      });
       _this2.tracker.client.on('NewMessage', function (ev) {
         return _this2.handleNewMessage(ev);
       });
@@ -1117,19 +1114,6 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
       }
       return handleNewMessage;
     }()
-  }, {
-    key: "handleSession",
-    value: function handleSession(ev) {
-      var _this3 = this;
-      var rooms = ev.state.rooms;
-      if (rooms.find(function (room) {
-        return room.id === _this3.roomId;
-      })) {
-        void this.resetToLatest();
-      } else {
-        this.deleteAll();
-      }
-    }
   }, {
     key: "fetchItemsAfter",
     value: function () {
@@ -4314,6 +4298,12 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
         return WebSocketChatClient_regenerator().w(function (_context) {
           while (1) switch (_context.n) {
             case 0:
+              if (!(this.isOpenWsState() || this.isConnectingWsState())) {
+                _context.n = 1;
+                break;
+              }
+              return _context.a(2);
+            case 1:
               params = new URLSearchParams((_this$options$queryPa = this.options.queryParams) !== null && _this$options$queryPa !== void 0 ? _this$options$queryPa : {});
               params.set('token', this.options.token);
               this.ws = new WebSocket("".concat(this.options.url, "?").concat(params));
@@ -4359,7 +4349,7 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
             case 0:
               envelope = this.createEnvelope(commandType, commandData);
               promise = this.createPromiseFromCommandEnvelope(envelope);
-              if (!this.isPendingReadyWsState()) {
+              if (!(this.isConnectingWsState() || !this.authenticated && this.isOpenWsState())) {
                 _context2.n = 1;
                 break;
               }
@@ -4377,14 +4367,19 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
       return send;
     }()
   }, {
+    key: "isReady",
+    get: function get() {
+      return this.isOpenWsState() && this.authenticated;
+    }
+  }, {
     key: "sendEnvelope",
     value: function sendEnvelope(envelope) {
       var _this$ws$readyState, _this$ws2;
-      if (this.isReadyToSendWsState()) {
+      if (this.isReady) {
         this.ws.send(JSON.stringify(envelope));
         return;
       }
-      this.handleEnvelopeSendError(envelope, new Error("Cannot send; invalid websocket state=".concat((_this$ws$readyState = (_this$ws2 = this.ws) === null || _this$ws2 === void 0 ? void 0 : _this$ws2.readyState) !== null && _this$ws$readyState !== void 0 ? _this$ws$readyState : '[no connection]')));
+      this.handleEnvelopeSendError(envelope, new Error("Cannot send - client is not ready (state=".concat((_this$ws$readyState = (_this$ws2 = this.ws) === null || _this$ws2 === void 0 ? void 0 : _this$ws2.readyState) !== null && _this$ws$readyState !== void 0 ? _this$ws$readyState : '[no connection]', "; authenticated=").concat(this.authenticated, ")")));
     }
   }, {
     key: "onMessage",
@@ -4444,14 +4439,14 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
       this.emit(this.Event.error, new Error('Connection timeout'));
     }
   }, {
-    key: "isPendingReadyWsState",
-    value: function isPendingReadyWsState() {
-      return this.ws && this.ws.readyState === this.ws.CONNECTING || !this.authenticated;
+    key: "isConnectingWsState",
+    value: function isConnectingWsState() {
+      return this.ws && this.ws.readyState === this.ws.CONNECTING;
     }
   }, {
-    key: "isReadyToSendWsState",
-    value: function isReadyToSendWsState() {
-      return this.ws && this.ws.readyState === this.ws.OPEN && this.authenticated;
+    key: "isOpenWsState",
+    value: function isOpenWsState() {
+      return this.ws && this.ws.readyState === this.ws.OPEN;
     }
   }]);
 }(AbstractChatClient);
