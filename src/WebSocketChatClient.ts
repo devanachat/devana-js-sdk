@@ -188,8 +188,7 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
 
             const timeout = setTimeout(() => {
                 this.pingInFlight = false;
-                this.disconnect();
-                void this.connect();
+                this.ws.close(1012); // Service Restart (reconnect)
             }, this.options.ping.pongBackTimeoutMs);
 
             this.pingInFlight = true;

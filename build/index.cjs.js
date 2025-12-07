@@ -4485,8 +4485,7 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
             case 2:
               timeout = setTimeout(function () {
                 _this4.pingInFlight = false;
-                _this4.disconnect();
-                void _this4.connect();
+                _this4.ws.close(1012); // Service Restart (reconnect)
               }, _this4.options.ping.pongBackTimeoutMs);
               _this4.pingInFlight = true;
               _this4.send('Ping', {}).then(function () {
