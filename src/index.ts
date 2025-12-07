@@ -126,6 +126,8 @@ import {Relationships} from "./schemes/events/Relationships";
 import {CreateRelationship} from "./schemes/commands/CreateRelationship";
 import {RoomSummaryUpdated} from "./schemes/events/RoomSummaryUpdated";
 import {UpdateRoomMember} from "./schemes/commands/UpdateRoomMember";
+import {Ping} from "./schemes/commands/Ping";
+import {Pong} from "./schemes/events/Pong";
 
 export {
     // objects
@@ -215,6 +217,7 @@ export {
     RelationshipDeleted,
     Relationships,
     RoomSummaryUpdated,
+    Pong,
     // commands
     AssignRole,
     GetMessages,
@@ -269,4 +272,5 @@ export {
     CreateRelationship,
     DeleteRelationship,
     UpdateRoomMember,
+    Ping,
 };
