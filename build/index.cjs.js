@@ -4269,7 +4269,7 @@ var WebSocketChatClientEvent = /*#__PURE__*/function (WebSocketChatClientEvent) 
 }(WebSocketChatClientEvent || {});
 var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
   function WebSocketChatClient(options) {
-    var _this$options$stateTr;
+    var _this$options$stateTr, _options$ping, _options$ping2, _options$ping2$enable, _options$ping3, _options$ping3$noActi, _options$ping4, _options$ping4$pongBa;
     var _this;
     WebSocketChatClient_classCallCheck(this, WebSocketChatClient);
     _this = WebSocketChatClient_callSuper(this, WebSocketChatClient);
@@ -4280,10 +4280,17 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
     WebSocketChatClient_defineProperty(_this, "connectingTimeoutId", void 0);
     WebSocketChatClient_defineProperty(_this, "authenticated", void 0);
     WebSocketChatClient_defineProperty(_this, "authenticatedResolvers", void 0);
+    WebSocketChatClient_defineProperty(_this, "pingIntervalId", void 0);
+    WebSocketChatClient_defineProperty(_this, "lastReceivedMessageAt", void 0);
+    WebSocketChatClient_defineProperty(_this, "pingInFlight", void 0);
     _this.options = options;
     if ((_this$options$stateTr = _this.options.stateTracking) !== null && _this$options$stateTr !== void 0 ? _this$options$stateTr : true) {
       _this.state = new ChatStateTracker(_this);
     }
+    (_options$ping = options.ping) !== null && _options$ping !== void 0 ? _options$ping : options.ping = {};
+    (_options$ping2$enable = (_options$ping2 = options.ping).enabled) !== null && _options$ping2$enable !== void 0 ? _options$ping2$enable : _options$ping2.enabled = true;
+    (_options$ping3$noActi = (_options$ping3 = options.ping).noActivityTimeoutMs) !== null && _options$ping3$noActi !== void 0 ? _options$ping3$noActi : _options$ping3.noActivityTimeoutMs = 15000;
+    (_options$ping4$pongBa = (_options$ping4 = options.ping).pongBackTimeoutMs) !== null && _options$ping4$pongBa !== void 0 ? _options$ping4$pongBa : _options$ping4.pongBackTimeoutMs = 5000;
     return _this;
   }
   WebSocketChatClient_inherits(WebSocketChatClient, _AbstractChatClient);
@@ -4336,7 +4343,7 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
     value: function disconnect() {
       var _this$ws;
       this.sendQueue = [];
-      (_this$ws = this.ws) === null || _this$ws === void 0 || _this$ws.close();
+      (_this$ws = this.ws) === null || _this$ws === void 0 || _this$ws.close(1000); // Normal closure
       this.ws = null;
     }
   }, {
@@ -4384,6 +4391,7 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
   }, {
     key: "onMessage",
     value: function onMessage(event) {
+      this.lastReceivedMessageAt = Date.now();
       var envelope = JSON.parse(event.data);
       this.handleIncomingEnvelope(envelope);
       this.emit(envelope.type, envelope.data);
@@ -4394,6 +4402,7 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
         var isAuthenticated = envelope.type !== 'Bye';
         this.authenticated = isAuthenticated;
         if (isAuthenticated) {
+          this.startConnectionMonitor();
           this.authenticatedResolvers[0]();
           this.emit(this.Event.connect);
           this.sendFromQueue();
@@ -4405,6 +4414,7 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
   }, {
     key: "onClose",
     value: function onClose(event) {
+      this.stopConnectionMonitor();
       clearTimeout(this.connectingTimeoutId);
       var reconnect = event.code !== 1000; // Connection was closed because of error
       if (reconnect) {
@@ -4447,6 +4457,56 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
     key: "isOpenWsState",
     value: function isOpenWsState() {
       return this.ws && this.ws.readyState === this.ws.OPEN;
+    }
+  }, {
+    key: "startConnectionMonitor",
+    value: function startConnectionMonitor() {
+      var _this4 = this;
+      if (!this.options.ping.enabled) {
+        return;
+      }
+      this.lastReceivedMessageAt = Date.now();
+      this.pingIntervalId = setInterval(/*#__PURE__*/WebSocketChatClient_asyncToGenerator(/*#__PURE__*/WebSocketChatClient_regenerator().m(function _callee3() {
+        var timeout;
+        return WebSocketChatClient_regenerator().w(function (_context3) {
+          while (1) switch (_context3.n) {
+            case 0:
+              if (!(!_this4.isReady || _this4.pingInFlight)) {
+                _context3.n = 1;
+                break;
+              }
+              return _context3.a(2);
+            case 1:
+              if (!(Date.now() - _this4.lastReceivedMessageAt < _this4.options.ping.noActivityTimeoutMs)) {
+                _context3.n = 2;
+                break;
+              }
+              return _context3.a(2);
+            case 2:
+              timeout = setTimeout(function () {
+                _this4.pingInFlight = false;
+                _this4.disconnect();
+                void _this4.connect();
+              }, _this4.options.ping.pongBackTimeoutMs);
+              _this4.pingInFlight = true;
+              _this4.send('Ping', {}).then(function () {
+                _this4.pingInFlight = false;
+                clearTimeout(timeout);
+              });
+            case 3:
+              return _context3.a(2);
+          }
+        }, _callee3);
+      })), 1000);
+    }
+  }, {
+    key: "stopConnectionMonitor",
+    value: function stopConnectionMonitor() {
+      if (this.pingIntervalId) {
+        clearInterval(this.pingIntervalId);
+        this.pingIntervalId = undefined;
+      }
+      this.pingInFlight = false;
     }
   }]);
 }(AbstractChatClient);

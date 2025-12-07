@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { ObservableInterface } from "./EventTarget";
 import { AbstractChatClient, CommandResult, CommandsMap } from "./AbstractChatClient";
 import { ChatStateTracker } from "./state-tracker/ChatStateTracker";
@@ -9,6 +10,20 @@ export interface WebSocketClientOptions {
     awaitQueueSendDelayMs?: number;
     stateTracking?: boolean;
     queryParams?: Record<string, string>;
+    /**
+     * Ping/pong configuration, enabled by default.
+     */
+    ping?: {
+        enabled?: boolean;
+        /**
+         * Time without activity after which a ping will be sent. Default is 10 seconds.
+         */
+        noActivityTimeoutMs?: number;
+        /**
+         * Time to wait for a pong response before considering the connection dead. Default is 2 seconds.
+         */
+        pongBackTimeoutMs?: number;
+    };
 }
 declare enum WebSocketChatClientEvent {
     connect = "connect",
@@ -25,6 +40,9 @@ export declare class WebSocketChatClient extends AbstractChatClient implements O
     protected connectingTimeoutId: any;
     protected authenticated: boolean;
     protected authenticatedResolvers: [() => void, (error: Error) => void];
+    protected pingIntervalId?: NodeJS.Timeout;
+    protected lastReceivedMessageAt?: number;
+    protected pingInFlight: boolean;
     constructor(options: WebSocketClientOptions);
     connect(): Promise<void>;
     disconnect(): void;
@@ -37,5 +55,7 @@ export declare class WebSocketChatClient extends AbstractChatClient implements O
     private triggerConnectionTimeout;
     private isConnectingWsState;
     private isOpenWsState;
+    private startConnectionMonitor;
+    private stopConnectionMonitor;
 }
 export {};

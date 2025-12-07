@@ -1,5 +1,5 @@
 import {ObservableInterface} from "./EventTarget";
-import {AbstractChatClient, CommandResult, CommandsMap} from "./AbstractChatClient";
+import {AbstractChatClient, CommandResult, CommandsMap, EventsMap} from "./AbstractChatClient";
 import {ChatStateTracker} from "./state-tracker/ChatStateTracker";
 import {Envelope} from "./types/src";
 
@@ -10,6 +10,20 @@ export interface WebSocketClientOptions {
     awaitQueueSendDelayMs?: number;
     stateTracking?: boolean;
     queryParams?: Record<string, string>;
+    /**
+     * Ping/pong configuration, enabled by default.
+     */
+    ping?: {
+        enabled?: boolean;
+        /**
+         * Time without activity after which a ping will be sent. Default is 10 seconds.
+         */
+        noActivityTimeoutMs?: number;
+        /**
+         * Time to wait for a pong response before considering the connection dead. Default is 2 seconds.
+         */
+        pongBackTimeoutMs?: number;
+    },
 }
 
 enum WebSocketChatClientEvent {
@@ -28,12 +42,20 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
     protected connectingTimeoutId: any;
     protected authenticated: boolean;
     protected authenticatedResolvers: [() => void, (error: Error) => void];
+    protected pingIntervalId?: NodeJS.Timeout;
+    protected lastReceivedMessageAt?: number;
+    protected pingInFlight: boolean;
 
     public constructor(private readonly options: WebSocketClientOptions) {
         super();
         if (this.options.stateTracking ?? true) {
             this.state = new ChatStateTracker(this);
         }
+
+        options.ping ??= {};
+        options.ping.enabled ??= true;
+        options.ping.noActivityTimeoutMs ??= 15000;
+        options.ping.pongBackTimeoutMs ??= 5000;
     }
 
     public async connect(): Promise<void> {
@@ -52,13 +74,12 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
             this.options.connectingTimeoutMs ?? 10000
         );
         this.authenticated = false;
-
         return new Promise((...args) => this.authenticatedResolvers = args);
     }
 
     public disconnect(): void {
         this.sendQueue = [];
-        this.ws?.close();
+        this.ws?.close(1000); // Normal closure
         this.ws = null;
     }
 
@@ -93,6 +114,7 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
     }
 
     private onMessage(event: MessageEvent): void {
+        this.lastReceivedMessageAt = Date.now();
         const envelope: Envelope = JSON.parse(event.data);
         this.handleIncomingEnvelope(envelope);
         this.emit(envelope.type, envelope.data);
@@ -103,6 +125,7 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
             const isAuthenticated = envelope.type !== 'Bye';
             this.authenticated = isAuthenticated;
             if (isAuthenticated) {
+                this.startConnectionMonitor();
                 this.authenticatedResolvers[0]();
                 this.emit(this.Event.connect);
                 this.sendFromQueue();
@@ -113,6 +136,7 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
     }
 
     private onClose(event: CloseEvent): void {
+        this.stopConnectionMonitor();
         clearTimeout(this.connectingTimeoutId);
         const reconnect = event.code !== 1000; // Connection was closed because of error
         if (reconnect) {
@@ -144,5 +168,44 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
 
     private isOpenWsState(): boolean {
         return this.ws && this.ws.readyState === this.ws.OPEN;
+    }
+
+    private startConnectionMonitor(): void {
+        if (!this.options.ping!.enabled) {
+            return;
+        }
+
+        this.lastReceivedMessageAt = Date.now();
+
+        this.pingIntervalId = setInterval(async () => {
+            if (!this.isReady || this.pingInFlight) {
+                return;
+            }
+
+            if ((Date.now() - this.lastReceivedMessageAt) < this.options.ping!.noActivityTimeoutMs) {
+                return;
+            }
+
+            const timeout = setTimeout(() => {
+                this.pingInFlight = false;
+                this.disconnect();
+                void this.connect();
+            }, this.options.ping.pongBackTimeoutMs);
+
+            this.pingInFlight = true;
+
+            this.send('Ping', {}).then(() => {
+                this.pingInFlight = false;
+                clearTimeout(timeout);
+            });
+        }, 1000);
+    }
+
+    private stopConnectionMonitor(): void {
+        if (this.pingIntervalId) {
+            clearInterval(this.pingIntervalId);
+            this.pingIntervalId = undefined;
+        }
+        this.pingInFlight = false;
     }
 }

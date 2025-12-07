@@ -1,4 +1,4 @@
-import { Bye, GetSession, JoinSpace, Session, SpaceJoined, Error as ErrorType, SpaceLeft, SpaceMemberJoined, SpaceMemberLeft, SpaceMemberUpdated, SpaceDeleted, SpaceMembers, SpaceRooms, NewRole, RoomDeleted, RoomJoined, RoomLeft, RoomMemberLeft, RoomMemberJoined, RoomMembers, NewRoom, NewTopic, TopicDeleted, NewMessage, GetPermissionOverwrites, GetComputedPermissions, LeaveSpace, CreateSpace, DeleteSpace, GetSpaceMembers, GetSpaceRooms, CreateRole, DeleteRole, AssignRole, DeassignRole, SetPermissionOverwrites, JoinRoom, LeaveRoom, CreateRoom, DeleteRoom, GetRoomMembers, CreateTopic, DeleteTopic, CreateMessage, Envelope, PermissionOverwrites, PermissionOverwritesUpdated, RoomMemberUpdated, UpdateRole, RoleUpdated, Ack, UserUpdated, UpdateRoom, RoomUpdated, UpdateSpace, SpaceUpdated, PermissionOverwriteTargets, GetPermissionOverwriteTargets, Owners, Ok, GetOwners, CreateOwner, RoleDeleted, FollowedTopicUpdated, TopicFollowed, TopicUnfollowed, FollowedTopics, FollowTopic, UnfollowTopic, GetFollowedTopics, Messages, GetMessages, Topics, GetTopics, TopicUpdated, UpdateTopic, GetDiscoverableSpaces, DiscoverableSpaces, CreateEmoticon, DeleteEmoticon, GetEmoticons, Emoticons, EmoticonDeleted, NewEmoticon, Bans, GetBans, Ban, Unban, Kick, ClientData, GetClientData, SetClientData, GetRoomSummary, GetSpaceSummary, RoomSummaryEvent, SpaceSummaryEvent, UpdateSpaceMember, Relationships, RelationshipDeleted, NewRelationship, DeleteRelationship, CreateRelationship, RoomSummaryUpdated } from "./types/src/index";
+import { Bye, GetSession, JoinSpace, Session, SpaceJoined, Error as ErrorType, SpaceLeft, SpaceMemberJoined, SpaceMemberLeft, SpaceMemberUpdated, SpaceDeleted, SpaceMembers, SpaceRooms, NewRole, RoomDeleted, RoomJoined, RoomLeft, RoomMemberLeft, RoomMemberJoined, RoomMembers, NewRoom, NewTopic, TopicDeleted, NewMessage, GetPermissionOverwrites, GetComputedPermissions, LeaveSpace, CreateSpace, DeleteSpace, GetSpaceMembers, GetSpaceRooms, CreateRole, DeleteRole, AssignRole, DeassignRole, SetPermissionOverwrites, JoinRoom, LeaveRoom, CreateRoom, DeleteRoom, GetRoomMembers, CreateTopic, DeleteTopic, CreateMessage, Envelope, PermissionOverwrites, PermissionOverwritesUpdated, RoomMemberUpdated, UpdateRole, RoleUpdated, Ack, UserUpdated, UpdateRoom, RoomUpdated, UpdateSpace, SpaceUpdated, PermissionOverwriteTargets, GetPermissionOverwriteTargets, Owners, Ok, GetOwners, CreateOwner, RoleDeleted, FollowedTopicUpdated, TopicFollowed, TopicUnfollowed, FollowedTopics, FollowTopic, UnfollowTopic, GetFollowedTopics, Messages, GetMessages, Topics, GetTopics, TopicUpdated, UpdateTopic, GetDiscoverableSpaces, DiscoverableSpaces, CreateEmoticon, DeleteEmoticon, GetEmoticons, Emoticons, EmoticonDeleted, NewEmoticon, Bans, GetBans, Ban, Unban, Kick, ClientData, GetClientData, SetClientData, GetRoomSummary, GetSpaceSummary, RoomSummaryEvent, SpaceSummaryEvent, UpdateSpaceMember, Relationships, RelationshipDeleted, NewRelationship, DeleteRelationship, CreateRelationship, RoomSummaryUpdated, Pong, Ping } from "./types/src/index";
 import { EventTarget } from "./EventTarget";
 import { GetRelationships } from "./types/src/schemes/commands/GetRelationships";
 import { UpdateRoomMember } from "./types/src/schemes/commands/UpdateRoomMember";
@@ -39,6 +39,7 @@ export type EventsMap = {
     NewRelationship: NewRelationship;
     RelationshipDeleted: RelationshipDeleted;
     Relationships: Relationships;
+    Pong: Pong;
     DiscoverableSpaces: DiscoverableSpaces;
     SpaceJoined: SpaceJoined;
     SpaceLeft: SpaceLeft;
@@ -100,6 +101,7 @@ export type CommandsMap = {
     DeleteRelationship: [DeleteRelationship, EventsMap['RelationshipDeleted']];
     CreateRelationship: [CreateRelationship, EventsMap['NewRelationship']];
     GetRelationships: [GetRelationships, EventsMap['Relationships']];
+    Ping: [Ping, EventsMap['Pong']];
     GetDiscoverableSpaces: [GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']];
     JoinSpace: [JoinSpace, EventsMap['SpaceJoined']];
     LeaveSpace: [LeaveSpace, EventsMap['SpaceLeft']];

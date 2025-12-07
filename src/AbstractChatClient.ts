@@ -101,7 +101,7 @@ import {
     NewRelationship,
     DeleteRelationship,
     CreateRelationship,
-    RoomSummaryUpdated,
+    RoomSummaryUpdated, Pong, Ping,
 } from "./types/src/index";
 import {EventTarget} from "./EventTarget";
 import {GetRelationships} from "./types/src/schemes/commands/GetRelationships";
@@ -184,6 +184,7 @@ export type EventsMap = {
     NewRelationship: NewRelationship,
     RelationshipDeleted: RelationshipDeleted,
     Relationships: Relationships,
+    Pong: Pong,
     // Space events
     DiscoverableSpaces: DiscoverableSpaces,
     SpaceJoined: SpaceJoined,
@@ -250,6 +251,7 @@ export type CommandsMap = {
     DeleteRelationship: [DeleteRelationship, EventsMap['RelationshipDeleted']],
     CreateRelationship: [CreateRelationship, EventsMap['NewRelationship']],
     GetRelationships: [GetRelationships, EventsMap['Relationships']],
+    Ping: [Ping, EventsMap['Pong']],
     // Space commands
     GetDiscoverableSpaces: [GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']],
     JoinSpace: [JoinSpace, EventsMap['SpaceJoined']],
