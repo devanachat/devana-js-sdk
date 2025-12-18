@@ -4280,9 +4280,9 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
     WebSocketChatClient_defineProperty(_this, "connectingTimeoutId", void 0);
     WebSocketChatClient_defineProperty(_this, "authenticated", void 0);
     WebSocketChatClient_defineProperty(_this, "authenticatedResolvers", void 0);
-    WebSocketChatClient_defineProperty(_this, "pingIntervalId", void 0);
+    WebSocketChatClient_defineProperty(_this, "pingMonitorInterval", void 0);
+    WebSocketChatClient_defineProperty(_this, "inFlightPingTimeout", void 0);
     WebSocketChatClient_defineProperty(_this, "lastReceivedMessageAt", void 0);
-    WebSocketChatClient_defineProperty(_this, "pingInFlight", void 0);
     _this.options = options;
     if ((_this$options$stateTr = _this.options.stateTracking) !== null && _this$options$stateTr !== void 0 ? _this$options$stateTr : true) {
       _this.state = new ChatStateTracker(_this);
@@ -4466,12 +4466,11 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
         return;
       }
       this.lastReceivedMessageAt = Date.now();
-      this.pingIntervalId = setInterval(/*#__PURE__*/WebSocketChatClient_asyncToGenerator(/*#__PURE__*/WebSocketChatClient_regenerator().m(function _callee3() {
-        var timeout;
+      this.pingMonitorInterval = setInterval(/*#__PURE__*/WebSocketChatClient_asyncToGenerator(/*#__PURE__*/WebSocketChatClient_regenerator().m(function _callee3() {
         return WebSocketChatClient_regenerator().w(function (_context3) {
           while (1) switch (_context3.n) {
             case 0:
-              if (!(!_this4.isReady || _this4.pingInFlight)) {
+              if (!(!_this4.isReady || _this4.inFlightPingTimeout)) {
                 _context3.n = 1;
                 break;
               }
@@ -4483,14 +4482,13 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
               }
               return _context3.a(2);
             case 2:
-              timeout = setTimeout(function () {
-                _this4.pingInFlight = false;
-                _this4.ws.close(1012); // Service Restart (reconnect)
+              _this4.inFlightPingTimeout = setTimeout(function () {
+                _this4.inFlightPingTimeout = undefined;
+                _this4.ws.close(3000); // Service Restart (reconnect)
               }, _this4.options.ping.pongBackTimeoutMs);
-              _this4.pingInFlight = true;
               _this4.send('Ping', {}).then(function () {
-                _this4.pingInFlight = false;
-                clearTimeout(timeout);
+                clearTimeout(_this4.inFlightPingTimeout);
+                _this4.inFlightPingTimeout = undefined;
               });
             case 3:
               return _context3.a(2);
@@ -4501,11 +4499,14 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
   }, {
     key: "stopConnectionMonitor",
     value: function stopConnectionMonitor() {
-      if (this.pingIntervalId) {
-        clearInterval(this.pingIntervalId);
-        this.pingIntervalId = undefined;
+      if (this.inFlightPingTimeout) {
+        clearTimeout(this.inFlightPingTimeout);
+        this.inFlightPingTimeout = undefined;
       }
-      this.pingInFlight = false;
+      if (this.pingMonitorInterval) {
+        clearInterval(this.pingMonitorInterval);
+        this.pingMonitorInterval = undefined;
+      }
     }
   }]);
 }(AbstractChatClient);

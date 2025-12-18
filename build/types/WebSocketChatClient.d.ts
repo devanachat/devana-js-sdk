@@ -40,9 +40,9 @@ export declare class WebSocketChatClient extends AbstractChatClient implements O
     protected connectingTimeoutId: any;
     protected authenticated: boolean;
     protected authenticatedResolvers: [() => void, (error: Error) => void];
-    protected pingIntervalId?: NodeJS.Timeout;
+    protected pingMonitorInterval?: NodeJS.Timeout;
+    protected inFlightPingTimeout: NodeJS.Timeout;
     protected lastReceivedMessageAt?: number;
-    protected pingInFlight: boolean;
     constructor(options: WebSocketClientOptions);
     connect(): Promise<void>;
     disconnect(): void;

@@ -42,9 +42,9 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
     protected connectingTimeoutId: any;
     protected authenticated: boolean;
     protected authenticatedResolvers: [() => void, (error: Error) => void];
-    protected pingIntervalId?: NodeJS.Timeout;
+    protected pingMonitorInterval?: NodeJS.Timeout;
+    protected inFlightPingTimeout: NodeJS.Timeout;
     protected lastReceivedMessageAt?: number;
-    protected pingInFlight: boolean;
 
     public constructor(private readonly options: WebSocketClientOptions) {
         super();
@@ -177,8 +177,8 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
 
         this.lastReceivedMessageAt = Date.now();
 
-        this.pingIntervalId = setInterval(async () => {
-            if (!this.isReady || this.pingInFlight) {
+        this.pingMonitorInterval = setInterval(async () => {
+            if (!this.isReady || this.inFlightPingTimeout) {
                 return;
             }
 
@@ -186,25 +186,26 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
                 return;
             }
 
-            const timeout = setTimeout(() => {
-                this.pingInFlight = false;
-                this.ws.close(1012); // Service Restart (reconnect)
+            this.inFlightPingTimeout = setTimeout(() => {
+                this.inFlightPingTimeout = undefined;
+                this.ws.close(3000); // Service Restart (reconnect)
             }, this.options.ping.pongBackTimeoutMs);
 
-            this.pingInFlight = true;
-
             this.send('Ping', {}).then(() => {
-                this.pingInFlight = false;
-                clearTimeout(timeout);
+                clearTimeout(this.inFlightPingTimeout);
+                this.inFlightPingTimeout = undefined;
             });
         }, 1000);
     }
 
     private stopConnectionMonitor(): void {
-        if (this.pingIntervalId) {
-            clearInterval(this.pingIntervalId);
-            this.pingIntervalId = undefined;
+        if (this.inFlightPingTimeout) {
+            clearTimeout(this.inFlightPingTimeout);
+            this.inFlightPingTimeout = undefined;
         }
-        this.pingInFlight = false;
+        if (this.pingMonitorInterval) {
+            clearInterval(this.pingMonitorInterval);
+            this.pingMonitorInterval = undefined;
+        }
     }
 }
