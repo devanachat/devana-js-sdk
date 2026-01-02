@@ -3219,7 +3219,7 @@ function PermissionsManager_toPrimitive(t, r) { if ("object" != PermissionsManag
 
 
 var getOvId = function getOvId(location, target) {
-  return [location.spaceId, location.roomId, location.topicId, target === null || target === void 0 ? void 0 : target.type, target === null || target === void 0 ? void 0 : target.userId, target === null || target === void 0 ? void 0 : target.roleId].filter(Boolean).join('/');
+  return [location.roomId, location.topicId, target === null || target === void 0 ? void 0 : target.type, target === null || target === void 0 ? void 0 : target.userId, target === null || target === void 0 ? void 0 : target.roleId].filter(Boolean).join('/');
 };
 var getOvIdByObject = function getOvIdByObject(overwrites) {
   return getOvId(overwrites.location, overwrites.target);
