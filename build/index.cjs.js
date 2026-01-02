@@ -3219,7 +3219,7 @@ function PermissionsManager_toPrimitive(t, r) { if ("object" != PermissionsManag
 
 
 var getOvId = function getOvId(location, target) {
-  return [location.roomId, location.topicId, target === null || target === void 0 ? void 0 : target.type, target === null || target === void 0 ? void 0 : target.userId, target === null || target === void 0 ? void 0 : target.roleId].filter(Boolean).join('/');
+  return [location.spaceId, location.roomId, location.topicId, target === null || target === void 0 ? void 0 : target.type, target === null || target === void 0 ? void 0 : target.userId, target === null || target === void 0 ? void 0 : target.roleId].filter(Boolean).join('/');
 };
 var getOvIdByObject = function getOvIdByObject(overwrites) {
   return getOvId(overwrites.location, overwrites.target);
@@ -3364,19 +3364,38 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
     key: "calculatePermissions",
     value: function () {
       var _calculatePermissions = PermissionsManager_asyncToGenerator(/*#__PURE__*/PermissionsManager_regenerator().m(function _callee4(location) {
-        var _spaceMember$roles, _roomMember$roles, _yield$this$tracker$s, _yield$this$tracker$r, _yield$this$tracker$r2;
-        var userId, _yield$this$fetchMemb, _yield$this$fetchMemb2, spaceMember, roomMember, userRoles, promises, filterLocation, _filterLocation, _t, _t2, _t3, _t4, _t5, _t6, _t7, _t8, _t9, _t0, _t1, _t10, _t11;
+        var _location$spaceId, _spaceMember$roles, _roomMember$roles, _yield$this$tracker$s, _yield$this$tracker$r;
+        var room, userId, _yield$this$fetchMemb, _yield$this$fetchMemb2, spaceMember, roomMember, userRoles, promises, filterLocation, _filterLocation, _t, _t2, _t3, _t4, _t5, _t6, _t7, _t8, _t9, _t0;
         return PermissionsManager_regenerator().w(function (_context4) {
           while (1) switch (_context4.n) {
             case 0:
-              this.validateLocation(location);
+              if (!location.roomId) {
+                _context4.n = 2;
+                break;
+              }
               _context4.n = 1;
-              return this.tracker.getMe();
+              return this.tracker.rooms.get();
             case 1:
-              userId = _context4.v.id;
-              _context4.n = 2;
-              return this.fetchMembersOrFail(location);
+              _t = _context4.v.get(location.roomId);
+              _context4.n = 3;
+              break;
             case 2:
+              _t = null;
+            case 3:
+              room = _t;
+              location = {
+                spaceId: (_location$spaceId = location.spaceId) !== null && _location$spaceId !== void 0 ? _location$spaceId : room === null || room === void 0 ? void 0 : room.spaceId,
+                roomId: location.roomId,
+                topicId: location.topicId
+              };
+              this.validateLocation(location);
+              _context4.n = 4;
+              return this.tracker.getMe();
+            case 4:
+              userId = _context4.v.id;
+              _context4.n = 5;
+              return this.fetchMembersOrFail(location);
+            case 5:
               _yield$this$fetchMemb = _context4.v;
               _yield$this$fetchMemb2 = PermissionsManager_slicedToArray(_yield$this$fetchMemb, 2);
               spaceMember = _yield$this$fetchMemb2[0];
@@ -3390,33 +3409,33 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
               }).then(function (v) {
                 return v.overwrites;
               })];
-              _t = location.spaceId;
-              if (!_t) {
-                _context4.n = 6;
-                break;
-              }
-              _context4.n = 3;
-              return this.tracker.spaces.get();
-            case 3:
-              _t4 = _yield$this$tracker$s = _context4.v;
-              _t3 = _t4 !== null;
-              if (!_t3) {
-                _context4.n = 4;
-                break;
-              }
-              _t3 = _yield$this$tracker$s !== void 0;
-            case 4:
-              _t2 = _t3;
+              _t2 = location.spaceId;
               if (!_t2) {
-                _context4.n = 5;
+                _context4.n = 9;
                 break;
               }
-              _t2 = _yield$this$tracker$s.has(location.spaceId);
-            case 5:
-              _t = _t2;
+              _context4.n = 6;
+              return this.tracker.spaces.get();
             case 6:
-              if (!_t) {
+              _t5 = _yield$this$tracker$s = _context4.v;
+              _t4 = _t5 !== null;
+              if (!_t4) {
                 _context4.n = 7;
+                break;
+              }
+              _t4 = _yield$this$tracker$s !== void 0;
+            case 7:
+              _t3 = _t4;
+              if (!_t3) {
+                _context4.n = 8;
+                break;
+              }
+              _t3 = _yield$this$tracker$s.has(location.spaceId);
+            case 8:
+              _t2 = _t3;
+            case 9:
+              if (!_t2) {
+                _context4.n = 10;
                 break;
               }
               filterLocation = {
@@ -3429,77 +3448,49 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
               }).then(function (v) {
                 return v.overwrites;
               }));
-            case 7:
-              _t5 = location.roomId;
-              if (!_t5) {
-                _context4.n = 11;
-                break;
-              }
-              _context4.n = 8;
-              return this.tracker.rooms.get();
-            case 8:
-              _t8 = _yield$this$tracker$r = _context4.v;
-              _t7 = _t8 !== null;
-              if (!_t7) {
-                _context4.n = 9;
-                break;
-              }
-              _t7 = _yield$this$tracker$r !== void 0;
-            case 9:
-              _t6 = _t7;
-              if (!_t6) {
-                _context4.n = 10;
-                break;
-              }
-              _t6 = _yield$this$tracker$r.has(location.roomId);
             case 10:
-              _t5 = _t6;
-            case 11:
-              if (!_t5) {
-                _context4.n = 12;
-                break;
+              if (room) {
+                _filterLocation = {
+                  spaceId: location.spaceId,
+                  roomId: location.roomId
+                };
+                if (userRoles.length) {
+                  promises.push(this.collectRoleOverwrites(_filterLocation, userRoles));
+                }
+                promises.push(this.getOverwrites(_filterLocation, {
+                  type: 'User',
+                  userId: userId
+                }).then(function (v) {
+                  return v.overwrites;
+                }));
               }
-              _filterLocation = {
-                spaceId: location.spaceId,
-                roomId: location.roomId
-              };
-              if (userRoles.length) {
-                promises.push(this.collectRoleOverwrites(_filterLocation, userRoles));
-              }
-              promises.push(this.getOverwrites(_filterLocation, {
-                type: 'User',
-                userId: userId
-              }).then(function (v) {
-                return v.overwrites;
-              }));
-            case 12:
-              _t9 = location.topicId;
-              if (!_t9) {
-                _context4.n = 16;
-                break;
-              }
-              _context4.n = 13;
-              return this.tracker.rooms.getTopics(location.roomId);
-            case 13:
-              _t10 = _yield$this$tracker$r2 = _context4.v;
-              _t1 = _t10 !== null;
-              if (!_t1) {
+              _t6 = location.topicId;
+              if (!_t6) {
                 _context4.n = 14;
                 break;
               }
-              _t1 = _yield$this$tracker$r2 !== void 0;
-            case 14:
-              _t0 = _t1;
-              if (!_t0) {
-                _context4.n = 15;
+              _context4.n = 11;
+              return this.tracker.rooms.getTopics(location.roomId);
+            case 11:
+              _t9 = _yield$this$tracker$r = _context4.v;
+              _t8 = _t9 !== null;
+              if (!_t8) {
+                _context4.n = 12;
                 break;
               }
-              _t0 = _yield$this$tracker$r2.has(location.topicId);
-            case 15:
-              _t9 = _t0;
-            case 16:
-              if (!_t9) {
-                _context4.n = 17;
+              _t8 = _yield$this$tracker$r !== void 0;
+            case 12:
+              _t7 = _t8;
+              if (!_t7) {
+                _context4.n = 13;
+                break;
+              }
+              _t7 = _yield$this$tracker$r.has(location.topicId);
+            case 13:
+              _t6 = _t7;
+            case 14:
+              if (!_t6) {
+                _context4.n = 15;
                 break;
               }
               if (userRoles.length) {
@@ -3511,12 +3502,12 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
               }).then(function (v) {
                 return v.overwrites;
               }));
-            case 17:
-              _t11 = this;
-              _context4.n = 18;
+            case 15:
+              _t0 = this;
+              _context4.n = 16;
               return Promise.all(promises);
-            case 18:
-              return _context4.a(2, _t11.resolveOverwritesHierarchy.call(_t11, _context4.v));
+            case 16:
+              return _context4.a(2, _t0.resolveOverwritesHierarchy.call(_t0, _context4.v));
           }
         }, _callee4, this);
       }));
