@@ -39,7 +39,7 @@ __webpack_require__.r(__webpack_exports__);
 
 // EXPORTS
 __webpack_require__.d(__webpack_exports__, {
-  AuthClient: () => (/* reexport */ AuthClient),
+  AbstractRestClient: () => (/* reexport */ AbstractRestClient),
   FilesClient: () => (/* reexport */ FilesClient),
   IndexedCollection: () => (/* reexport */ IndexedCollection),
   IndexedObjectCollection: () => (/* reexport */ IndexedObjectCollection),
@@ -4774,135 +4774,6 @@ var AbstractRestClient = /*#__PURE__*/function () {
     }
   }]);
 }();
-;// ./src/AuthClient.ts
-function AuthClient_typeof(o) { "@babel/helpers - typeof"; return AuthClient_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, AuthClient_typeof(o); }
-function AuthClient_regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return AuthClient_regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (AuthClient_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, AuthClient_regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, AuthClient_regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), AuthClient_regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", AuthClient_regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), AuthClient_regeneratorDefine2(u), AuthClient_regeneratorDefine2(u, o, "Generator"), AuthClient_regeneratorDefine2(u, n, function () { return this; }), AuthClient_regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (AuthClient_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
-function AuthClient_regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } AuthClient_regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { AuthClient_regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, AuthClient_regeneratorDefine2(e, r, n, t); }
-function AuthClient_asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
-function AuthClient_asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { AuthClient_asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { AuthClient_asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
-function AuthClient_classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
-function AuthClient_defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, AuthClient_toPropertyKey(o.key), o); } }
-function AuthClient_createClass(e, r, t) { return r && AuthClient_defineProperties(e.prototype, r), t && AuthClient_defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
-function AuthClient_callSuper(t, o, e) { return o = AuthClient_getPrototypeOf(o), AuthClient_possibleConstructorReturn(t, AuthClient_isNativeReflectConstruct() ? Reflect.construct(o, e || [], AuthClient_getPrototypeOf(t).constructor) : o.apply(t, e)); }
-function AuthClient_possibleConstructorReturn(t, e) { if (e && ("object" == AuthClient_typeof(e) || "function" == typeof e)) return e; if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined"); return AuthClient_assertThisInitialized(t); }
-function AuthClient_assertThisInitialized(e) { if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); return e; }
-function AuthClient_isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (AuthClient_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
-function AuthClient_getPrototypeOf(t) { return AuthClient_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, AuthClient_getPrototypeOf(t); }
-function AuthClient_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && AuthClient_setPrototypeOf(t, e); }
-function AuthClient_setPrototypeOf(t, e) { return AuthClient_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, AuthClient_setPrototypeOf(t, e); }
-function AuthClient_defineProperty(e, r, t) { return (r = AuthClient_toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
-function AuthClient_toPropertyKey(t) { var i = AuthClient_toPrimitive(t, "string"); return "symbol" == AuthClient_typeof(i) ? i : i + ""; }
-function AuthClient_toPrimitive(t, r) { if ("object" != AuthClient_typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != AuthClient_typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-
-var AuthClient = /*#__PURE__*/function (_AbstractRestClient) {
-  function AuthClient() {
-    var _this;
-    AuthClient_classCallCheck(this, AuthClient);
-    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
-    }
-    _this = AuthClient_callSuper(this, AuthClient, [].concat(args));
-    AuthClient_defineProperty(_this, "defaultUrl", 'https://polfan.pl/webservice/api');
-    return _this;
-  }
-  AuthClient_inherits(AuthClient, _AbstractRestClient);
-  return AuthClient_createClass(AuthClient, [{
-    key: "deleteToken",
-    value: function () {
-      var _deleteToken = AuthClient_asyncToGenerator(/*#__PURE__*/AuthClient_regenerator().m(function _callee(token) {
-        var response;
-        return AuthClient_regenerator().w(function (_context) {
-          while (1) switch (_context.n) {
-            case 0:
-              _context.n = 1;
-              return this.send('DELETE', "auth/tokens/".concat(token));
-            case 1:
-              response = _context.v;
-              if (response.ok) {
-                _context.n = 2;
-                break;
-              }
-              throw new Error("Cannot delete access token: ".concat(response.data.errors[0]));
-            case 2:
-              return _context.a(2);
-          }
-        }, _callee, this);
-      }));
-      function deleteToken(_x) {
-        return _deleteToken.apply(this, arguments);
-      }
-      return deleteToken;
-    }()
-  }, {
-    key: "getMe",
-    value: function () {
-      var _getMe = AuthClient_asyncToGenerator(/*#__PURE__*/AuthClient_regenerator().m(function _callee2() {
-        var response;
-        return AuthClient_regenerator().w(function (_context2) {
-          while (1) switch (_context2.n) {
-            case 0:
-              _context2.n = 1;
-              return this.send('GET', 'auth/me');
-            case 1:
-              response = _context2.v;
-              if (!response.ok) {
-                _context2.n = 2;
-                break;
-              }
-              response.data.id = response.data.id.toString();
-              return _context2.a(2, response.data);
-            case 2:
-              throw new Error("Cannot get current user account: ".concat(response.data.errors[0]));
-            case 3:
-              return _context2.a(2);
-          }
-        }, _callee2, this);
-      }));
-      function getMe() {
-        return _getMe.apply(this, arguments);
-      }
-      return getMe;
-    }()
-  }], [{
-    key: "createToken",
-    value: function () {
-      var _createToken = AuthClient_asyncToGenerator(/*#__PURE__*/AuthClient_regenerator().m(function _callee3(login, password) {
-        var clientName,
-          response,
-          _args3 = arguments;
-        return AuthClient_regenerator().w(function (_context3) {
-          while (1) switch (_context3.n) {
-            case 0:
-              clientName = _args3.length > 2 && _args3[2] !== undefined ? _args3[2] : 'pserv-js-client';
-              _context3.n = 1;
-              return new AuthClient({
-                token: null
-              }).send('POST', 'auth/tokens', {
-                login: login,
-                password: password,
-                client_name: clientName
-              });
-            case 1:
-              response = _context3.v;
-              if (!response.ok) {
-                _context3.n = 2;
-                break;
-              }
-              return _context3.a(2, response.data);
-            case 2:
-              throw new Error("Cannot create user token: ".concat(response.data.errors[0]));
-            case 3:
-              return _context3.a(2);
-          }
-        }, _callee3);
-      }));
-      function createToken(_x2, _x3) {
-        return _createToken.apply(this, arguments);
-      }
-      return createToken;
-    }()
-  }]);
-}(AbstractRestClient);
 ;// ./src/FilesClient.ts
 function FilesClient_typeof(o) { "@babel/helpers - typeof"; return FilesClient_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, FilesClient_typeof(o); }
 function FilesClient_regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return FilesClient_regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (FilesClient_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, FilesClient_regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, FilesClient_regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), FilesClient_regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", FilesClient_regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), FilesClient_regeneratorDefine2(u), FilesClient_regeneratorDefine2(u, o, "Generator"), FilesClient_regeneratorDefine2(u, n, function () { return this; }), FilesClient_regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (FilesClient_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
