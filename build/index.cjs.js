@@ -4667,6 +4667,7 @@ var AbstractRestClient = /*#__PURE__*/function () {
     value: function () {
       var _send = AbstractRestClient_asyncToGenerator(/*#__PURE__*/AbstractRestClient_regenerator().m(function _callee(method, uri) {
         var data,
+          additionalHeaders,
           url,
           body,
           headers,
@@ -4676,6 +4677,7 @@ var AbstractRestClient = /*#__PURE__*/function () {
           while (1) switch (_context.n) {
             case 0:
               data = _args.length > 2 && _args[2] !== undefined ? _args[2] : undefined;
+              additionalHeaders = _args.length > 3 && _args[3] !== undefined ? _args[3] : {};
               url = this.getUrl(uri);
               body = undefined;
               if (data) {
@@ -4685,10 +4687,10 @@ var AbstractRestClient = /*#__PURE__*/function () {
                   body = JSON.stringify(data);
                 }
               }
-              headers = AbstractRestClient_objectSpread({
+              headers = AbstractRestClient_objectSpread(AbstractRestClient_objectSpread({
                 'Content-Type': 'application/json',
                 Accept: 'application/json'
-              }, this.getAuthHeaders());
+              }, additionalHeaders), this.getAuthHeaders());
               _context.n = 1;
               return fetch(url, {
                 method: method,

@@ -21,7 +21,8 @@ export abstract class AbstractRestClient {
     protected async send<ResponseT = any>(
         method: HttpMethod,
         uri: string,
-        data: any = undefined
+        data: any = undefined,
+        additionalHeaders: Record<string, string> = {},
     ): Promise<RestClientResponse<ResponseT>> {
         let url = this.getUrl(uri);
         let body = undefined;
@@ -37,6 +38,7 @@ export abstract class AbstractRestClient {
         const headers = {
             'Content-Type': 'application/json',
             Accept: 'application/json',
+            ...additionalHeaders,
             ...this.getAuthHeaders(),
         };
 

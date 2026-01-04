@@ -12,7 +12,7 @@ export declare abstract class AbstractRestClient {
     private readonly options;
     protected abstract defaultUrl: string;
     constructor(options: RestClientOptions);
-    protected send<ResponseT = any>(method: HttpMethod, uri: string, data?: any): Promise<RestClientResponse<ResponseT>>;
+    protected send<ResponseT = any>(method: HttpMethod, uri: string, data?: any, additionalHeaders?: Record<string, string>): Promise<RestClientResponse<ResponseT>>;
     protected getAuthHeaders(): any;
     protected getUrl(uri: string): string;
     protected convertFetchResponse<T>(result: Response): Promise<RestClientResponse<T>>;
