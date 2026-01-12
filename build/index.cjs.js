@@ -4682,7 +4682,7 @@ var AbstractRestClient = /*#__PURE__*/function () {
               body = undefined;
               if (data) {
                 if (['GET', 'DELETE'].includes(method)) {
-                  url += new URLSearchParams(data).toString();
+                  url += '?' + new URLSearchParams(data).toString();
                 } else {
                   body = JSON.stringify(data);
                 }

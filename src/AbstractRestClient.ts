@@ -29,7 +29,7 @@ export abstract class AbstractRestClient {
 
         if (data) {
             if (['GET', 'DELETE'].includes(method)) {
-                url += new URLSearchParams(data).toString()
+                url += '?' + new URLSearchParams(data).toString()
             } else {
                 body = JSON.stringify(data);
             }
