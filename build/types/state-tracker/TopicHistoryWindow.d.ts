@@ -30,8 +30,18 @@ export declare abstract class TraversableRemoteCollection<T> extends ObservableI
         current: WindowState;
         ongoing?: WindowState;
         limit: number | null;
+        fetchLimit: number;
+        lastFetchCount: number;
         oldestId: string | null;
     };
+    /**
+     * Number of items to fetch per request.
+     */
+    get fetchLimit(): number;
+    /**
+     * Sets number of items to fetch per request.
+     */
+    set fetchLimit(value: number);
     /**
      * Maximum numer of items stored in window.
      * Null for unlimited.

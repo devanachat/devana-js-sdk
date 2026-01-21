@@ -697,6 +697,8 @@ var TraversableRemoteCollection = /*#__PURE__*/function (_ObservableIndexedObj) 
       current: WindowState.LIVE,
       ongoing: undefined,
       limit: 50,
+      fetchLimit: 50,
+      lastFetchCount: 0,
       oldestId: null
     });
     return _this;
@@ -712,13 +714,29 @@ var TraversableRemoteCollection = /*#__PURE__*/function (_ObservableIndexedObj) 
       return this.internalState.current;
     }
   }, {
-    key: "limit",
+    key: "fetchLimit",
     get:
+    /**
+     * Number of items to fetch per request.
+     */
+    function get() {
+      return this.internalState.fetchLimit;
+    }
+
+    /**
+     * Sets number of items to fetch per request.
+     */,
+    set: function set(value) {
+      this.internalState.fetchLimit = value;
+    }
+
     /**
      * Maximum numer of items stored in window.
      * Null for unlimited.
      */
-    function get() {
+  }, {
+    key: "limit",
+    get: function get() {
       return this.internalState.limit;
     }
 
@@ -737,7 +755,7 @@ var TraversableRemoteCollection = /*#__PURE__*/function (_ObservableIndexedObj) 
   }, {
     key: "hasOldest",
     get: function get() {
-      return this.state === WindowState.OLDEST || this.internalState.oldestId !== null && this.has(this.internalState.oldestId);
+      return this.state === WindowState.OLDEST || this.state === WindowState.LATEST && this.length < this.fetchLimit || this.internalState.oldestId !== null && this.has(this.internalState.oldestId);
     }
   }, {
     key: "resetToLatest",
@@ -759,6 +777,7 @@ var TraversableRemoteCollection = /*#__PURE__*/function (_ObservableIndexedObj) 
               return this.fetchLatestItems();
             case 3:
               result = _context.v;
+              this.internalState.lastFetchCount = result.length;
             case 4:
               _context.p = 4;
               this.internalState.ongoing = undefined;
@@ -797,6 +816,7 @@ var TraversableRemoteCollection = /*#__PURE__*/function (_ObservableIndexedObj) 
               return this.fetchItemsBefore();
             case 3:
               result = _context2.v;
+              this.internalState.lastFetchCount = result ? result.length : 0;
             case 4:
               _context2.p = 4;
               this.internalState.ongoing = undefined;
@@ -856,6 +876,7 @@ var TraversableRemoteCollection = /*#__PURE__*/function (_ObservableIndexedObj) 
               return this.fetchItemsAfter();
             case 3:
               result = _context3.v;
+              this.internalState.lastFetchCount = result ? result.length : 0;
             case 4:
               _context3.p = 4;
               this.internalState.ongoing = undefined;
@@ -1136,7 +1157,8 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
                   roomId: this.roomId,
                   topicId: this.topicId
                 },
-                after: afterId
+                after: afterId,
+                limit: this.internalState.fetchLimit
               });
             case 2:
               result = _context0.v;
@@ -1177,7 +1199,8 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
                   roomId: this.roomId,
                   topicId: this.topicId
                 },
-                before: beforeId
+                before: beforeId,
+                limit: this.internalState.fetchLimit
               });
             case 2:
               result = _context1.v;
@@ -1209,7 +1232,8 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
                 location: {
                   roomId: this.roomId,
                   topicId: this.topicId
-                }
+                },
+                limit: this.internalState.fetchLimit
               });
             case 1:
               result = _context10.v;

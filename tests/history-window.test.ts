@@ -1,5 +1,4 @@
-import { IndexedObjectCollection } from "../src";
-import {TopicHistoryWindow, TraversableRemoteCollection, WindowState} from "../src/state-tracker/TopicHistoryWindow";
+import {TraversableRemoteCollection, WindowState} from "../src/state-tracker/TopicHistoryWindow";
 
 interface SimpleMessage {
     id: number;
@@ -76,6 +75,7 @@ test('history window - fresh instance', async () => {
 test('history window - states change', async () => {
     const window = new TestableHistoryWindow();
     window.limit = 5;
+    window.fetchLimit = 3;
 
     expect(window.state).toEqual(WindowState.LIVE);
 
@@ -101,6 +101,7 @@ test('history window - states change', async () => {
 test('history window - traverse back', async () => {
     const window = new TestableHistoryWindow();
     window.limit = 5;
+    window.fetchLimit = 3;
 
     await window.fetchPrevious(); // 7,8,9
 
@@ -126,6 +127,7 @@ test('history window - traverse back', async () => {
 test('history window - traverse forward', async () => {
     const window = new TestableHistoryWindow();
     window.limit = 5;
+    window.fetchLimit = 3;
 
     await window.fetchNext(); // []
 
@@ -159,6 +161,7 @@ test('history window - traverse forward', async () => {
 test('history window - reset to latest', async () => {
     const window = new TestableHistoryWindow();
     window.limit = 5;
+    window.fetchLimit = 3;
 
     await window.fetchPrevious(); // [7,8,9]
     await window.fetchPrevious(); // [4,5,6,7,8]
@@ -176,6 +179,7 @@ test('history window - reset to latest', async () => {
 test('history window - trim messages window to limit', async () => {
     const window = new TestableHistoryWindow();
     window.limit = 5;
+    window.fetchLimit = 3;
 
     expect(window.items).toHaveLength(0);
 
@@ -214,10 +218,36 @@ test('history window - states priority', async () => {
     await window.fetchPrevious(); // [0,1,2,3,4,5,6,7,8,9]
 
     expect(window.state).toEqual(WindowState.LATEST);
-    expect(window.hasOldest).toBeFalsy();
+    expect(window.hasOldest).toBeTruthy();
     expect(window.hasLatest).toBeTruthy();
 
     await window.fetchPrevious();
 
     expect(window.hasOldest).toBeTruthy();
+});
+
+test('history window - hasOldest when in LATEST and length < fetchLimit', async () => {
+    const window = new TestableHistoryWindow();
+    // ensure fetchLimit is larger than the loaded items count (loaded: 3)
+    window.fetchLimit = 10;
+
+    await window.resetToLatest(); // loads 3 items
+
+    expect(window.state).toEqual(WindowState.LATEST);
+    expect(window.items).toHaveLength(3);
+    expect(window.fetchLimit).toEqual(10);
+    expect(window.hasOldest).toBeTruthy();
+});
+
+test('history window - hasOldest false when in LATEST and length == fetchLimit', async () => {
+    const window = new TestableHistoryWindow();
+    // set fetchLimit equal to loaded items count
+    window.fetchLimit = 3;
+
+    await window.resetToLatest(); // loads 3 items
+
+    expect(window.state).toEqual(WindowState.LATEST);
+    expect(window.items).toHaveLength(3);
+    expect(window.fetchLimit).toEqual(3);
+    expect(window.hasOldest).toBeFalsy();
 });

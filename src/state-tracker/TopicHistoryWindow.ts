@@ -1,4 +1,4 @@
-import {Message, NewMessage, Session, Topic} from "../types/src";
+import {Message, NewMessage, Topic} from "../types/src";
 import {ChatStateTracker} from "./ChatStateTracker";
 import {ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
 
@@ -38,13 +38,31 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
         current: WindowState,
         ongoing?: WindowState,
         limit: number | null,
+        fetchLimit: number,
+        lastFetchCount: number,
         oldestId: string | null,
     } = {
         current: WindowState.LIVE,
         ongoing: undefined,
         limit: 50,
+        fetchLimit: 50,
+        lastFetchCount: 0,
         oldestId: null,
     };
+
+    /**
+     * Number of items to fetch per request.
+     */
+    public get fetchLimit(): number {
+        return this.internalState.fetchLimit;
+    }
+
+    /**
+     * Sets number of items to fetch per request.
+     */
+    public set fetchLimit(value: number) {
+        this.internalState.fetchLimit = value;
+    }
 
     /**
      * Maximum numer of items stored in window.
@@ -67,7 +85,9 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
     }
 
     public get hasOldest(): boolean {
-        return this.state === WindowState.OLDEST || this.internalState.oldestId !== null && this.has(this.internalState.oldestId);
+        return this.state === WindowState.OLDEST
+            || this.state === WindowState.LATEST && this.length < this.fetchLimit
+            || this.internalState.oldestId !== null && this.has(this.internalState.oldestId);
     }
 
     public abstract createMirror(): TraversableRemoteCollection<T>;
@@ -83,6 +103,7 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
 
         try {
             result = await this.fetchLatestItems();
+            this.internalState.lastFetchCount = result.length;
         } finally {
             this.internalState.ongoing = undefined;
         }
@@ -103,6 +124,7 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
 
         try {
             result = await this.fetchItemsBefore();
+            this.internalState.lastFetchCount = result ? result.length : 0;
         } finally {
             this.internalState.ongoing = undefined;
         }
@@ -140,6 +162,7 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
 
         try {
             result = await this.fetchItemsAfter();
+            this.internalState.lastFetchCount = result ? result.length : 0;
         } finally {
             this.internalState.ongoing = undefined;
         }
@@ -301,6 +324,7 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
         const result = await this.tracker.client.send('GetMessages', {
             location: {roomId: this.roomId, topicId: this.topicId},
             after: afterId,
+            limit: this.internalState.fetchLimit,
         });
 
         if (result.error) {
@@ -321,6 +345,7 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
         const result = await this.tracker.client.send('GetMessages', {
             location: {roomId: this.roomId, topicId: this.topicId},
             before: beforeId,
+            limit: this.internalState.fetchLimit,
         });
 
         if (result.error) {
@@ -333,6 +358,7 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
     protected async fetchLatestItems(): Promise<Message[]> {
         const result = await this.tracker.client.send('GetMessages', {
             location: {roomId: this.roomId, topicId: this.topicId},
+            limit: this.internalState.fetchLimit,
         });
 
         if (result.error) {
