@@ -3140,14 +3140,11 @@ Permissions_defineProperty(Permissions, "list", {
     value: 1 << 2,
     maxLayer: Layer.Space
   },
-  ManageSpaceRoles: {
+  ManageRoles: {
     value: 1 << 3,
     maxLayer: Layer.Space
   },
-  ManageRoom: {
-    value: 1 << 4,
-    maxLayer: Layer.Room
-  },
+  //ManageRoom: {value: 1 << 4, maxLayer: Layer.Room},
   CreateTopics: {
     value: 1 << 5,
     maxLayer: Layer.Room
@@ -3156,11 +3153,11 @@ Permissions_defineProperty(Permissions, "list", {
     value: 1 << 6,
     maxLayer: Layer.Topic
   },
-  ManageSpaceMembers: {
+  ManageMemberProfiles: {
     value: 1 << 7,
     maxLayer: Layer.Space
   },
-  ManageRoomMembers: {
+  ManageMemberRoles: {
     value: 1 << 8,
     maxLayer: Layer.Room
   },
@@ -3172,11 +3169,11 @@ Permissions_defineProperty(Permissions, "list", {
     value: 1 << 10,
     maxLayer: Layer.Topic
   },
-  CreateSpaceRooms: {
+  CreateRooms: {
     value: 1 << 11,
     maxLayer: Layer.Space
   },
-  ManageSpaceRooms: {
+  ManageRoom: {
     value: 1 << 12,
     maxLayer: Layer.Space
   },
@@ -3184,11 +3181,11 @@ Permissions_defineProperty(Permissions, "list", {
     value: 1 << 13,
     maxLayer: Layer.Space
   },
-  ManageEmoticon: {
+  ManageEmoticons: {
     value: 1 << 14,
     maxLayer: Layer.Space
   },
-  ManageBan: {
+  ManageBans: {
     value: 1 << 15,
     maxLayer: Layer.Room
   },

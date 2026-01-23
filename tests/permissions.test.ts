@@ -9,6 +9,6 @@ test('can permission be defined on layer', () => {
     expect(Permissions.canBeDefinedOnLayer('CreateSpaces', Layer.Global)).toBe(true);
     expect(Permissions.canBeDefinedOnLayer('CreateSpaces', Layer.Space)).toBe(false);
 
-    expect(Permissions.canBeDefinedOnLayer('ManageSpaceMembers', Layer.Space)).toBe(true);
-    expect(Permissions.canBeDefinedOnLayer('ManageSpaceMembers', Layer.Room)).toBe(false);
+    expect(Permissions.canBeDefinedOnLayer('ManageMemberProfiles', Layer.Space)).toBe(true);
+    expect(Permissions.canBeDefinedOnLayer('ManageMemberProfiles', Layer.Room)).toBe(false);
 });

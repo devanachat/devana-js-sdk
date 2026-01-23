@@ -22,11 +22,7 @@ export declare class Permissions {
             value: number;
             maxLayer: Layer;
         };
-        ManageSpaceRoles: {
-            value: number;
-            maxLayer: Layer;
-        };
-        ManageRoom: {
+        ManageRoles: {
             value: number;
             maxLayer: Layer;
         };
@@ -38,11 +34,11 @@ export declare class Permissions {
             value: number;
             maxLayer: Layer;
         };
-        ManageSpaceMembers: {
+        ManageMemberProfiles: {
             value: number;
             maxLayer: Layer;
         };
-        ManageRoomMembers: {
+        ManageMemberRoles: {
             value: number;
             maxLayer: Layer;
         };
@@ -54,11 +50,11 @@ export declare class Permissions {
             value: number;
             maxLayer: Layer;
         };
-        CreateSpaceRooms: {
+        CreateRooms: {
             value: number;
             maxLayer: Layer;
         };
-        ManageSpaceRooms: {
+        ManageRoom: {
             value: number;
             maxLayer: Layer;
         };
@@ -66,11 +62,11 @@ export declare class Permissions {
             value: number;
             maxLayer: Layer;
         };
-        ManageEmoticon: {
+        ManageEmoticons: {
             value: number;
             maxLayer: Layer;
         };
-        ManageBan: {
+        ManageBans: {
             value: number;
             maxLayer: Layer;
         };
