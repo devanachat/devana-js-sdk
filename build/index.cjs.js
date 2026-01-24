@@ -3175,7 +3175,7 @@ Permissions_defineProperty(Permissions, "list", {
   },
   ManageRoom: {
     value: 1 << 12,
-    maxLayer: Layer.Space
+    maxLayer: Layer.Room
   },
   CreateEmoticons: {
     value: 1 << 13,

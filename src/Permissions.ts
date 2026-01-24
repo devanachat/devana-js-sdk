@@ -24,7 +24,7 @@ export class Permissions {
         CreateMessages: {value: 1 << 9, maxLayer: Layer.Topic},
         ManagePermissions: {value: 1 << 10, maxLayer: Layer.Topic},
         CreateRooms: {value: 1 << 11, maxLayer: Layer.Space},
-        ManageRoom: {value: 1 << 12, maxLayer: Layer.Space},
+        ManageRoom: {value: 1 << 12, maxLayer: Layer.Room},
         CreateEmoticons: {value: 1 << 13, maxLayer: Layer.Space},
         ManageEmoticons: {value: 1 << 14, maxLayer: Layer.Space},
         ManageBans: {value: 1 << 15, maxLayer: Layer.Room},
