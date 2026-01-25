@@ -2,7 +2,7 @@ import {Envelope} from "./schemes/Envelope";
 import {Message, MessageType, MessageAuthor} from "./schemes/Message";
 import {PermissionOverwritesValue} from "./schemes/PermissionOverwritesValue";
 import {Role} from "./schemes/Role";
-import {Room, RoomType, RoomFlag} from "./schemes/Room";
+import {Room, RoomType} from "./schemes/Room";
 import {RoomMember} from "./schemes/RoomMember";
 import {RoomSummary, RoomSummaryExtras} from "./schemes/RoomSummary";
 import {Space, SpaceDiscoverable} from "./schemes/Space";
@@ -114,7 +114,6 @@ import {RoomStream, RoomStreamType} from "./schemes/RoomStream";
 import {RoomHistory, RoomHistoryMode} from "./schemes/RoomHistory";
 import {GetRoomSummary} from "./schemes/commands/GetRoomSummary";
 import {GetSpaceSummary} from "./schemes/commands/GetSpaceSummary";
-import {SpaceFlag} from "./schemes/Space";
 import {SpaceSummary as SpaceSummaryEvent} from "./schemes/events/SpaceSummary";
 import {RoomSummary as RoomSummaryEvent} from "./schemes/events/RoomSummary";
 import {UpdateSpaceMember} from "./schemes/commands/UpdateSpaceMember";
@@ -137,7 +136,6 @@ export {
     MessageAuthor,
     Role,
     Room,
-    RoomFlag,
     RoomType,
     RoomStream,
     RoomStreamType,
@@ -147,7 +145,6 @@ export {
     RoomSummary,
     RoomSummaryExtras,
     Space,
-    SpaceFlag,
     SpaceMember,
     Topic,
     FollowedTopic,
