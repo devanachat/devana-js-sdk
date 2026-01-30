@@ -3200,6 +3200,10 @@ Permissions_defineProperty(Permissions, "list", {
   ChangeOwnColor: {
     value: 1 << 18,
     maxLayer: Layer.Room
+  },
+  RedactMessages: {
+    value: 1 << 19,
+    maxLayer: Layer.Topic
   }
 });
 ;// ./src/state-tracker/PermissionsManager.ts
