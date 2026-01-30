@@ -101,7 +101,7 @@ import {
     NewRelationship,
     DeleteRelationship,
     CreateRelationship,
-    RoomSummaryUpdated, Pong, Ping,
+    RoomSummaryUpdated, Pong, Ping, RedactMessages, MessagesRedacted, ReportAbuse,
 } from "./types/src/index";
 import {EventTarget} from "./EventTarget";
 import {GetRelationships} from "./types/src/schemes/commands/GetRelationships";
@@ -224,6 +224,7 @@ export type EventsMap = {
     Messages: Messages,
     Topics: Topics,
     TopicUpdated: TopicUpdated,
+    MessagesRedacted: MessagesRedacted,
 };
 
 /**
@@ -252,6 +253,7 @@ export type CommandsMap = {
     CreateRelationship: [CreateRelationship, EventsMap['NewRelationship']],
     GetRelationships: [GetRelationships, EventsMap['Relationships']],
     Ping: [Ping, EventsMap['Pong']],
+    ReportAbuse: [ReportAbuse, EventsMap['Ok']],
     // Space commands
     GetDiscoverableSpaces: [GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']],
     JoinSpace: [JoinSpace, EventsMap['SpaceJoined']],
@@ -288,4 +290,5 @@ export type CommandsMap = {
     GetMessages: [GetMessages, EventsMap['Messages']],
     GetTopics: [GetTopics, EventsMap['Topics']],
     UpdateTopic: [UpdateTopic, EventsMap['TopicUpdated']],
+    RedactMessages: [RedactMessages, EventsMap['MessagesRedacted']],
 }

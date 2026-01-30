@@ -3,10 +3,6 @@ import { User } from "./User";
 import { RoomStream } from "./RoomStream";
 import { RoomHistory } from "./RoomHistory";
 export type RoomType = 'Text' | 'ClassicText' | 'Pm';
-export declare enum RoomFlag {
-    AllowSystemMessages = 1,
-    Private = 2
-}
 export interface Room {
     id: string;
     spaceId: string | null;
