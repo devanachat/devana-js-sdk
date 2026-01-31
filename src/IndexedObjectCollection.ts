@@ -1,4 +1,4 @@
-import {ChangeEventMap, EventTarget, ObservableInterface} from "./EventTarget";
+import {EventHandler, EventTarget, ObservableInterface} from "./EventTarget";
 
 export class IndexedCollection<KeyT, ValueT> {
     protected _items: Map<KeyT, ValueT> = new Map();
@@ -127,114 +127,133 @@ export class IndexedObjectCollection<T> {
     }
 }
 
-type CollectionEventMap<KeyT> = ChangeEventMap<{setItems?: KeyT[], deletedItems?: KeyT[]}>;
+export type CollectionEventMap<IdType = string> = {
+    change: { setItems?: IdType[]; deletedItems?: IdType[] };
+};
 
-export class ObservableIndexedCollection<KeyT, ValueT> extends IndexedCollection<KeyT, ValueT> implements ObservableInterface {
-    protected eventTarget: EventTarget<CollectionEventMap<KeyT>>;
+export class ObservableIndexedCollection<
+    KeyT,
+    ValueT,
+    EventMapT extends CollectionEventMap<KeyT> = CollectionEventMap<KeyT>
+> extends IndexedCollection<KeyT, ValueT> implements ObservableInterface<EventMapT> {
+
+    protected eventTarget: EventTarget<EventMapT>;
 
     public constructor(items: [key: KeyT, value: ValueT][] = []) {
         super();
-        this.eventTarget = new EventTarget<CollectionEventMap<KeyT>>();
+        this.eventTarget = new EventTarget<EventMapT>();
         this.set(...items);
     }
 
     public set(...items: [KeyT, ValueT][]) {
         if (items.length) {
             super.set(...items);
-            this.eventTarget.emit('change', {setItems: items.map(item => item[0])});
+            this.eventTarget.emit('change', { setItems: items.map(item => item[0]) });
         }
     }
 
     public delete(...ids: KeyT[]) {
         if (ids.length) {
             super.delete(...ids);
-            this.eventTarget.emit('change', {deletedItems: ids});
+            this.eventTarget.emit('change', { deletedItems: ids });
         }
     }
 
     public deleteAll() {
         if (this.length) {
-            const ids = this._items.keys();
+            const ids = Array.from(this._items.keys());
             super.deleteAll();
-            this.eventTarget.emit('change', {deletedItems: Array.from(ids)});
+            this.eventTarget.emit('change', { deletedItems: Array.from(ids) });
         }
     }
 
-    public createMirror(): ObservableIndexedCollection<KeyT, ValueT> {
-        const copy = new ObservableIndexedCollection<KeyT, ValueT>();
+    public createMirror(): ObservableIndexedCollection<KeyT, ValueT, EventMapT> {
+        const copy = new ObservableIndexedCollection<KeyT, ValueT, EventMapT>();
         copy.eventTarget = this.eventTarget;
         copy._items = this._items;
         return copy;
     }
 
-    public on(eventName: 'change', handler: (ev?: CollectionEventMap<KeyT>['change']) => void): this {
+    public on<K extends keyof EventMapT & string>(eventName: K, handler: EventHandler<EventMapT[K]>): this {
         this.eventTarget.on(eventName, handler);
         return this;
     }
 
-    public once(eventName: 'change', handler: (ev?: CollectionEventMap<KeyT>['change']) => void): this {
+    public once<K extends keyof EventMapT & string>(eventName: K, handler: EventHandler<EventMapT[K]>): this {
         this.eventTarget.once(eventName, handler);
         return this;
     }
 
-    public off(eventName: string, handler: (ev?: CollectionEventMap<KeyT>['change']) => void): this {
+    public off<K extends keyof EventMapT & string>(eventName: K, handler: EventHandler<EventMapT[K]>): this {
         this.eventTarget.off(eventName, handler);
         return this;
     }
 }
 
-export class ObservableIndexedObjectCollection<T> extends IndexedObjectCollection<T> implements ObservableInterface {
-    protected eventTarget: EventTarget<CollectionEventMap<string>>;
+export class ObservableIndexedObjectCollection<
+    ItemT,
+    EventMapT extends CollectionEventMap = CollectionEventMap
+> extends IndexedObjectCollection<ItemT> implements ObservableInterface<EventMapT> {
+    protected eventTarget: EventTarget<EventMapT>;
 
     public constructor(
-        public readonly id: keyof T | ((item: T) => string),
-        items: T[] = [],
+        id: keyof ItemT | ((item: ItemT) => string),
+        items: ItemT[] = [],
     ) {
         super(id);
-        this.eventTarget = new EventTarget<CollectionEventMap<string>>();
+        this.eventTarget = new EventTarget<EventMapT>();
         this.set(...items);
     }
 
-    public set(...items: T[]) {
+    public set(...items: ItemT[]) {
         if (items.length) {
             super.set(...items);
-            this.eventTarget.emit('change', {setItems: items.map(item => this.getId(item))});
+            this.eventTarget.emit('change', { setItems: items.map(item => this.getId(item)) });
         }
     }
 
     public delete(...ids: string[]) {
         if (ids.length) {
             super.delete(...ids);
-            this.eventTarget.emit('change', {deletedItems: ids});
+            this.eventTarget.emit('change', { deletedItems: ids });
         }
     }
 
     public deleteAll() {
         if (this.length) {
-            const ids = this._items.items.keys();
+            const ids = this.items.map(item => this.getId(item));
             super.deleteAll();
-            this.eventTarget.emit('change', {deletedItems: Array.from(ids)});
+            this.eventTarget.emit('change', { deletedItems: ids });
         }
     }
 
-    public createMirror(): IndexedObjectCollection<T> {
-        const copy = new ObservableIndexedObjectCollection<T>(this.id);
+    public createMirror(): ObservableIndexedObjectCollection<ItemT, EventMapT> {
+        const copy = new ObservableIndexedObjectCollection<ItemT, EventMapT>(this.id);
         copy.eventTarget = this.eventTarget;
         copy._items = this._items;
         return copy;
     }
 
-    public on(eventName: 'change', handler: (ev?: CollectionEventMap<string>['change']) => void): this {
+    public on<EventName extends keyof EventMapT & string>(
+        eventName: EventName,
+        handler: EventHandler<EventMapT[EventName]>
+    ): this {
         this.eventTarget.on(eventName, handler);
         return this;
     }
 
-    public once(eventName: 'change', handler: (ev?: CollectionEventMap<string>['change']) => void): this {
+    public once<EventName extends keyof EventMapT & string>(
+        eventName: EventName,
+        handler: EventHandler<EventMapT[EventName]>
+    ): this {
         this.eventTarget.once(eventName, handler);
         return this;
     }
 
-    public off(eventName: string, handler: (ev?: CollectionEventMap<string>['change']) => void): this {
+    public off<EventName extends keyof EventMapT & string>(
+        eventName: EventName,
+        handler: EventHandler<EventMapT[EventName]>
+    ): this {
         this.eventTarget.off(eventName, handler);
         return this;
     }

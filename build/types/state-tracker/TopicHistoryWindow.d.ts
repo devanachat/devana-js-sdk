@@ -1,6 +1,6 @@
 import { Message, Topic } from "../types/src";
 import { ChatStateTracker } from "./ChatStateTracker";
-import { ObservableIndexedObjectCollection } from "../IndexedObjectCollection";
+import { CollectionEventMap, ObservableIndexedObjectCollection } from "../IndexedObjectCollection";
 export declare enum WindowState {
     /**
      * The latest messages (those received live) are available in the history window, history has not been fetched.
@@ -21,7 +21,7 @@ export declare enum WindowState {
      */
     OLDEST = 3
 }
-export declare abstract class TraversableRemoteCollection<T> extends ObservableIndexedObjectCollection<T> {
+export declare abstract class TraversableRemoteCollection<ItemT, EventMapT extends CollectionEventMap = CollectionEventMap> extends ObservableIndexedObjectCollection<ItemT, EventMapT> {
     /**
      * Current mode od collection window. To change mode, call one of available fetch methods.
      */
@@ -54,22 +54,25 @@ export declare abstract class TraversableRemoteCollection<T> extends ObservableI
     set limit(value: number | null);
     get hasLatest(): boolean;
     get hasOldest(): boolean;
-    abstract createMirror(): TraversableRemoteCollection<T>;
+    abstract createMirror(): TraversableRemoteCollection<ItemT, EventMapT>;
     resetToLatest(): Promise<void>;
     fetchPrevious(): Promise<void>;
     fetchNext(): Promise<void>;
-    protected abstract fetchLatestItems(): Promise<T[]>;
-    protected abstract fetchItemsBefore(): Promise<T[] | null>;
-    protected abstract fetchItemsAfter(): Promise<T[] | null>;
+    protected abstract fetchLatestItems(): Promise<ItemT[]>;
+    protected abstract fetchItemsBefore(): Promise<ItemT[] | null>;
+    protected abstract fetchItemsAfter(): Promise<ItemT[] | null>;
     protected abstract isLatestItemLoaded(): Promise<boolean>;
     protected refreshFetchedState(): Promise<void>;
-    protected addItems(newItems: T[], to: 'head' | 'tail'): void;
+    protected addItems(newItems: ItemT[], to: 'head' | 'tail'): void;
     /**
      * Return array with messages of count that matching limit.
      */
     private trimItemsArrayToLimit;
 }
-export declare class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
+export type TopicHistoryWindowEventMap = CollectionEventMap & {
+    reftopicsdeleted: string[];
+};
+export declare class TopicHistoryWindow extends TraversableRemoteCollection<Message, TopicHistoryWindowEventMap> {
     private roomId;
     private topicId;
     private tracker;
@@ -93,6 +96,7 @@ export declare class TopicHistoryWindow extends TraversableRemoteCollection<Mess
      */
     _updateMessageReference(refTopic: Topic): void;
     private handleNewMessage;
+    private handleMessagesRedacted;
     protected fetchItemsAfter(): Promise<Message[] | null>;
     protected fetchItemsBefore(): Promise<Message[] | null>;
     protected fetchLatestItems(): Promise<Message[]>;

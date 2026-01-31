@@ -82,12 +82,12 @@ var EventTarget = /*#__PURE__*/function () {
   }, {
     key: "off",
     value: function off(eventName, handler) {
-      var _this$events$get;
+      var _this$events$get, _this$events$get2;
       var index = (_this$events$get = this.events.get(eventName)) === null || _this$events$get === void 0 ? void 0 : _this$events$get.indexOf(handler);
-      if (!index || index < 0) {
+      if (index === undefined || index < 0) {
         return this;
       }
-      this.events.get(eventName).splice(index, 1);
+      (_this$events$get2 = this.events.get(eventName)) === null || _this$events$get2 === void 0 || _this$events$get2.splice(index, 1);
       return this;
     }
   }, {
@@ -125,9 +125,6 @@ function _callSuper(t, o, e) { return o = _getPrototypeOf(o), _possibleConstruct
 function _possibleConstructorReturn(t, e) { if (e && ("object" == AbstractChatClient_typeof(e) || "function" == typeof e)) return e; if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined"); return _assertThisInitialized(t); }
 function _assertThisInitialized(e) { if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); return e; }
 function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
-function _superPropGet(t, o, e, r) { var p = _get(_getPrototypeOf(1 & r ? t.prototype : t), o, e); return 2 & r && "function" == typeof p ? function (t) { return p.apply(e, t); } : p; }
-function _get() { return _get = "undefined" != typeof Reflect && Reflect.get ? Reflect.get.bind() : function (e, t, r) { var p = _superPropBase(e, t); if (p) { var n = Object.getOwnPropertyDescriptor(p, t); return n.get ? n.get.call(arguments.length < 3 ? e : r) : n.value; } }, _get.apply(null, arguments); }
-function _superPropBase(t, o) { for (; !{}.hasOwnProperty.call(t, o) && null !== (t = _getPrototypeOf(t));); return t; }
 function _getPrototypeOf(t) { return _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, _getPrototypeOf(t); }
 function _inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && _setPrototypeOf(t, e); }
 function _setPrototypeOf(t, e) { return _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, _setPrototypeOf(t, e); }
@@ -149,16 +146,6 @@ var AbstractChatClient = /*#__PURE__*/function (_EventTarget) {
   }
   _inherits(AbstractChatClient, _EventTarget);
   return AbstractChatClient_createClass(AbstractChatClient, [{
-    key: "on",
-    value: function on(eventName, handler) {
-      return _superPropGet(AbstractChatClient, "on", this, 3)([eventName, handler]);
-    }
-  }, {
-    key: "once",
-    value: function once(eventName, handler) {
-      return _superPropGet(AbstractChatClient, "once", this, 3)([eventName, handler]);
-    }
-  }, {
     key: "createEnvelope",
     value: function createEnvelope(type, data) {
       return {
@@ -216,9 +203,9 @@ function IndexedObjectCollection_callSuper(t, o, e) { return o = IndexedObjectCo
 function IndexedObjectCollection_possibleConstructorReturn(t, e) { if (e && ("object" == IndexedObjectCollection_typeof(e) || "function" == typeof e)) return e; if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined"); return IndexedObjectCollection_assertThisInitialized(t); }
 function IndexedObjectCollection_assertThisInitialized(e) { if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); return e; }
 function IndexedObjectCollection_isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (IndexedObjectCollection_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
-function IndexedObjectCollection_superPropGet(t, o, e, r) { var p = IndexedObjectCollection_get(IndexedObjectCollection_getPrototypeOf(1 & r ? t.prototype : t), o, e); return 2 & r && "function" == typeof p ? function (t) { return p.apply(e, t); } : p; }
-function IndexedObjectCollection_get() { return IndexedObjectCollection_get = "undefined" != typeof Reflect && Reflect.get ? Reflect.get.bind() : function (e, t, r) { var p = IndexedObjectCollection_superPropBase(e, t); if (p) { var n = Object.getOwnPropertyDescriptor(p, t); return n.get ? n.get.call(arguments.length < 3 ? e : r) : n.value; } }, IndexedObjectCollection_get.apply(null, arguments); }
-function IndexedObjectCollection_superPropBase(t, o) { for (; !{}.hasOwnProperty.call(t, o) && null !== (t = IndexedObjectCollection_getPrototypeOf(t));); return t; }
+function _superPropGet(t, o, e, r) { var p = _get(IndexedObjectCollection_getPrototypeOf(1 & r ? t.prototype : t), o, e); return 2 & r && "function" == typeof p ? function (t) { return p.apply(e, t); } : p; }
+function _get() { return _get = "undefined" != typeof Reflect && Reflect.get ? Reflect.get.bind() : function (e, t, r) { var p = _superPropBase(e, t); if (p) { var n = Object.getOwnPropertyDescriptor(p, t); return n.get ? n.get.call(arguments.length < 3 ? e : r) : n.value; } }, _get.apply(null, arguments); }
+function _superPropBase(t, o) { for (; !{}.hasOwnProperty.call(t, o) && null !== (t = IndexedObjectCollection_getPrototypeOf(t));); return t; }
 function IndexedObjectCollection_getPrototypeOf(t) { return IndexedObjectCollection_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, IndexedObjectCollection_getPrototypeOf(t); }
 function IndexedObjectCollection_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && IndexedObjectCollection_setPrototypeOf(t, e); }
 function IndexedObjectCollection_setPrototypeOf(t, e) { return IndexedObjectCollection_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, IndexedObjectCollection_setPrototypeOf(t, e); }
@@ -430,7 +417,7 @@ var ObservableIndexedCollection = /*#__PURE__*/function (_IndexedCollection2) {
         items[_key4] = arguments[_key4];
       }
       if (items.length) {
-        IndexedObjectCollection_superPropGet(ObservableIndexedCollection, "set", this, 3)(items);
+        _superPropGet(ObservableIndexedCollection, "set", this, 3)(items);
         this.eventTarget.emit('change', {
           setItems: items.map(function (item) {
             return item[0];
@@ -445,7 +432,7 @@ var ObservableIndexedCollection = /*#__PURE__*/function (_IndexedCollection2) {
         ids[_key5] = arguments[_key5];
       }
       if (ids.length) {
-        IndexedObjectCollection_superPropGet(ObservableIndexedCollection, "delete", this, 3)(ids);
+        _superPropGet(ObservableIndexedCollection, "delete", this, 3)(ids);
         this.eventTarget.emit('change', {
           deletedItems: ids
         });
@@ -455,8 +442,8 @@ var ObservableIndexedCollection = /*#__PURE__*/function (_IndexedCollection2) {
     key: "deleteAll",
     value: function deleteAll() {
       if (this.length) {
-        var ids = this._items.keys();
-        IndexedObjectCollection_superPropGet(ObservableIndexedCollection, "deleteAll", this, 3)([]);
+        var ids = Array.from(this._items.keys());
+        _superPropGet(ObservableIndexedCollection, "deleteAll", this, 3)([]);
         this.eventTarget.emit('change', {
           deletedItems: Array.from(ids)
         });
@@ -498,7 +485,6 @@ var ObservableIndexedObjectCollection = /*#__PURE__*/function (_IndexedObjectCol
     IndexedObjectCollection_classCallCheck(this, ObservableIndexedObjectCollection);
     _this4 = IndexedObjectCollection_callSuper(this, ObservableIndexedObjectCollection, [id]);
     IndexedObjectCollection_defineProperty(_this4, "eventTarget", void 0);
-    _this4.id = id;
     _this4.eventTarget = new EventTarget();
     (_this5 = _this4).set.apply(_this5, _toConsumableArray(items));
     return _this4;
@@ -512,7 +498,7 @@ var ObservableIndexedObjectCollection = /*#__PURE__*/function (_IndexedObjectCol
         items[_key6] = arguments[_key6];
       }
       if (items.length) {
-        IndexedObjectCollection_superPropGet(ObservableIndexedObjectCollection, "set", this, 3)(items);
+        _superPropGet(ObservableIndexedObjectCollection, "set", this, 3)(items);
         this.eventTarget.emit('change', {
           setItems: items.map(function (item) {
             return _this6.getId(item);
@@ -527,7 +513,7 @@ var ObservableIndexedObjectCollection = /*#__PURE__*/function (_IndexedObjectCol
         ids[_key7] = arguments[_key7];
       }
       if (ids.length) {
-        IndexedObjectCollection_superPropGet(ObservableIndexedObjectCollection, "delete", this, 3)(ids);
+        _superPropGet(ObservableIndexedObjectCollection, "delete", this, 3)(ids);
         this.eventTarget.emit('change', {
           deletedItems: ids
         });
@@ -536,11 +522,14 @@ var ObservableIndexedObjectCollection = /*#__PURE__*/function (_IndexedObjectCol
   }, {
     key: "deleteAll",
     value: function deleteAll() {
+      var _this7 = this;
       if (this.length) {
-        var ids = this._items.items.keys();
-        IndexedObjectCollection_superPropGet(ObservableIndexedObjectCollection, "deleteAll", this, 3)([]);
+        var ids = this.items.map(function (item) {
+          return _this7.getId(item);
+        });
+        _superPropGet(ObservableIndexedObjectCollection, "deleteAll", this, 3)([]);
         this.eventTarget.emit('change', {
-          deletedItems: Array.from(ids)
+          deletedItems: ids
         });
       }
     }
@@ -992,6 +981,9 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
       _this2.tracker.client.on('NewMessage', function (ev) {
         return _this2.handleNewMessage(ev);
       });
+      _this2.tracker.client.on('MessagesRedacted', function (ev) {
+        return _this2.handleMessagesRedacted(ev);
+      });
     }
     return _this2;
   }
@@ -1136,58 +1128,50 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
       return handleNewMessage;
     }()
   }, {
-    key: "fetchItemsAfter",
+    key: "handleMessagesRedacted",
     value: function () {
-      var _fetchItemsAfter = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0() {
-        var _this$getAt;
-        var afterId, result;
+      var _handleMessagesRedacted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0(ev) {
         return _regenerator().w(function (_context0) {
           while (1) switch (_context0.n) {
             case 0:
-              afterId = (_this$getAt = this.getAt(this.length - 1)) === null || _this$getAt === void 0 ? void 0 : _this$getAt.id;
-              if (afterId) {
+              if (!(ev.location.topicId !== this.topicId || ev.location.roomId !== this.roomId)) {
                 _context0.n = 1;
                 break;
               }
-              return _context0.a(2, null);
+              return _context0.a(2);
             case 1:
-              _context0.n = 2;
-              return this.tracker.client.send('GetMessages', {
-                location: {
-                  roomId: this.roomId,
-                  topicId: this.topicId
-                },
-                after: afterId,
-                limit: this.internalState.fetchLimit
-              });
-            case 2:
-              result = _context0.v;
-              if (!result.error) {
-                _context0.n = 3;
+              // const refTopicIds = this.items
+              //     .filter(msg => msg.topicRef && ev.ids.includes(msg.id))
+              //     .map(msg => msg.topicRef as string);
+
+              this["delete"].apply(this, TopicHistoryWindow_toConsumableArray(ev.ids));
+              if (!(this.length === 0)) {
+                _context0.n = 2;
                 break;
               }
-              throw new Error("Cannot fetch messages: ".concat(result.error.message));
-            case 3:
-              return _context0.a(2, result.data.messages);
+              _context0.n = 2;
+              return this.resetToLatest();
+            case 2:
+              return _context0.a(2);
           }
         }, _callee0, this);
       }));
-      function fetchItemsAfter() {
-        return _fetchItemsAfter.apply(this, arguments);
+      function handleMessagesRedacted(_x3) {
+        return _handleMessagesRedacted.apply(this, arguments);
       }
-      return fetchItemsAfter;
+      return handleMessagesRedacted;
     }()
   }, {
-    key: "fetchItemsBefore",
+    key: "fetchItemsAfter",
     value: function () {
-      var _fetchItemsBefore = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
-        var _this$getAt2;
-        var beforeId, result;
+      var _fetchItemsAfter = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
+        var _this$getAt;
+        var afterId, result;
         return _regenerator().w(function (_context1) {
           while (1) switch (_context1.n) {
             case 0:
-              beforeId = (_this$getAt2 = this.getAt(0)) === null || _this$getAt2 === void 0 ? void 0 : _this$getAt2.id;
-              if (beforeId) {
+              afterId = (_this$getAt = this.getAt(this.length - 1)) === null || _this$getAt === void 0 ? void 0 : _this$getAt.id;
+              if (afterId) {
                 _context1.n = 1;
                 break;
               }
@@ -1199,7 +1183,7 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
                   roomId: this.roomId,
                   topicId: this.topicId
                 },
-                before: beforeId,
+                after: afterId,
                 limit: this.internalState.fetchLimit
               });
             case 2:
@@ -1214,6 +1198,48 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
           }
         }, _callee1, this);
       }));
+      function fetchItemsAfter() {
+        return _fetchItemsAfter.apply(this, arguments);
+      }
+      return fetchItemsAfter;
+    }()
+  }, {
+    key: "fetchItemsBefore",
+    value: function () {
+      var _fetchItemsBefore = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10() {
+        var _this$getAt2;
+        var beforeId, result;
+        return _regenerator().w(function (_context10) {
+          while (1) switch (_context10.n) {
+            case 0:
+              beforeId = (_this$getAt2 = this.getAt(0)) === null || _this$getAt2 === void 0 ? void 0 : _this$getAt2.id;
+              if (beforeId) {
+                _context10.n = 1;
+                break;
+              }
+              return _context10.a(2, null);
+            case 1:
+              _context10.n = 2;
+              return this.tracker.client.send('GetMessages', {
+                location: {
+                  roomId: this.roomId,
+                  topicId: this.topicId
+                },
+                before: beforeId,
+                limit: this.internalState.fetchLimit
+              });
+            case 2:
+              result = _context10.v;
+              if (!result.error) {
+                _context10.n = 3;
+                break;
+              }
+              throw new Error("Cannot fetch messages: ".concat(result.error.message));
+            case 3:
+              return _context10.a(2, result.data.messages);
+          }
+        }, _callee10, this);
+      }));
       function fetchItemsBefore() {
         return _fetchItemsBefore.apply(this, arguments);
       }
@@ -1222,12 +1248,12 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
   }, {
     key: "fetchLatestItems",
     value: function () {
-      var _fetchLatestItems = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10() {
+      var _fetchLatestItems = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11() {
         var result;
-        return _regenerator().w(function (_context10) {
-          while (1) switch (_context10.n) {
+        return _regenerator().w(function (_context11) {
+          while (1) switch (_context11.n) {
             case 0:
-              _context10.n = 1;
+              _context11.n = 1;
               return this.tracker.client.send('GetMessages', {
                 location: {
                   roomId: this.roomId,
@@ -1236,16 +1262,16 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
                 limit: this.internalState.fetchLimit
               });
             case 1:
-              result = _context10.v;
+              result = _context11.v;
               if (!result.error) {
-                _context10.n = 2;
+                _context11.n = 2;
                 break;
               }
               throw new Error("Cannot fetch messages: ".concat(result.error.message));
             case 2:
-              return _context10.a(2, result.data.messages);
+              return _context11.a(2, result.data.messages);
           }
-        }, _callee10, this);
+        }, _callee11, this);
       }));
       function fetchLatestItems() {
         return _fetchLatestItems.apply(this, arguments);
@@ -1255,16 +1281,16 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
   }, {
     key: "getTopic",
     value: function () {
-      var _getTopic = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11() {
-        return _regenerator().w(function (_context11) {
-          while (1) switch (_context11.n) {
+      var _getTopic = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12() {
+        return _regenerator().w(function (_context12) {
+          while (1) switch (_context12.n) {
             case 0:
-              _context11.n = 1;
+              _context12.n = 1;
               return this.tracker.rooms.getTopics(this.roomId, [this.topicId]);
             case 1:
-              return _context11.a(2, _context11.v.get(this.topicId));
+              return _context12.a(2, _context12.v.get(this.topicId));
           }
-        }, _callee11, this);
+        }, _callee12, this);
       }));
       function getTopic() {
         return _getTopic.apply(this, arguments);
@@ -1274,43 +1300,43 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
   }, {
     key: "getLatestMessageId",
     value: function () {
-      var _getLatestMessageId = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12() {
+      var _getLatestMessageId = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13() {
         var _yield$this$getTopic;
         var _t2, _t3, _t4, _t5;
-        return _regenerator().w(function (_context12) {
-          while (1) switch (_context12.n) {
+        return _regenerator().w(function (_context13) {
+          while (1) switch (_context13.n) {
             case 0:
-              _context12.n = 1;
+              _context13.n = 1;
               return this.getTopic();
             case 1:
-              _t4 = _yield$this$getTopic = _context12.v;
+              _t4 = _yield$this$getTopic = _context13.v;
               _t3 = _t4 === null;
               if (_t3) {
-                _context12.n = 2;
+                _context13.n = 2;
                 break;
               }
               _t3 = _yield$this$getTopic === void 0;
             case 2:
               _t2 = _t3;
               if (_t2) {
-                _context12.n = 3;
+                _context13.n = 3;
                 break;
               }
               _t2 = (_yield$this$getTopic = _yield$this$getTopic.lastMessage) === null || _yield$this$getTopic === void 0;
             case 3:
               if (!_t2) {
-                _context12.n = 4;
+                _context13.n = 4;
                 break;
               }
               _t5 = void 0;
-              _context12.n = 5;
+              _context13.n = 5;
               break;
             case 4:
               _t5 = _yield$this$getTopic.id;
             case 5:
-              return _context12.a(2, _t5);
+              return _context13.a(2, _t5);
           }
-        }, _callee12, this);
+        }, _callee13, this);
       }));
       function getLatestMessageId() {
         return _getLatestMessageId.apply(this, arguments);
@@ -1320,18 +1346,18 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
   }, {
     key: "isLatestItemLoaded",
     value: function () {
-      var _isLatestItemLoaded = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13() {
+      var _isLatestItemLoaded = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee14() {
         var lastMessageId;
-        return _regenerator().w(function (_context13) {
-          while (1) switch (_context13.n) {
+        return _regenerator().w(function (_context14) {
+          while (1) switch (_context14.n) {
             case 0:
-              _context13.n = 1;
+              _context14.n = 1;
               return this.getLatestMessageId();
             case 1:
-              lastMessageId = _context13.v;
-              return _context13.a(2, lastMessageId ? this.has(lastMessageId) : true);
+              lastMessageId = _context14.v;
+              return _context14.a(2, lastMessageId ? this.has(lastMessageId) : true);
           }
-        }, _callee13, this);
+        }, _callee14, this);
       }));
       function isLatestItemLoaded() {
         return _isLatestItemLoaded.apply(this, arguments);
@@ -1342,6 +1368,11 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
 }(TraversableRemoteCollection);
 ;// ./src/state-tracker/RoomMessagesHistory.ts
 function RoomMessagesHistory_typeof(o) { "@babel/helpers - typeof"; return RoomMessagesHistory_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, RoomMessagesHistory_typeof(o); }
+function RoomMessagesHistory_toConsumableArray(r) { return RoomMessagesHistory_arrayWithoutHoles(r) || RoomMessagesHistory_iterableToArray(r) || RoomMessagesHistory_unsupportedIterableToArray(r) || RoomMessagesHistory_nonIterableSpread(); }
+function RoomMessagesHistory_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function RoomMessagesHistory_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function RoomMessagesHistory_arrayWithoutHoles(r) { if (Array.isArray(r)) return RoomMessagesHistory_arrayLikeToArray(r); }
+function RoomMessagesHistory_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = RoomMessagesHistory_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || RoomMessagesHistory_unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function RoomMessagesHistory_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return RoomMessagesHistory_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? RoomMessagesHistory_arrayLikeToArray(r, a) : void 0; } }
@@ -1390,12 +1421,11 @@ var RoomMessagesHistory = /*#__PURE__*/function () {
     key: "getMessagesWindow",
     value: (function () {
       var _getMessagesWindow = RoomMessagesHistory_asyncToGenerator(/*#__PURE__*/RoomMessagesHistory_regenerator().m(function _callee(topicId) {
-        var historyWindow, topic;
+        var topic;
         return RoomMessagesHistory_regenerator().w(function (_context) {
           while (1) switch (_context.n) {
             case 0:
-              historyWindow = this.historyWindows.get(topicId);
-              if (historyWindow) {
+              if (this.historyWindows.has(topicId)) {
                 _context.n = 2;
                 break;
               }
@@ -1473,12 +1503,32 @@ var RoomMessagesHistory = /*#__PURE__*/function () {
   }, {
     key: "createHistoryWindowForTopic",
     value: function createHistoryWindowForTopic(topic) {
+      var _this2 = this;
       if (this.historyWindows.has(topic.id)) {
         return;
       }
       var historyWindow = new TopicHistoryWindow(this.room.id, topic.id, this.tracker);
       void historyWindow.setTraverseLock(this.traverseLock);
       this.historyWindows.set([topic.id, historyWindow]);
+
+      // Current behavior of deletion a message with referenced topic is to delete the whole side topic
+      // So we need to listen for topic deletions here
+      historyWindow.on('reftopicsdeleted', function (deletedTopicIds) {
+        var _this2$tracker$rooms;
+        var _iterator = RoomMessagesHistory_createForOfIteratorHelper(deletedTopicIds),
+          _step;
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var topicId = _step.value;
+            _this2.historyWindows["delete"](topicId);
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
+        }
+        (_this2$tracker$rooms = _this2.tracker.rooms)._deleteTopicsFromRoom.apply(_this2$tracker$rooms, [_this2.room.id].concat(RoomMessagesHistory_toConsumableArray(deletedTopicIds)));
+      });
 
       // If new topic refers to some message from this room, update other structures
       if (topic.refMessage) {
@@ -2260,21 +2310,35 @@ var RoomsManager = /*#__PURE__*/function () {
         return _getTopics.apply(this, arguments);
       }
       return getTopics;
-    }())
+    }()
+    /**
+     * For internal use. If you want to delete topic, execute a proper command on client object.
+     * @internal
+     */
+    )
+  }, {
+    key: "_deleteTopicsFromRoom",
+    value: function _deleteTopicsFromRoom(roomId) {
+      var _this$topics$get;
+      for (var _len = arguments.length, topicIds = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+        topicIds[_key - 1] = arguments[_key];
+      }
+      (_this$topics$get = this.topics.get(roomId)) === null || _this$topics$get === void 0 || _this$topics$get["delete"].apply(_this$topics$get, topicIds);
+    }
   }, {
     key: "deleteRoom",
     value: function deleteRoom() {
       var _this$list, _this$members, _this$membersPromises, _this$topics;
-      for (var _len = arguments.length, roomIds = new Array(_len), _key = 0; _key < _len; _key++) {
-        roomIds[_key] = arguments[_key];
+      for (var _len2 = arguments.length, roomIds = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        roomIds[_key2] = arguments[_key2];
       }
       (_this$list = this.list)["delete"].apply(_this$list, roomIds);
       (_this$members = this.members)["delete"].apply(_this$members, roomIds);
       (_this$membersPromises = this.membersPromises).forget.apply(_this$membersPromises, roomIds);
       for (var _i = 0, _roomIds = roomIds; _i < _roomIds.length; _i++) {
-        var _this$topics$get$item, _this$topics$get, _this$messages;
+        var _this$topics$get$item, _this$topics$get2, _this$messages;
         var roomId = _roomIds[_i];
-        var topicIds = (_this$topics$get$item = (_this$topics$get = this.topics.get(roomId)) === null || _this$topics$get === void 0 ? void 0 : _this$topics$get.items.map(function (topic) {
+        var topicIds = (_this$topics$get$item = (_this$topics$get2 = this.topics.get(roomId)) === null || _this$topics$get2 === void 0 ? void 0 : _this$topics$get2.items.map(function (topic) {
           return topic.id;
         })) !== null && _this$topics$get$item !== void 0 ? _this$topics$get$item : [];
         (_this$messages = this.messages)._deleteByTopicIds.apply(_this$messages, [roomId].concat(RoomsManager_toConsumableArray(topicIds)));
@@ -2374,12 +2438,12 @@ var RoomsManager = /*#__PURE__*/function () {
   }, {
     key: "addJoinedRoomTopics",
     value: function addJoinedRoomTopics(roomId) {
-      for (var _len2 = arguments.length, topics = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-        topics[_key2 - 1] = arguments[_key2];
+      for (var _len3 = arguments.length, topics = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+        topics[_key3 - 1] = arguments[_key3];
       }
       if (this.topics.has(roomId)) {
-        var _this$topics$get2;
-        (_this$topics$get2 = this.topics.get(roomId)).set.apply(_this$topics$get2, topics);
+        var _this$topics$get3;
+        (_this$topics$get3 = this.topics.get(roomId)).set.apply(_this$topics$get3, topics);
       } else {
         this.topics.set([roomId, new ObservableIndexedObjectCollection('id', topics)]);
       }
@@ -2404,9 +2468,9 @@ var RoomsManager = /*#__PURE__*/function () {
   }, {
     key: "handleTopicUpdated",
     value: function handleTopicUpdated(ev) {
-      var _this$topics$get3;
+      var _this$topics$get4;
       var room = this.list.get(ev.location.roomId);
-      if ((_this$topics$get3 = this.topics.get(ev.location.roomId)) !== null && _this$topics$get3 !== void 0 && _this$topics$get3.has(ev.topic.id)) {
+      if ((_this$topics$get4 = this.topics.get(ev.location.roomId)) !== null && _this$topics$get4 !== void 0 && _this$topics$get4.has(ev.topic.id)) {
         this.topics.get(ev.location.roomId).set(ev.topic);
       }
       if (room.defaultTopic.id === ev.topic.id) {
@@ -2418,8 +2482,8 @@ var RoomsManager = /*#__PURE__*/function () {
     key: "addJoinedRooms",
     value: function addJoinedRooms() {
       var _this$list2;
-      for (var _len3 = arguments.length, rooms = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-        rooms[_key3] = arguments[_key3];
+      for (var _len4 = arguments.length, rooms = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+        rooms[_key4] = arguments[_key4];
       }
       for (var _i2 = 0, _rooms = rooms; _i2 < _rooms.length; _i2++) {
         var room = _rooms[_i2];
@@ -3230,9 +3294,6 @@ function PermissionsManager_callSuper(t, o, e) { return o = PermissionsManager_g
 function PermissionsManager_possibleConstructorReturn(t, e) { if (e && ("object" == PermissionsManager_typeof(e) || "function" == typeof e)) return e; if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined"); return PermissionsManager_assertThisInitialized(t); }
 function PermissionsManager_assertThisInitialized(e) { if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); return e; }
 function PermissionsManager_isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (PermissionsManager_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
-function PermissionsManager_superPropGet(t, o, e, r) { var p = PermissionsManager_get(PermissionsManager_getPrototypeOf(1 & r ? t.prototype : t), o, e); return 2 & r && "function" == typeof p ? function (t) { return p.apply(e, t); } : p; }
-function PermissionsManager_get() { return PermissionsManager_get = "undefined" != typeof Reflect && Reflect.get ? Reflect.get.bind() : function (e, t, r) { var p = PermissionsManager_superPropBase(e, t); if (p) { var n = Object.getOwnPropertyDescriptor(p, t); return n.get ? n.get.call(arguments.length < 3 ? e : r) : n.value; } }, PermissionsManager_get.apply(null, arguments); }
-function PermissionsManager_superPropBase(t, o) { for (; !{}.hasOwnProperty.call(t, o) && null !== (t = PermissionsManager_getPrototypeOf(t));); return t; }
 function PermissionsManager_getPrototypeOf(t) { return PermissionsManager_getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, PermissionsManager_getPrototypeOf(t); }
 function PermissionsManager_inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && PermissionsManager_setPrototypeOf(t, e); }
 function PermissionsManager_setPrototypeOf(t, e) { return PermissionsManager_setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, PermissionsManager_setPrototypeOf(t, e); }
@@ -3342,11 +3403,6 @@ var PermissionsManager = /*#__PURE__*/function (_EventTarget) {
       }
       return getOverwrites;
     }()
-  }, {
-    key: "on",
-    value: function on(eventName, handler) {
-      return PermissionsManager_superPropGet(PermissionsManager, "on", this, 3)([eventName, handler]);
-    }
   }, {
     key: "check",
     value: function () {

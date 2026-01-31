@@ -1,6 +1,6 @@
 import {Message, MessagesRedacted, NewMessage, Topic} from "../types/src";
 import {ChatStateTracker} from "./ChatStateTracker";
-import {ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
+import {CollectionEventMap, ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
 
 export enum WindowState {
     /**
@@ -26,7 +26,10 @@ export enum WindowState {
     OLDEST,
 }
 
-export abstract class TraversableRemoteCollection<T> extends ObservableIndexedObjectCollection<T> {
+export abstract class TraversableRemoteCollection<
+    ItemT,
+    EventMapT extends CollectionEventMap = CollectionEventMap
+> extends ObservableIndexedObjectCollection<ItemT, EventMapT> {
     /**
      * Current mode od collection window. To change mode, call one of available fetch methods.
      */
@@ -90,7 +93,7 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
             || this.internalState.oldestId !== null && this.has(this.internalState.oldestId);
     }
 
-    public abstract createMirror(): TraversableRemoteCollection<T>;
+    public abstract createMirror(): TraversableRemoteCollection<ItemT, EventMapT>;
 
     public async resetToLatest(): Promise<void> {
         if (this.internalState.ongoing || this.internalState.current === WindowState.LATEST) {
@@ -179,11 +182,11 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
         }
     }
 
-    protected abstract fetchLatestItems(): Promise<T[]>;
+    protected abstract fetchLatestItems(): Promise<ItemT[]>;
 
-    protected abstract fetchItemsBefore(): Promise<T[] | null>;
+    protected abstract fetchItemsBefore(): Promise<ItemT[] | null>;
 
-    protected abstract fetchItemsAfter(): Promise<T[] | null>;
+    protected abstract fetchItemsAfter(): Promise<ItemT[] | null>;
 
     protected abstract isLatestItemLoaded(): Promise<boolean>;
 
@@ -191,7 +194,7 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
         this.internalState.current = (await this.isLatestItemLoaded()) ? WindowState.LATEST : WindowState.PAST;
     }
 
-    protected addItems(newItems: T[], to: 'head' | 'tail'): void {
+    protected addItems(newItems: ItemT[], to: 'head' | 'tail'): void {
         let result;
 
         if (to === 'head') {
@@ -209,7 +212,7 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
     /**
      * Return array with messages of count that matching limit.
      */
-    private trimItemsArrayToLimit(items: T[], from: 'head' | 'tail'): T[] {
+    private trimItemsArrayToLimit(items: ItemT[], from: 'head' | 'tail'): ItemT[] {
         if (this.limit === null) {
             return items;
         }
@@ -224,7 +227,14 @@ export abstract class TraversableRemoteCollection<T> extends ObservableIndexedOb
     }
 }
 
-export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
+export type TopicHistoryWindowEventMap = CollectionEventMap & {
+    reftopicsdeleted: string[];
+};
+
+export class TopicHistoryWindow extends TraversableRemoteCollection<
+    Message,
+    TopicHistoryWindowEventMap
+> {
     /**
      * Reexported available window modes enum.
      */

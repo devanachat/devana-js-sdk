@@ -118,6 +118,14 @@ export class RoomsManager {
         return this.topics.get(roomId);
     }
 
+    /**
+     * For internal use. If you want to delete topic, execute a proper command on client object.
+     * @internal
+     */
+    public _deleteTopicsFromRoom(roomId: string, ...topicIds: string[]): void {
+        this.topics.get(roomId)?.delete(...topicIds);
+    }
+
     private deleteRoom(...roomIds: string[]): void {
         this.list.delete(...roomIds);
         this.members.delete(...roomIds);

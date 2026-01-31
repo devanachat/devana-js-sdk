@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { ObservableInterface } from "./EventTarget";
-import { AbstractChatClient, CommandResult, CommandsMap } from "./AbstractChatClient";
+import { AbstractChatClient, CommandRequest, CommandResult, CommandResponse, CommandsMap, EventsMap } from "./AbstractChatClient";
 import { ChatStateTracker } from "./state-tracker/ChatStateTracker";
 import { Envelope } from "./types/src";
 export interface WebSocketClientOptions {
@@ -31,7 +31,13 @@ declare enum WebSocketChatClientEvent {
     message = "message",
     error = "error"
 }
-export declare class WebSocketChatClient extends AbstractChatClient implements ObservableInterface {
+type WebSocketEventMap = EventsMap & {
+    [WebSocketChatClientEvent.connect]: void;
+    [WebSocketChatClientEvent.disconnect]: boolean;
+    [WebSocketChatClientEvent.message]: Envelope;
+    [WebSocketChatClientEvent.error]: Error;
+};
+export declare class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventMap, keyof WebSocketEventMap>> implements ObservableInterface {
     private readonly options;
     readonly Event: typeof WebSocketChatClientEvent;
     readonly state?: ChatStateTracker;
@@ -46,7 +52,7 @@ export declare class WebSocketChatClient extends AbstractChatClient implements O
     constructor(options: WebSocketClientOptions);
     connect(): Promise<void>;
     disconnect(): void;
-    send<CommandType extends keyof CommandsMap>(commandType: CommandType, commandData: CommandsMap[CommandType][0]): Promise<CommandResult<CommandsMap[CommandType][1]>>;
+    send<CommandType extends keyof CommandsMap>(commandType: CommandType, commandData: CommandRequest<CommandType>): Promise<CommandResult<CommandResponse<CommandType>>>;
     get isReady(): boolean;
     private sendEnvelope;
     private onMessage;

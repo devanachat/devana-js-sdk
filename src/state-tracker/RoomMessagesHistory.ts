@@ -76,6 +76,15 @@ export class RoomMessagesHistory {
 
         this.historyWindows.set([topic.id, historyWindow]);
 
+        // Current behavior of deletion a message with referenced topic is to delete the whole side topic
+        // So we need to listen for topic deletions here
+        historyWindow.on('reftopicsdeleted', (deletedTopicIds: string[]) => {
+            for (const topicId of deletedTopicIds) {
+                this.historyWindows.delete(topicId);
+            }
+            this.tracker.rooms._deleteTopicsFromRoom(this.room.id, ...deletedTopicIds);
+        });
+
         // If new topic refers to some message from this room, update other structures
         if (topic.refMessage) {
             const refHistoryWindow = this.historyWindows.get(topic.refMessage.location.topicId);

@@ -1,4 +1,4 @@
-import { EventTarget, ObservableInterface } from "./EventTarget";
+import { EventHandler, EventTarget, ObservableInterface } from "./EventTarget";
 export declare class IndexedCollection<KeyT, ValueT> {
     protected _items: Map<KeyT, ValueT>;
     constructor(items?: [key: KeyT, value: ValueT][]);
@@ -28,31 +28,31 @@ export declare class IndexedObjectCollection<T> {
     createMirror(): IndexedObjectCollection<T>;
     protected getId(item: T): any;
 }
-interface ObservableCollectionEvent<KeyT> {
-    setItems?: KeyT[];
-    deletedItems?: KeyT[];
-}
-export declare class ObservableIndexedCollection<KeyT, ValueT> extends IndexedCollection<KeyT, ValueT> implements ObservableInterface {
-    protected eventTarget: EventTarget<ObservableCollectionEvent<KeyT>>;
+export type CollectionEventMap<IdType = string> = {
+    change: {
+        setItems?: IdType[];
+        deletedItems?: IdType[];
+    };
+};
+export declare class ObservableIndexedCollection<KeyT, ValueT, EventMapT extends CollectionEventMap<KeyT> = CollectionEventMap<KeyT>> extends IndexedCollection<KeyT, ValueT> implements ObservableInterface<EventMapT> {
+    protected eventTarget: EventTarget<EventMapT>;
     constructor(items?: [key: KeyT, value: ValueT][]);
     set(...items: [KeyT, ValueT][]): void;
     delete(...ids: KeyT[]): void;
     deleteAll(): void;
-    createMirror(): ObservableIndexedCollection<KeyT, ValueT>;
-    on(eventName: 'change', handler: (ev?: ObservableCollectionEvent<KeyT>) => void): this;
-    once(eventName: 'change', handler: (ev?: ObservableCollectionEvent<KeyT>) => void): this;
-    off(eventName: string, handler: (ev?: ObservableCollectionEvent<KeyT>) => void): this;
+    createMirror(): ObservableIndexedCollection<KeyT, ValueT, EventMapT>;
+    on<K extends keyof EventMapT & string>(eventName: K, handler: EventHandler<EventMapT[K]>): this;
+    once<K extends keyof EventMapT & string>(eventName: K, handler: EventHandler<EventMapT[K]>): this;
+    off<K extends keyof EventMapT & string>(eventName: K, handler: EventHandler<EventMapT[K]>): this;
 }
-export declare class ObservableIndexedObjectCollection<T> extends IndexedObjectCollection<T> implements ObservableInterface {
-    readonly id: keyof T | ((item: T) => string);
-    protected eventTarget: EventTarget<ObservableCollectionEvent<string>>;
-    constructor(id: keyof T | ((item: T) => string), items?: T[]);
-    set(...items: T[]): void;
+export declare class ObservableIndexedObjectCollection<ItemT, EventMapT extends CollectionEventMap = CollectionEventMap> extends IndexedObjectCollection<ItemT> implements ObservableInterface<EventMapT> {
+    protected eventTarget: EventTarget<EventMapT>;
+    constructor(id: keyof ItemT | ((item: ItemT) => string), items?: ItemT[]);
+    set(...items: ItemT[]): void;
     delete(...ids: string[]): void;
     deleteAll(): void;
-    createMirror(): IndexedObjectCollection<T>;
-    on(eventName: 'change', handler: (ev?: ObservableCollectionEvent<string>) => void): this;
-    once(eventName: 'change', handler: (ev?: ObservableCollectionEvent<string>) => void): this;
-    off(eventName: string, handler: (ev?: ObservableCollectionEvent<string>) => void): this;
+    createMirror(): ObservableIndexedObjectCollection<ItemT, EventMapT>;
+    on<EventName extends keyof EventMapT & string>(eventName: EventName, handler: EventHandler<EventMapT[EventName]>): this;
+    once<EventName extends keyof EventMapT & string>(eventName: EventName, handler: EventHandler<EventMapT[EventName]>): this;
+    off<EventName extends keyof EventMapT & string>(eventName: EventName, handler: EventHandler<EventMapT[EventName]>): this;
 }
-export {};

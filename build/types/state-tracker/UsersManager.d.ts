@@ -4,7 +4,9 @@ import { User } from "../types/src";
 import { EventTarget } from "../EventTarget";
 export declare class UsersManager {
     private tracker;
-    readonly onlineStatus: EventTarget<any>;
+    readonly onlineStatus: EventTarget<{
+        change: User;
+    }>;
     private readonly users;
     constructor(tracker: ChatStateTracker);
     /**

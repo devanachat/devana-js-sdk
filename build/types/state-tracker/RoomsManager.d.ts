@@ -29,6 +29,11 @@ export declare class RoomsManager {
      * You can pass topic ids as second argument, to try to fetch them from the server.
      */
     getTopics(roomId: string, tryToFetchTopicIds?: string[]): Promise<ObservableIndexedObjectCollection<Topic> | undefined>;
+    /**
+     * For internal use. If you want to delete topic, execute a proper command on client object.
+     * @internal
+     */
+    _deleteTopicsFromRoom(roomId: string, ...topicIds: string[]): void;
     private deleteRoom;
     private deleteRoomsBySpaceId;
     private handleSpaceMemberUpdated;
