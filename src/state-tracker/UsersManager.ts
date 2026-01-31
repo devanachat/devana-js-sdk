@@ -5,7 +5,7 @@ import {extractUserFromMember} from "./functions";
 import {EventTarget} from "../EventTarget";
 
 export class UsersManager {
-    public readonly onlineStatus = new EventTarget();
+    public readonly onlineStatus = new EventTarget<{ change: User }>();
 
     private readonly users: ObservableIndexedObjectCollection<User> = new ObservableIndexedObjectCollection('id');
 

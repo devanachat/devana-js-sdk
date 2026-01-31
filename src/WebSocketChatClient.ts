@@ -1,5 +1,5 @@
 import {ObservableInterface} from "./EventTarget";
-import {AbstractChatClient, CommandResult, CommandsMap, EventsMap} from "./AbstractChatClient";
+import {AbstractChatClient, CommandRequest, CommandResult, CommandResponse, CommandsMap, EventsMap} from "./AbstractChatClient";
 import {ChatStateTracker} from "./state-tracker/ChatStateTracker";
 import {Envelope} from "./types/src";
 
@@ -33,7 +33,14 @@ enum WebSocketChatClientEvent {
     error = 'error',
 }
 
-export class WebSocketChatClient extends AbstractChatClient implements ObservableInterface {
+type WebSocketEventMap = EventsMap & {
+    [WebSocketChatClientEvent.connect]: void;
+    [WebSocketChatClientEvent.disconnect]: boolean;
+    [WebSocketChatClientEvent.message]: Envelope;
+    [WebSocketChatClientEvent.error]: Error;
+};
+
+export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventMap, keyof WebSocketEventMap>> implements ObservableInterface {
     public readonly Event = WebSocketChatClientEvent;
     public readonly state?: ChatStateTracker;
 
@@ -83,9 +90,9 @@ export class WebSocketChatClient extends AbstractChatClient implements Observabl
         this.ws = null;
     }
 
-    public async send<CommandType extends keyof CommandsMap>(commandType: CommandType, commandData: CommandsMap[CommandType][0]):
-       Promise<CommandResult<CommandsMap[CommandType][1]>> {
-        const envelope = this.createEnvelope<CommandsMap[CommandType][0]>(commandType, commandData);
+    public async send<CommandType extends keyof CommandsMap>(commandType: CommandType, commandData: CommandRequest<CommandType>):
+       Promise<CommandResult<CommandResponse<CommandType>>> {
+        const envelope = this.createEnvelope<CommandRequest<CommandType>>(commandType, commandData);
         const promise = this.createPromiseFromCommandEnvelope<CommandType>(envelope);
 
         if (this.isConnectingWsState() || !this.authenticated && this.isOpenWsState()) {

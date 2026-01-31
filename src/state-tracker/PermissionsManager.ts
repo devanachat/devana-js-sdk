@@ -12,7 +12,7 @@ import {
     SpaceMemberUpdated,
     TopicDeleted,
 } from "../types/src";
-import {EventHandler, EventTarget} from "../EventTarget";
+import {ChangeEventMap, EventTarget} from "../EventTarget";
 import {IndexedCollection} from "../IndexedObjectCollection";
 import {Permissions} from "../Permissions";
 import {PromiseRegistry} from "./AsyncUtils";
@@ -35,7 +35,9 @@ interface CheckPermissionsResult {
     missing: string[];
 }
 
-export class PermissionsManager extends EventTarget {
+type PermissionsManagerEventMap = ChangeEventMap<void>;
+
+export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> {
     private readonly overwrites = new IndexedCollection<string, PermissionOverwrites>();
     private readonly overwritesPromises = new PromiseRegistry();
 
@@ -77,10 +79,6 @@ export class PermissionsManager extends EventTarget {
 
         await this.overwritesPromises.get(id);
         return this.overwrites.get(id);
-    }
-
-    public on(eventName: 'change', handler: EventHandler<any>): this {
-        return super.on(eventName, handler);
     }
 
     public async check(

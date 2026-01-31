@@ -101,30 +101,31 @@ import {
     NewRelationship,
     DeleteRelationship,
     CreateRelationship,
-    RoomSummaryUpdated, Pong, Ping, RedactMessages, MessagesRedacted, ReportAbuse,
-} from "./types/src/index";
+    RoomSummaryUpdated,
+    Pong,
+    Ping,
+    RedactMessages,
+    MessagesRedacted,
+    ReportAbuse,
+    UpdateRoomMember,
+    GetRelationships,
+} from "./types/src";
 import {EventTarget} from "./EventTarget";
-import {GetRelationships} from "./types/src/schemes/commands/GetRelationships";
-import {UpdateRoomMember} from "./types/src/schemes/commands/UpdateRoomMember";
 
 type ArrayOfPromiseResolvers = [(value: any) => void, (reason?: any) => void];
+type ExtraEventMap = Record<string, any>;
 
-export abstract class AbstractChatClient extends EventTarget {
-    protected awaitingResponse: Map<string, ArrayOfPromiseResolvers> = new Map<string, ArrayOfPromiseResolvers>();
-    protected sentCounter: number = 0;
+type CommandDefinition<RequestT, ResponseT> = {
+    request: RequestT;
+    response: ResponseT;
+};
+
+export abstract class AbstractChatClient<AdditionalEvents extends ExtraEventMap = {}> extends EventTarget<EventsMap & AdditionalEvents> {
+     protected awaitingResponse: Map<string, ArrayOfPromiseResolvers> = new Map<string, ArrayOfPromiseResolvers>();
+     protected sentCounter: number = 0;
 
     public abstract send<CommandType extends keyof CommandsMap>
-        (commandType: CommandType, commandData: CommandsMap[CommandType][0]): Promise<CommandResult<CommandsMap[CommandType][1]>>;
-
-    public on<EventName extends keyof EventsMap>
-        (eventName: EventName | string, handler: (event: EventsMap[EventName]) => void): this {
-        return super.on(eventName, handler);
-    }
-
-    public once<EventName extends keyof EventsMap>
-        (eventName: EventName, handler: (event: EventsMap[EventName]) => void): this {
-        return super.once(eventName, handler);
-    }
+        (commandType: CommandType, commandData: CommandRequest<CommandType>): Promise<CommandResult<CommandResponse<CommandType>>>;
 
     protected createEnvelope<CommandT>(type: string, data: CommandT): Envelope<CommandT> {
         return {
@@ -133,10 +134,10 @@ export abstract class AbstractChatClient extends EventTarget {
     }
 
     protected createPromiseFromCommandEnvelope
-        <CommandT extends keyof CommandsMap>(envelope: Envelope<CommandsMap[CommandT][0]>):
-        Promise<CommandResult<CommandsMap[CommandT][1]>> {
+        <CommandT extends keyof CommandsMap>(envelope: Envelope<CommandRequest<CommandT>>):
+        Promise<CommandResult<CommandResponse<CommandT>>> {
         return new Promise((...args) =>
-            this.awaitingResponse.set(envelope.ref as string, args));
+             this.awaitingResponse.set(envelope.ref as string, args));
     }
 
     protected handleIncomingEnvelope(envelope: Envelope): void {
@@ -161,11 +162,13 @@ export abstract class AbstractChatClient extends EventTarget {
 }
 
 export type CommandResult<ResultT> = {data?: ResultT, error?: ErrorType};
+export type CommandRequest<CommandType extends keyof CommandsMap> = CommandsMap[CommandType]['request'];
+export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap[CommandType]['response'];
 
-/**
- * Map of incoming events.
- */
-export type EventsMap = {
+ /**
+  * Map of incoming events.
+  */
+ export type EventsMap = {
     // General Events
     Bye: Bye,
     Ok: Ok,
@@ -231,64 +234,64 @@ export type EventsMap = {
  * Map of commands and their corresponding events.
  */
 export type CommandsMap = {
-    // General commands
-    GetSession: [GetSession, EventsMap['Session']],
-    SetPermissionOverwrites: [SetPermissionOverwrites, EventsMap['PermissionOverwritesUpdated']],
-    GetPermissionOverwrites: [GetPermissionOverwrites, EventsMap['PermissionOverwrites']],
-    GetComputedPermissions: [GetComputedPermissions, EventsMap['Permissions']],
-    GetPermissionOverwriteTargets: [GetPermissionOverwriteTargets, EventsMap['PermissionOverwriteTargets']],
-    GetOwners: [GetOwners, EventsMap['Owners']],
-    CreateOwner: [CreateOwner, EventsMap['Owners']],
-    DeleteOwner: [CreateOwner, EventsMap['Owners']],
-    CreateEmoticon: [CreateEmoticon, EventsMap['NewEmoticon']],
-    DeleteEmoticon: [DeleteEmoticon, EventsMap['EmoticonDeleted']],
-    GetEmoticons: [GetEmoticons, EventsMap['Emoticons']],
-    GetBans: [GetBans, EventsMap['Bans']],
-    Ban: [Ban, EventsMap['Ok']],
-    Unban: [Unban, EventsMap['Ok']],
-    Kick: [Kick, EventsMap['Ok']],
-    GetClientData: [GetClientData, EventsMap['ClientData']],
-    SetClientData: [SetClientData, EventsMap['Ok']],
-    DeleteRelationship: [DeleteRelationship, EventsMap['RelationshipDeleted']],
-    CreateRelationship: [CreateRelationship, EventsMap['NewRelationship']],
-    GetRelationships: [GetRelationships, EventsMap['Relationships']],
-    Ping: [Ping, EventsMap['Pong']],
-    ReportAbuse: [ReportAbuse, EventsMap['Ok']],
-    // Space commands
-    GetDiscoverableSpaces: [GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']],
-    JoinSpace: [JoinSpace, EventsMap['SpaceJoined']],
-    LeaveSpace: [LeaveSpace, EventsMap['SpaceLeft']],
-    CreateSpace: [CreateSpace, EventsMap['SpaceJoined']],
-    UpdateSpace: [UpdateSpace, EventsMap['SpaceUpdated']],
-    DeleteSpace: [DeleteSpace, EventsMap['SpaceDeleted']],
-    GetSpaceMembers: [GetSpaceMembers, EventsMap['SpaceMembers']],
-    GetSpaceRooms: [GetSpaceRooms, EventsMap['SpaceRooms']],
-    CreateRole: [CreateRole, EventsMap['NewRole']],
-    DeleteRole: [DeleteRole, EventsMap['RoleDeleted']],
-    UpdateRole: [UpdateRole, EventsMap['RoleUpdated']],
-    AssignRole: [AssignRole, EventsMap['SpaceMemberUpdated'] | EventsMap['RoomMemberUpdated']],
-    DeassignRole: [DeassignRole, EventsMap['SpaceMemberUpdated'] | EventsMap['RoomMemberUpdated']],
-    GetSpaceSummary: [GetSpaceSummary, EventsMap['SpaceSummaryEvent']],
-    UpdateSpaceMember: [UpdateSpaceMember, EventsMap['SpaceMemberUpdated']],
-    // Room commands
-    JoinRoom: [JoinRoom, EventsMap['RoomJoined']],
-    LeaveRoom: [LeaveRoom, EventsMap['RoomLeft']],
-    CreateRoom: [CreateRoom, EventsMap['RoomJoined']],
-    DeleteRoom: [DeleteRoom, EventsMap['RoomDeleted']],
-    UpdateRoom: [UpdateRoom, EventsMap['RoomUpdated']],
-    GetRoomMembers: [GetRoomMembers, EventsMap['RoomMembers']],
-    GetRoomSummary: [GetRoomSummary, EventsMap['RoomSummaryEvent']],
-    UpdateRoomMember: [UpdateRoomMember, EventsMap['RoomMemberUpdated']],
-    // Topic commands
-    CreateTopic: [CreateTopic, EventsMap['NewTopic']],
-    DeleteTopic: [DeleteTopic, EventsMap['TopicDeleted']],
-    CreateMessage: [CreateMessage, EventsMap['NewMessage']],
-    Ack: [Ack, EventsMap['FollowedTopicUpdated'] | EventsMap['Ok']],
-    FollowTopic: [FollowTopic, EventsMap['TopicFollowed']],
-    UnfollowTopic: [UnfollowTopic, EventsMap['TopicUnfollowed']],
-    GetFollowedTopics: [GetFollowedTopics, EventsMap['FollowedTopics']],
-    GetMessages: [GetMessages, EventsMap['Messages']],
-    GetTopics: [GetTopics, EventsMap['Topics']],
-    UpdateTopic: [UpdateTopic, EventsMap['TopicUpdated']],
-    RedactMessages: [RedactMessages, EventsMap['MessagesRedacted']],
-}
+     // General commands
+    GetSession: CommandDefinition<GetSession, EventsMap['Session']>,
+    SetPermissionOverwrites: CommandDefinition<SetPermissionOverwrites, EventsMap['PermissionOverwritesUpdated']>,
+    GetPermissionOverwrites: CommandDefinition<GetPermissionOverwrites, EventsMap['PermissionOverwrites']>,
+    GetComputedPermissions: CommandDefinition<GetComputedPermissions, EventsMap['Permissions']>,
+    GetPermissionOverwriteTargets: CommandDefinition<GetPermissionOverwriteTargets, EventsMap['PermissionOverwriteTargets']>,
+    GetOwners: CommandDefinition<GetOwners, EventsMap['Owners']>,
+    CreateOwner: CommandDefinition<CreateOwner, EventsMap['Owners']>,
+    DeleteOwner: CommandDefinition<CreateOwner, EventsMap['Owners']>,
+    CreateEmoticon: CommandDefinition<CreateEmoticon, EventsMap['NewEmoticon']>,
+    DeleteEmoticon: CommandDefinition<DeleteEmoticon, EventsMap['EmoticonDeleted']>,
+    GetEmoticons: CommandDefinition<GetEmoticons, EventsMap['Emoticons']>,
+    GetBans: CommandDefinition<GetBans, EventsMap['Bans']>,
+    Ban: CommandDefinition<Ban, EventsMap['Ok']>,
+    Unban: CommandDefinition<Unban, EventsMap['Ok']>,
+    Kick: CommandDefinition<Kick, EventsMap['Ok']>,
+    GetClientData: CommandDefinition<GetClientData, EventsMap['ClientData']>,
+    SetClientData: CommandDefinition<SetClientData, EventsMap['Ok']>,
+    DeleteRelationship: CommandDefinition<DeleteRelationship, EventsMap['RelationshipDeleted']>,
+    CreateRelationship: CommandDefinition<CreateRelationship, EventsMap['NewRelationship']>,
+    GetRelationships: CommandDefinition<GetRelationships, EventsMap['Relationships']>,
+    Ping: CommandDefinition<Ping, EventsMap['Pong']>,
+    ReportAbuse: CommandDefinition<ReportAbuse, EventsMap['Ok']>,
+     // Space commands
+    GetDiscoverableSpaces: CommandDefinition<GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']>,
+    JoinSpace: CommandDefinition<JoinSpace, EventsMap['SpaceJoined']>,
+    LeaveSpace: CommandDefinition<LeaveSpace, EventsMap['SpaceLeft']>,
+    CreateSpace: CommandDefinition<CreateSpace, EventsMap['SpaceJoined']>,
+    UpdateSpace: CommandDefinition<UpdateSpace, EventsMap['SpaceUpdated']>,
+    DeleteSpace: CommandDefinition<DeleteSpace, EventsMap['SpaceDeleted']>,
+    GetSpaceMembers: CommandDefinition<GetSpaceMembers, EventsMap['SpaceMembers']>,
+    GetSpaceRooms: CommandDefinition<GetSpaceRooms, EventsMap['SpaceRooms']>,
+    CreateRole: CommandDefinition<CreateRole, EventsMap['NewRole']>,
+    DeleteRole: CommandDefinition<DeleteRole, EventsMap['RoleDeleted']>,
+    UpdateRole: CommandDefinition<UpdateRole, EventsMap['RoleUpdated']>,
+    AssignRole: CommandDefinition<AssignRole, EventsMap['SpaceMemberUpdated'] | EventsMap['RoomMemberUpdated']>,
+    DeassignRole: CommandDefinition<DeassignRole, EventsMap['SpaceMemberUpdated'] | EventsMap['RoomMemberUpdated']>,
+    GetSpaceSummary: CommandDefinition<GetSpaceSummary, EventsMap['SpaceSummaryEvent']>,
+    UpdateSpaceMember: CommandDefinition<UpdateSpaceMember, EventsMap['SpaceMemberUpdated']>,
+     // Room commands
+    JoinRoom: CommandDefinition<JoinRoom, EventsMap['RoomJoined']>,
+    LeaveRoom: CommandDefinition<LeaveRoom, EventsMap['RoomLeft']>,
+    CreateRoom: CommandDefinition<CreateRoom, EventsMap['RoomJoined']>,
+    DeleteRoom: CommandDefinition<DeleteRoom, EventsMap['RoomDeleted']>,
+    UpdateRoom: CommandDefinition<UpdateRoom, EventsMap['RoomUpdated']>,
+    GetRoomMembers: CommandDefinition<GetRoomMembers, EventsMap['RoomMembers']>,
+    GetRoomSummary: CommandDefinition<GetRoomSummary, EventsMap['RoomSummaryEvent']>,
+    UpdateRoomMember: CommandDefinition<UpdateRoomMember, EventsMap['RoomMemberUpdated']>,
+     // Topic commands
+    CreateTopic: CommandDefinition<CreateTopic, EventsMap['NewTopic']>,
+    DeleteTopic: CommandDefinition<DeleteTopic, EventsMap['TopicDeleted']>,
+    CreateMessage: CommandDefinition<CreateMessage, EventsMap['NewMessage']>,
+    Ack: CommandDefinition<Ack, EventsMap['FollowedTopicUpdated'] | EventsMap['Ok']>,
+    FollowTopic: CommandDefinition<FollowTopic, EventsMap['TopicFollowed']>,
+    UnfollowTopic: CommandDefinition<UnfollowTopic, EventsMap['TopicUnfollowed']>,
+    GetFollowedTopics: CommandDefinition<GetFollowedTopics, EventsMap['FollowedTopics']>,
+    GetMessages: CommandDefinition<GetMessages, EventsMap['Messages']>,
+    GetTopics: CommandDefinition<GetTopics, EventsMap['Topics']>,
+    UpdateTopic: CommandDefinition<UpdateTopic, EventsMap['TopicUpdated']>,
+    RedactMessages: CommandDefinition<RedactMessages, EventsMap['MessagesRedacted']>,
+ }

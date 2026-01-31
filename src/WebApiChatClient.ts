@@ -1,4 +1,4 @@
-import {AbstractChatClient, CommandResult, CommandsMap} from "./AbstractChatClient";
+import {AbstractChatClient, CommandRequest, CommandResult, CommandResponse, CommandsMap, EventsMap} from "./AbstractChatClient";
 import {ObservableInterface} from "./EventTarget";
 import {Envelope} from "./types/src";
 
@@ -16,7 +16,13 @@ enum WebApiChatClientEvent {
     destroy = 'destroy',
 }
 
-export class WebApiChatClient extends AbstractChatClient implements ObservableInterface {
+type WebApiEventMap = EventsMap & {
+    [WebApiChatClientEvent.message]: Envelope;
+    [WebApiChatClientEvent.error]: Error;
+    [WebApiChatClientEvent.destroy]: boolean;
+};
+
+export class WebApiChatClient extends AbstractChatClient<Pick<WebApiEventMap, keyof WebApiEventMap>> implements ObservableInterface {
     public readonly Event = WebApiChatClientEvent;
 
     protected sendStack: {data: any, attempts: number, lastTimeoutId: any}[];
@@ -25,8 +31,8 @@ export class WebApiChatClient extends AbstractChatClient implements ObservableIn
         super();
     }
 
-    public async send<CommandType extends keyof CommandsMap>(commandType: CommandType, commandData: CommandsMap[CommandType][0]):
-        Promise<CommandResult<CommandsMap[CommandType][1]>> {
+    public async send<CommandType extends keyof CommandsMap>(commandType: CommandType, commandData: CommandRequest<CommandType>):
+        Promise<CommandResult<CommandResponse<CommandType>>> {
         const envelope = this.createEnvelope(commandType, commandData);
         this.sendStack.push({data: envelope, attempts: 0, lastTimeoutId: null});
         this.makeApiCall(this.sendStack.length - 1);

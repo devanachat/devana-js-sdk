@@ -1,4 +1,4 @@
-import {EventTarget, ObservableInterface} from "./EventTarget";
+import {ChangeEventMap, EventTarget, ObservableInterface} from "./EventTarget";
 
 export class IndexedCollection<KeyT, ValueT> {
     protected _items: Map<KeyT, ValueT> = new Map();
@@ -127,17 +127,14 @@ export class IndexedObjectCollection<T> {
     }
 }
 
-interface ObservableCollectionEvent<KeyT> {
-    setItems?: KeyT[],
-    deletedItems?: KeyT[],
-}
+type CollectionEventMap<KeyT> = ChangeEventMap<{setItems?: KeyT[], deletedItems?: KeyT[]}>;
 
 export class ObservableIndexedCollection<KeyT, ValueT> extends IndexedCollection<KeyT, ValueT> implements ObservableInterface {
-    protected eventTarget: EventTarget<ObservableCollectionEvent<KeyT>>;
+    protected eventTarget: EventTarget<CollectionEventMap<KeyT>>;
 
     public constructor(items: [key: KeyT, value: ValueT][] = []) {
         super();
-        this.eventTarget = new EventTarget<ObservableCollectionEvent<KeyT>>();
+        this.eventTarget = new EventTarget<CollectionEventMap<KeyT>>();
         this.set(...items);
     }
 
@@ -170,31 +167,31 @@ export class ObservableIndexedCollection<KeyT, ValueT> extends IndexedCollection
         return copy;
     }
 
-    public on(eventName: 'change', handler: (ev?: ObservableCollectionEvent<KeyT>) => void): this {
+    public on(eventName: 'change', handler: (ev?: CollectionEventMap<KeyT>['change']) => void): this {
         this.eventTarget.on(eventName, handler);
         return this;
     }
 
-    public once(eventName: 'change', handler: (ev?: ObservableCollectionEvent<KeyT>) => void): this {
+    public once(eventName: 'change', handler: (ev?: CollectionEventMap<KeyT>['change']) => void): this {
         this.eventTarget.once(eventName, handler);
         return this;
     }
 
-    public off(eventName: string, handler: (ev?: ObservableCollectionEvent<KeyT>) => void): this {
+    public off(eventName: string, handler: (ev?: CollectionEventMap<KeyT>['change']) => void): this {
         this.eventTarget.off(eventName, handler);
         return this;
     }
 }
 
 export class ObservableIndexedObjectCollection<T> extends IndexedObjectCollection<T> implements ObservableInterface {
-    protected eventTarget: EventTarget<ObservableCollectionEvent<string>>;
+    protected eventTarget: EventTarget<CollectionEventMap<string>>;
 
     public constructor(
         public readonly id: keyof T | ((item: T) => string),
         items: T[] = [],
     ) {
         super(id);
-        this.eventTarget = new EventTarget();
+        this.eventTarget = new EventTarget<CollectionEventMap<string>>();
         this.set(...items);
     }
 
@@ -227,17 +224,17 @@ export class ObservableIndexedObjectCollection<T> extends IndexedObjectCollectio
         return copy;
     }
 
-    public on(eventName: 'change', handler: (ev?: ObservableCollectionEvent<string>) => void): this {
+    public on(eventName: 'change', handler: (ev?: CollectionEventMap<string>['change']) => void): this {
         this.eventTarget.on(eventName, handler);
         return this;
     }
 
-    public once(eventName: 'change', handler: (ev?: ObservableCollectionEvent<string>) => void): this {
+    public once(eventName: 'change', handler: (ev?: CollectionEventMap<string>['change']) => void): this {
         this.eventTarget.once(eventName, handler);
         return this;
     }
 
-    public off(eventName: string, handler: (ev?: ObservableCollectionEvent<string>) => void): this {
+    public off(eventName: string, handler: (ev?: CollectionEventMap<string>['change']) => void): this {
         this.eventTarget.off(eventName, handler);
         return this;
     }
