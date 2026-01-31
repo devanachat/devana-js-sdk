@@ -1,4 +1,4 @@
-import {Message, NewMessage, Topic} from "../types/src";
+import {Message, MessagesRedacted, NewMessage, Topic} from "../types/src";
 import {ChatStateTracker} from "./ChatStateTracker";
 import {ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
 
@@ -246,6 +246,7 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
 
         if (bindEvents) {
             this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
+            this.tracker.client.on('MessagesRedacted', ev => this.handleMessagesRedacted(ev));
         }
     }
 
@@ -310,6 +311,22 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<Message> {
             && ev.message.location.topicId === this.topicId
         ) {
             this.addItems([ev.message], 'tail');
+        }
+    }
+
+    private async handleMessagesRedacted(ev: MessagesRedacted): Promise<void> {
+        if (ev.location.topicId !== this.topicId || ev.location.roomId !== this.roomId) {
+            return;
+        }
+
+        // const refTopicIds = this.items
+        //     .filter(msg => msg.topicRef && ev.ids.includes(msg.id))
+        //     .map(msg => msg.topicRef as string);
+
+        this.delete(...ev.ids);
+
+        if (this.length === 0) {
+            await this.resetToLatest();
         }
     }
 

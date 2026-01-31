@@ -26,9 +26,7 @@ export class RoomMessagesHistory {
      * Returns a history window object for the given topic ID, allowing you to view message history.
      */
     public async getMessagesWindow(topicId: string): Promise<TopicHistoryWindow | undefined> {
-        let historyWindow = this.historyWindows.get(topicId);
-
-        if (!historyWindow) {
+        if (!this.historyWindows.has(topicId)) {
             const topic = (await this.tracker.rooms.getTopics(this.room.id, [topicId])).get(topicId);
 
             if (topic) {

@@ -127,7 +127,7 @@ export class MessagesManager {
 
         if (collection) {
             return collection.items.reduce(
-                (previousValue, currentValue) => previousValue + (currentValue.missed ?? 0),
+                (previousValue: number, currentValue) => previousValue + (currentValue.missed ?? 0),
                 0,
             );
         }
