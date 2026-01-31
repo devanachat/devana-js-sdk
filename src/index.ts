@@ -130,6 +130,7 @@ import {Pong} from "./schemes/events/Pong";
 import {ReportAbuse} from "./schemes/commands/ReportAbuse";
 import {RedactMessages} from "./schemes/commands/RedactMessages";
 import {MessagesRedacted} from "./schemes/events/MessagesRedacted";
+import {GetRelationships} from "./schemes/commands/GetRelationships";
 
 export {
     // objects
@@ -272,6 +273,7 @@ export {
     UpdateSpaceMember,
     CreateRelationship,
     DeleteRelationship,
+    GetRelationships,
     UpdateRoomMember,
     Ping,
     ReportAbuse,
