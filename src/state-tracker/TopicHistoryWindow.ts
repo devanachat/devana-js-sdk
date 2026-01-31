@@ -329,14 +329,18 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
             return;
         }
 
-        // const refTopicIds = this.items
-        //     .filter(msg => msg.topicRef && ev.ids.includes(msg.id))
-        //     .map(msg => msg.topicRef as string);
+        const refTopicIds = this.items
+            .filter(msg => msg.topicRef && ev.ids.includes(msg.id))
+            .map(msg => msg.topicRef as string);
 
         this.delete(...ev.ids);
 
         if (this.length === 0) {
             await this.resetToLatest();
+        }
+
+        if (refTopicIds.length > 0) {
+            this.eventTarget.emit('reftopicsdeleted', refTopicIds);
         }
     }
 

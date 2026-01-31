@@ -1131,6 +1131,7 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
     key: "handleMessagesRedacted",
     value: function () {
       var _handleMessagesRedacted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0(ev) {
+        var refTopicIds;
         return _regenerator().w(function (_context0) {
           while (1) switch (_context0.n) {
             case 0:
@@ -1140,10 +1141,11 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
               }
               return _context0.a(2);
             case 1:
-              // const refTopicIds = this.items
-              //     .filter(msg => msg.topicRef && ev.ids.includes(msg.id))
-              //     .map(msg => msg.topicRef as string);
-
+              refTopicIds = this.items.filter(function (msg) {
+                return msg.topicRef && ev.ids.includes(msg.id);
+              }).map(function (msg) {
+                return msg.topicRef;
+              });
               this["delete"].apply(this, TopicHistoryWindow_toConsumableArray(ev.ids));
               if (!(this.length === 0)) {
                 _context0.n = 2;
@@ -1152,6 +1154,10 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
               _context0.n = 2;
               return this.resetToLatest();
             case 2:
+              if (refTopicIds.length > 0) {
+                this.eventTarget.emit('reftopicsdeleted', refTopicIds);
+              }
+            case 3:
               return _context0.a(2);
           }
         }, _callee0, this);
