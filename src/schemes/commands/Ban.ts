@@ -1,4 +1,5 @@
 import {ChatLocation} from "../ChatLocation";
+import {BanType} from "../BanObject";
 
 export interface Ban {
     userId: string;
@@ -6,4 +7,5 @@ export interface Ban {
     reason: string;
     expiresAt?: string;
     notify?: boolean;
+    type?: BanType;
 }

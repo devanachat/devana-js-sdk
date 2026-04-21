@@ -6,6 +6,7 @@ export interface RoomSummaryExtras {
 
 export interface RoomSummary {
     id: string;
+    spaceId?: string;
     name: string;
     description: string;
     memberCount: number;

@@ -6,4 +6,5 @@ export interface Session {
     protoVersion: string;
     state: UserState;
     user: User;
+    ict?: string;
 }

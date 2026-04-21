@@ -131,6 +131,9 @@ import {ReportAbuse} from "./schemes/commands/ReportAbuse";
 import {RedactMessages} from "./schemes/commands/RedactMessages";
 import {MessagesRedacted} from "./schemes/events/MessagesRedacted";
 import {GetRelationships} from "./schemes/commands/GetRelationships";
+import {GetUserInfo} from "./schemes/commands/GetUserInfo";
+import {UserInfo} from "./schemes/events/UserInfo";
+import {UserInformation} from "./schemes/UserInformation";
 
 export {
     // objects
@@ -165,6 +168,7 @@ export {
     UserRelationship,
     UserRelationshipType,
     CreateTopicInitialMessage,
+    UserInformation,
     // events
     Bye,
     Error,
@@ -220,6 +224,7 @@ export {
     RoomSummaryUpdated,
     Pong,
     MessagesRedacted,
+    UserInfo,
     // commands
     AssignRole,
     GetMessages,
@@ -277,5 +282,6 @@ export {
     UpdateRoomMember,
     Ping,
     ReportAbuse,
-    RedactMessages
+    RedactMessages,
+    GetUserInfo,
 };
