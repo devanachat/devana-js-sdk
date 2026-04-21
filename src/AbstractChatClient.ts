@@ -109,6 +109,8 @@ import {
     ReportAbuse,
     UpdateRoomMember,
     GetRelationships,
+    GetUserInfo,
+    UserInfo,
 } from "./types/src";
 import {EventTarget} from "./EventTarget";
 
@@ -188,6 +190,7 @@ export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap
     RelationshipDeleted: RelationshipDeleted,
     Relationships: Relationships,
     Pong: Pong,
+    UserInfo: UserInfo,
     // Space events
     DiscoverableSpaces: DiscoverableSpaces,
     SpaceJoined: SpaceJoined,
@@ -257,6 +260,7 @@ export type CommandsMap = {
     GetRelationships: CommandDefinition<GetRelationships, EventsMap['Relationships']>,
     Ping: CommandDefinition<Ping, EventsMap['Pong']>,
     ReportAbuse: CommandDefinition<ReportAbuse, EventsMap['Ok']>,
+    GetUserInfo: CommandDefinition<GetUserInfo, EventsMap['UserInfo']>,
      // Space commands
     GetDiscoverableSpaces: CommandDefinition<GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']>,
     JoinSpace: CommandDefinition<JoinSpace, EventsMap['SpaceJoined']>,
