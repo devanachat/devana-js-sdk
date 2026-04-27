@@ -685,7 +685,8 @@ var TraversableRemoteCollection = /*#__PURE__*/function (_ObservableIndexedObj) 
     TopicHistoryWindow_defineProperty(_this, "internalState", {
       current: WindowState.LIVE,
       ongoing: undefined,
-      limit: 50,
+      limit: 1000,
+      retainRatio: 1,
       fetchLimit: 50,
       lastFetchCount: 0,
       oldestId: null
@@ -720,7 +721,7 @@ var TraversableRemoteCollection = /*#__PURE__*/function (_ObservableIndexedObj) 
     }
 
     /**
-     * Maximum numer of items stored in window.
+     * Maximum number of items stored in window (High Watermark).
      * Null for unlimited.
      */
   }, {
@@ -730,11 +731,27 @@ var TraversableRemoteCollection = /*#__PURE__*/function (_ObservableIndexedObj) 
     }
 
     /**
-     * Maximum numer of items stored in window.
+     * Maximum number of items stored in window (High Watermark).
      * Null for unlimited.
      */,
     set: function set(value) {
       this.internalState.limit = value;
+    }
+
+    /**
+     * Percentage of limit to keep when trimming.
+     */
+  }, {
+    key: "retainRatio",
+    get: function get() {
+      return this.internalState.retainRatio;
+    }
+
+    /**
+     * Percentage of limit to keep when trimming.
+     */,
+    set: function set(value) {
+      this.internalState.retainRatio = value;
     }
   }, {
     key: "hasLatest",
@@ -772,7 +789,7 @@ var TraversableRemoteCollection = /*#__PURE__*/function (_ObservableIndexedObj) 
               this.internalState.ongoing = undefined;
               return _context.f(4);
             case 5:
-              this.deleteAll();
+              this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
               this.addItems(result, 'tail');
               this.internalState.current = WindowState.LATEST;
             case 6:
@@ -941,25 +958,28 @@ var TraversableRemoteCollection = /*#__PURE__*/function (_ObservableIndexedObj) 
       if (to === 'tail') {
         result = this.trimItemsArrayToLimit([].concat(TopicHistoryWindow_toConsumableArray(this.items), TopicHistoryWindow_toConsumableArray(newItems)), 'head');
       }
-      this.deleteAll();
+      this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
       this.set.apply(this, TopicHistoryWindow_toConsumableArray(result));
     }
 
     /**
-     * Return array with messages of count that matching limit.
+     * Return array with messages trimmed using High/Low Watermark strategy.
      */
   }, {
     key: "trimItemsArrayToLimit",
     value: function trimItemsArrayToLimit(items, from) {
-      if (this.limit === null) {
+      var highWatermark = this.limit;
+      if (highWatermark === null || items.length <= highWatermark) {
         return items;
       }
+      var lowWatermark = Math.floor(highWatermark * this.internalState.retainRatio);
       if (from === 'head') {
-        return items.slice(-this.limit);
+        return items.slice(-lowWatermark);
       }
       if (from === 'tail') {
-        return items.slice(0, this.limit);
+        return items.slice(0, lowWatermark);
       }
+      return items;
     }
   }]);
 }(ObservableIndexedObjectCollection);

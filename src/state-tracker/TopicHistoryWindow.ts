@@ -40,14 +40,16 @@ export abstract class TraversableRemoteCollection<
     protected internalState: {
         current: WindowState,
         ongoing?: WindowState,
-        limit: number | null,
+        limit: number | null, // Acts as High Watermark
+        retainRatio: number, // Percentage of limit to keep when trimming
         fetchLimit: number,
         lastFetchCount: number,
         oldestId: string | null,
     } = {
         current: WindowState.LIVE,
         ongoing: undefined,
-        limit: 50,
+        limit: 1000,
+        retainRatio: 1,
         fetchLimit: 50,
         lastFetchCount: 0,
         oldestId: null,
@@ -68,7 +70,7 @@ export abstract class TraversableRemoteCollection<
     }
 
     /**
-     * Maximum numer of items stored in window.
+     * Maximum number of items stored in window (High Watermark).
      * Null for unlimited.
      */
     public get limit(): number | null {
@@ -76,11 +78,25 @@ export abstract class TraversableRemoteCollection<
     }
 
     /**
-     * Maximum numer of items stored in window.
+     * Maximum number of items stored in window (High Watermark).
      * Null for unlimited.
      */
     public set limit(value: number | null) {
         this.internalState.limit = value;
+    }
+
+    /**
+     * Percentage of limit to keep when trimming.
+     */
+    public get retainRatio(): number {
+        return this.internalState.retainRatio;
+    }
+
+    /**
+     * Percentage of limit to keep when trimming.
+     */
+    public set retainRatio(value: number) {
+        this.internalState.retainRatio = value;
     }
 
     public get hasLatest(): boolean {
@@ -111,7 +127,7 @@ export abstract class TraversableRemoteCollection<
             this.internalState.ongoing = undefined;
         }
 
-        this.deleteAll();
+        this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
         this.addItems(result, 'tail');
         this.internalState.current = WindowState.LATEST;
     }
@@ -205,25 +221,31 @@ export abstract class TraversableRemoteCollection<
             result = this.trimItemsArrayToLimit([...this.items, ...newItems], 'head');
         }
 
-        this.deleteAll();
+        this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
         this.set(...result);
     }
 
     /**
-     * Return array with messages of count that matching limit.
+     * Return array with messages trimmed using High/Low Watermark strategy.
      */
     private trimItemsArrayToLimit(items: ItemT[], from: 'head' | 'tail'): ItemT[] {
-        if (this.limit === null) {
+        const highWatermark = this.limit;
+
+        if (highWatermark === null || items.length <= highWatermark) {
             return items;
         }
 
+        const lowWatermark = Math.floor(highWatermark * this.internalState.retainRatio);
+
         if (from === 'head') {
-            return items.slice(-this.limit);
+            return items.slice(-lowWatermark);
         }
 
         if (from === 'tail') {
-            return items.slice(0, this.limit);
+            return items.slice(0, lowWatermark);
         }
+
+        return items;
     }
 }
 

@@ -69,7 +69,8 @@ class TestableHistoryWindow extends TraversableRemoteCollection<SimpleMessage> {
 test('history window - fresh instance', async () => {
     const window = new TestableHistoryWindow();
     expect(window.items).toHaveLength(0);
-    expect(window.limit).toEqual(50);
+    expect(window.limit).toEqual(1000);
+    expect(window.retainRatio).toEqual(1);
 });
 
 test('history window - states change', async () => {
@@ -250,4 +251,37 @@ test('history window - hasOldest false when in LATEST and length == fetchLimit',
     expect(window.items).toHaveLength(3);
     expect(window.fetchLimit).toEqual(3);
     expect(window.hasOldest).toBeFalsy();
+});
+
+test('history window - high/low watermark limit (retainRatio)', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 6; // High Watermark
+    window.retainRatio = 0.5; // Low Watermark target = 6 * 0.5 = 3
+    window.fetchLimit = 3;
+
+    await window.resetToLatest(); // [7, 8, 9]
+
+    expect(window.items).toHaveLength(3);
+
+    await window.fetchPrevious(); // [4, 5, 6] added to 'head' -> [4, 5, 6, 7, 8, 9]
+
+    expect(window.items).toHaveLength(6);
+    [4, 5, 6, 7, 8, 9].forEach(id => expect(window.items.map(item => item.id)).toContain(id));
+
+    await window.fetchPrevious(); // [1, 2, 3] added to 'head' -> [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    expect(window.items).toHaveLength(3);
+    [1, 2, 3].forEach(id => expect(window.items.map(item => item.id)).toContain(id));
+    expect(window.state).toEqual(WindowState.PAST);
+
+    await window.fetchNext(); // [4, 5, 6] added to 'tail' -> [1, 2, 3, 4, 5, 6]
+
+    expect(window.items).toHaveLength(6);
+    [1, 2, 3, 4, 5, 6].forEach(id => expect(window.items.map(item => item.id)).toContain(id));
+
+    await window.fetchNext(); // [7, 8, 9] added to 'tail' -> [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    expect(window.items).toHaveLength(3);
+    [7, 8, 9].forEach(id => expect(window.items.map(item => item.id)).toContain(id));
+    expect(window.state).toEqual(WindowState.LATEST);
 });

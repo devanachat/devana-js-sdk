@@ -30,6 +30,7 @@ export declare abstract class TraversableRemoteCollection<ItemT, EventMapT exten
         current: WindowState;
         ongoing?: WindowState;
         limit: number | null;
+        retainRatio: number;
         fetchLimit: number;
         lastFetchCount: number;
         oldestId: string | null;
@@ -43,15 +44,23 @@ export declare abstract class TraversableRemoteCollection<ItemT, EventMapT exten
      */
     set fetchLimit(value: number);
     /**
-     * Maximum numer of items stored in window.
+     * Maximum number of items stored in window (High Watermark).
      * Null for unlimited.
      */
     get limit(): number | null;
     /**
-     * Maximum numer of items stored in window.
+     * Maximum number of items stored in window (High Watermark).
      * Null for unlimited.
      */
     set limit(value: number | null);
+    /**
+     * Percentage of limit to keep when trimming.
+     */
+    get retainRatio(): number;
+    /**
+     * Percentage of limit to keep when trimming.
+     */
+    set retainRatio(value: number);
     get hasLatest(): boolean;
     get hasOldest(): boolean;
     abstract createMirror(): TraversableRemoteCollection<ItemT, EventMapT>;
@@ -65,7 +74,7 @@ export declare abstract class TraversableRemoteCollection<ItemT, EventMapT exten
     protected refreshFetchedState(): Promise<void>;
     protected addItems(newItems: ItemT[], to: 'head' | 'tail'): void;
     /**
-     * Return array with messages of count that matching limit.
+     * Return array with messages trimmed using High/Low Watermark strategy.
      */
     private trimItemsArrayToLimit;
 }
