@@ -7,7 +7,12 @@ import {
     RoomDeleted,
     RoomLeft,
     TopicDeleted,
-    FollowedTopicUpdated, RoomJoined, NewTopic, Session, Room, MessageType,
+    FollowedTopicUpdated,
+    RoomJoined,
+    NewTopic,
+    Session,
+    Room,
+    Message, ChatLocation,
 } from "../types/src";
 import {
     IndexedCollection,
@@ -129,7 +134,7 @@ export class MessagesManager {
             return collection.items.reduce(
                 (previousValue: number, currentValue) => previousValue + (currentValue.missed ?? 0),
                 0,
-            );
+            ) as number;
         }
 
         return undefined;
@@ -141,6 +146,30 @@ export class MessagesManager {
      */
     public _deleteByTopicIds(roomId: string, ...topicIds: string[]): void {
         this.followedTopics.get(roomId)?.delete(...topicIds);
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public async _resolveLastMessage(location: ChatLocation): Promise<Message|null> {
+        // Try to get last message from history window (if cached)
+        let message: Message = await this.getRoomHistory(location.roomId)
+            .then(roomHistory => roomHistory?.getMessagesWindow(location.topicId, true))
+            .then(
+                historyWindow =>
+                    historyWindow?.hasLatest && historyWindow.getAt(historyWindow.length - 1)
+            );
+
+        if (!message) {
+            const result = await this.tracker.client.send('GetMessages', {
+                location,
+                limit: 1,
+            });
+            message = result.data?.messages[0];
+        }
+
+        return message || null;
     }
 
     private createHistoryForNewRoom(room: Room): void {

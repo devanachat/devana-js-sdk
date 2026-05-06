@@ -1442,16 +1442,21 @@ var RoomMessagesHistory = /*#__PURE__*/function () {
 
   /**
    * Returns a history window object for the given topic ID, allowing you to view message history.
+   * @param topicId
+   * @param peek If true, do not create a cache for this topic and do not allow it to collect new messages.
    */
   return RoomMessagesHistory_createClass(RoomMessagesHistory, [{
     key: "getMessagesWindow",
     value: (function () {
       var _getMessagesWindow = RoomMessagesHistory_asyncToGenerator(/*#__PURE__*/RoomMessagesHistory_regenerator().m(function _callee(topicId) {
-        var topic;
+        var peek,
+          topic,
+          _args = arguments;
         return RoomMessagesHistory_regenerator().w(function (_context) {
           while (1) switch (_context.n) {
             case 0:
-              if (this.historyWindows.has(topicId)) {
+              peek = _args.length > 1 && _args[1] !== undefined ? _args[1] : false;
+              if (!(!this.historyWindows.has(topicId) && !peek)) {
                 _context.n = 2;
                 break;
               }
@@ -1905,6 +1910,49 @@ var MessagesManager = /*#__PURE__*/function () {
       }
       (_this$followedTopics$ = this.followedTopics.get(roomId)) === null || _this$followedTopics$ === void 0 || _this$followedTopics$["delete"].apply(_this$followedTopics$, topicIds);
     }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+  }, {
+    key: "_resolveLastMessage",
+    value: (function () {
+      var _resolveLastMessage2 = MessagesManager_asyncToGenerator(/*#__PURE__*/MessagesManager_regenerator().m(function _callee7(location) {
+        var message, _result$data, result;
+        return MessagesManager_regenerator().w(function (_context7) {
+          while (1) switch (_context7.n) {
+            case 0:
+              _context7.n = 1;
+              return this.getRoomHistory(location.roomId).then(function (roomHistory) {
+                return roomHistory === null || roomHistory === void 0 ? void 0 : roomHistory.getMessagesWindow(location.topicId, true);
+              }).then(function (historyWindow) {
+                return (historyWindow === null || historyWindow === void 0 ? void 0 : historyWindow.hasLatest) && historyWindow.getAt(historyWindow.length - 1);
+              });
+            case 1:
+              message = _context7.v;
+              if (message) {
+                _context7.n = 3;
+                break;
+              }
+              _context7.n = 2;
+              return this.tracker.client.send('GetMessages', {
+                location: location,
+                limit: 1
+              });
+            case 2:
+              result = _context7.v;
+              message = (_result$data = result.data) === null || _result$data === void 0 ? void 0 : _result$data.messages[0];
+            case 3:
+              return _context7.a(2, message || null);
+          }
+        }, _callee7, this);
+      }));
+      function _resolveLastMessage(_x6) {
+        return _resolveLastMessage2.apply(this, arguments);
+      }
+      return _resolveLastMessage;
+    }())
   }, {
     key: "createHistoryForNewRoom",
     value: function createHistoryForNewRoom(room) {
@@ -1953,16 +2001,16 @@ var MessagesManager = /*#__PURE__*/function () {
   }, {
     key: "handleNewTopic",
     value: function () {
-      var _handleNewTopic = MessagesManager_asyncToGenerator(/*#__PURE__*/MessagesManager_regenerator().m(function _callee7(ev) {
+      var _handleNewTopic = MessagesManager_asyncToGenerator(/*#__PURE__*/MessagesManager_regenerator().m(function _callee8(ev) {
         var result, followedTopic;
-        return MessagesManager_regenerator().w(function (_context7) {
-          while (1) switch (_context7.n) {
+        return MessagesManager_regenerator().w(function (_context8) {
+          while (1) switch (_context8.n) {
             case 0:
               if (!this.followedTopics.has(ev.roomId)) {
-                _context7.n = 2;
+                _context8.n = 2;
                 break;
               }
-              _context7.n = 1;
+              _context8.n = 1;
               return this.tracker.client.send('GetFollowedTopics', {
                 location: {
                   roomId: ev.roomId,
@@ -1970,17 +2018,17 @@ var MessagesManager = /*#__PURE__*/function () {
                 }
               });
             case 1:
-              result = _context7.v;
+              result = _context8.v;
               followedTopic = result.data.followedTopics[0];
               if (followedTopic) {
                 this.followedTopics.get(ev.roomId).set(followedTopic);
               }
             case 2:
-              return _context7.a(2);
+              return _context8.a(2);
           }
-        }, _callee7, this);
+        }, _callee8, this);
       }));
-      function handleNewTopic(_x6) {
+      function handleNewTopic(_x7) {
         return _handleNewTopic.apply(this, arguments);
       }
       return handleNewTopic;
@@ -2639,18 +2687,48 @@ var RoomsManager = /*#__PURE__*/function () {
     }
   }, {
     key: "handleMessagesRedacted",
-    value: function handleMessagesRedacted(ev) {
-      // Remove redacted messages from topic and update metadata
-      var topics = this.topics.get(ev.location.roomId);
-      var topic = topics === null || topics === void 0 ? void 0 : topics.get(ev.location.topicId);
-      if (topic) {
-        var _topic$lastMessage;
-        topics.set(RoomsManager_objectSpread(RoomsManager_objectSpread({}, topic), {}, {
-          messageCount: Math.max(topic.messageCount - ev.ids.length, 0),
-          lastMessage: ev.ids.includes((_topic$lastMessage = topic.lastMessage) === null || _topic$lastMessage === void 0 ? void 0 : _topic$lastMessage.id) ? null : topic.lastMessage
-        }));
+    value: function () {
+      var _handleMessagesRedacted = RoomsManager_asyncToGenerator(/*#__PURE__*/RoomsManager_regenerator().m(function _callee6(ev) {
+        var topics, topic, messageCount, lastMessage, _t2;
+        return RoomsManager_regenerator().w(function (_context6) {
+          while (1) switch (_context6.n) {
+            case 0:
+              // Remove redacted messages from topic and update metadata
+              topics = this.topics.get(ev.location.roomId);
+              topic = topics === null || topics === void 0 ? void 0 : topics.get(ev.location.topicId);
+              if (!topic) {
+                _context6.n = 4;
+                break;
+              }
+              messageCount = Math.max(topic.messageCount - ev.ids.length, 0);
+              if (!(messageCount > 0)) {
+                _context6.n = 2;
+                break;
+              }
+              _context6.n = 1;
+              return this.messages._resolveLastMessage(ev.location);
+            case 1:
+              _t2 = _context6.v;
+              _context6.n = 3;
+              break;
+            case 2:
+              _t2 = null;
+            case 3:
+              lastMessage = _t2;
+              topics.set(RoomsManager_objectSpread(RoomsManager_objectSpread({}, topic), {}, {
+                messageCount: messageCount,
+                lastMessage: lastMessage
+              }));
+            case 4:
+              return _context6.a(2);
+          }
+        }, _callee6, this);
+      }));
+      function handleMessagesRedacted(_x5) {
+        return _handleMessagesRedacted.apply(this, arguments);
       }
-    }
+      return handleMessagesRedacted;
+    }()
   }]);
 }();
 ;// ./src/state-tracker/functions.ts

@@ -24,9 +24,11 @@ export class RoomMessagesHistory {
 
     /**
      * Returns a history window object for the given topic ID, allowing you to view message history.
+     * @param topicId
+     * @param peek If true, do not create a cache for this topic and do not allow it to collect new messages.
      */
-    public async getMessagesWindow(topicId: string): Promise<TopicHistoryWindow | undefined> {
-        if (!this.historyWindows.has(topicId)) {
+    public async getMessagesWindow(topicId: string, peek: boolean = false): Promise<TopicHistoryWindow | undefined> {
+        if (!this.historyWindows.has(topicId) && !peek) {
             const topic = (await this.tracker.rooms.getTopics(this.room.id, [topicId])).get(topicId);
 
             if (topic) {

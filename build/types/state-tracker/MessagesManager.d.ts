@@ -1,5 +1,5 @@
 import { ChatStateTracker } from "./ChatStateTracker";
-import { FollowedTopic } from "../types/src";
+import { FollowedTopic, Message, ChatLocation } from "../types/src";
 import { ObservableIndexedObjectCollection } from "../IndexedObjectCollection";
 import { RoomMessagesHistory } from "./RoomMessagesHistory";
 export declare class MessagesManager {
@@ -38,6 +38,11 @@ export declare class MessagesManager {
      * @internal
      */
     _deleteByTopicIds(roomId: string, ...topicIds: string[]): void;
+    /**
+     * For internal use.
+     * @internal
+     */
+    _resolveLastMessage(location: ChatLocation): Promise<Message | null>;
     private createHistoryForNewRoom;
     private handleNewMessage;
     private handleFollowedTopicUpdated;
