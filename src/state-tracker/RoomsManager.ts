@@ -369,11 +369,15 @@ export class RoomsManager {
     }
 
     private handleMessagesRedacted(ev: MessagesRedacted): void {
-        // Remove redacted messages from topic.lastMessage
+        // Remove redacted messages from topic and update metadata
         const topics = this.topics.get(ev.location.roomId);
-        const updatedTopics: Topic[] = topics.items
-            .filter(topic => topic.lastMessage?.id && ev.ids.includes(topic.lastMessage.id))
-            .map(topic => ({ ...topic, lastMessage: null }));
-        topics.set(...updatedTopics);
+        const topic = topics?.get(ev.location.topicId);
+        if (topic) {
+            topics.set({
+                ...topic,
+                messageCount: Math.max(topic.messageCount - ev.ids.length, 0),
+                lastMessage: ev.ids.includes(topic.lastMessage?.id) ? null : topic.lastMessage,
+            } as Topic);
+        }
     }
 }

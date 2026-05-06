@@ -2640,17 +2640,16 @@ var RoomsManager = /*#__PURE__*/function () {
   }, {
     key: "handleMessagesRedacted",
     value: function handleMessagesRedacted(ev) {
-      // Remove redacted messages from topic.lastMessage
+      // Remove redacted messages from topic and update metadata
       var topics = this.topics.get(ev.location.roomId);
-      var updatedTopics = topics.items.filter(function (topic) {
+      var topic = topics === null || topics === void 0 ? void 0 : topics.get(ev.location.topicId);
+      if (topic) {
         var _topic$lastMessage;
-        return ((_topic$lastMessage = topic.lastMessage) === null || _topic$lastMessage === void 0 ? void 0 : _topic$lastMessage.id) && ev.ids.includes(topic.lastMessage.id);
-      }).map(function (topic) {
-        return RoomsManager_objectSpread(RoomsManager_objectSpread({}, topic), {}, {
-          lastMessage: null
-        });
-      });
-      topics.set.apply(topics, RoomsManager_toConsumableArray(updatedTopics));
+        topics.set(RoomsManager_objectSpread(RoomsManager_objectSpread({}, topic), {}, {
+          messageCount: Math.max(topic.messageCount - ev.ids.length, 0),
+          lastMessage: ev.ids.includes((_topic$lastMessage = topic.lastMessage) === null || _topic$lastMessage === void 0 ? void 0 : _topic$lastMessage.id) ? null : topic.lastMessage
+        }));
+      }
     }
   }]);
 }();
