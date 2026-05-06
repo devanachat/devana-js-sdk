@@ -116,9 +116,9 @@ export abstract class TraversableRemoteCollection<
             return;
         }
 
-        this.internalState.ongoing = WindowState.LATEST;
-
         let result;
+        const originalState = this.state;
+        this.internalState.ongoing = WindowState.LATEST;
 
         try {
             result = await this.fetchLatestItems();
@@ -130,6 +130,7 @@ export abstract class TraversableRemoteCollection<
         this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
         this.addItems(result, 'tail');
         this.internalState.current = WindowState.LATEST;
+        this.emitChangeWithDiff(true, originalState);
     }
 
     public async fetchPrevious(): Promise<void> {
@@ -137,9 +138,9 @@ export abstract class TraversableRemoteCollection<
             return;
         }
 
-        this.internalState.ongoing = WindowState.PAST;
-
         let result;
+        const originalState = this.state;
+        this.internalState.ongoing = WindowState.PAST;
 
         try {
             result = await this.fetchItemsBefore();
@@ -163,11 +164,13 @@ export abstract class TraversableRemoteCollection<
                 this.internalState.current = WindowState.OLDEST;
             }
 
+            this.emitChangeWithDiff(false, originalState);
             return;
         }
 
         this.addItems(result, 'head');
         await this.refreshFetchedState();
+        this.emitChangeWithDiff(true, originalState);
     }
 
     public async fetchNext(): Promise<void> {
@@ -175,9 +178,9 @@ export abstract class TraversableRemoteCollection<
             return;
         }
 
-        this.internalState.ongoing = WindowState.PAST;
-
         let result;
+        const originalState = this.state;
+        this.internalState.ongoing = WindowState.PAST;
 
         try {
             result = await this.fetchItemsAfter();
@@ -194,6 +197,7 @@ export abstract class TraversableRemoteCollection<
         if (result.length) {
             this.addItems(result, 'tail');
             await this.refreshFetchedState();
+            this.emitChangeWithDiff(true, originalState);
             return;
         }
     }
@@ -221,8 +225,15 @@ export abstract class TraversableRemoteCollection<
             result = this.trimItemsArrayToLimit([...this.items, ...newItems], 'head');
         }
 
-        this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
-        this.set(...result);
+        // Directly calls to prevent event emit.
+        this._items.deleteAll();
+        this._items.set(...(result.map(item => [this.getId(item), item] as [string, ItemT])));
+    }
+
+    protected emitChangeWithDiff(itemChanged: boolean, originalState: WindowState): void {
+        if (itemChanged || originalState !== this.state) {
+            this.eventTarget.emit('change', { setItems: Array.from(this._items.items.keys()) })
+        }
     }
 
     /**
@@ -336,36 +347,6 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         }
     }
 
-    private async handleNewMessage(ev: NewMessage): Promise<void> {
-        if (
-            [WindowState.LATEST, WindowState.LIVE].includes(this.state)
-            && ev.message.location.roomId === this.roomId
-            && ev.message.location.topicId === this.topicId
-        ) {
-            this.addItems([ev.message], 'tail');
-        }
-    }
-
-    private async handleMessagesRedacted(ev: MessagesRedacted): Promise<void> {
-        if (ev.location.topicId !== this.topicId || ev.location.roomId !== this.roomId) {
-            return;
-        }
-
-        const refTopicIds = this.items
-            .filter(msg => msg.topicRef && ev.ids.includes(msg.id))
-            .map(msg => msg.topicRef as string);
-
-        this.delete(...ev.ids);
-
-        if (this.length === 0) {
-            await this.resetToLatest();
-        }
-
-        if (refTopicIds.length > 0) {
-            this.eventTarget.emit('reftopicsdeleted', refTopicIds);
-        }
-    }
-
     protected async fetchItemsAfter(): Promise<Message[] | null> {
         const afterId = this.getAt(this.length - 1)?.id;
 
@@ -432,5 +413,37 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
     protected async isLatestItemLoaded(): Promise<boolean> {
         const lastMessageId = await this.getLatestMessageId();
         return lastMessageId ? this.has(lastMessageId) : true;
+    }
+
+    private async handleNewMessage(ev: NewMessage): Promise<void> {
+        if (
+            [WindowState.LATEST, WindowState.LIVE].includes(this.state)
+            && ev.message.location.roomId === this.roomId
+            && ev.message.location.topicId === this.topicId
+        ) {
+            const originalState = this.state;
+            this.addItems([ev.message], 'tail');
+            this.emitChangeWithDiff(true, originalState);
+        }
+    }
+
+    private async handleMessagesRedacted(ev: MessagesRedacted): Promise<void> {
+        if (ev.location.topicId !== this.topicId || ev.location.roomId !== this.roomId) {
+            return;
+        }
+
+        const refTopicIds = this.items
+            .filter(msg => msg.topicRef && ev.ids.includes(msg.id))
+            .map(msg => msg.topicRef as string);
+
+        this.delete(...ev.ids);
+
+        if (this.length === 0) {
+            await this.resetToLatest();
+        }
+
+        if (refTopicIds.length > 0) {
+            this.eventTarget.emit('reftopicsdeleted', refTopicIds);
+        }
     }
 }

@@ -73,6 +73,7 @@ export declare abstract class TraversableRemoteCollection<ItemT, EventMapT exten
     protected abstract isLatestItemLoaded(): Promise<boolean>;
     protected refreshFetchedState(): Promise<void>;
     protected addItems(newItems: ItemT[], to: 'head' | 'tail'): void;
+    protected emitChangeWithDiff(itemChanged: boolean, originalState: WindowState): void;
     /**
      * Return array with messages trimmed using High/Low Watermark strategy.
      */
@@ -104,12 +105,12 @@ export declare class TopicHistoryWindow extends TraversableRemoteCollection<Mess
      * @internal
      */
     _updateMessageReference(refTopic: Topic): void;
-    private handleNewMessage;
-    private handleMessagesRedacted;
     protected fetchItemsAfter(): Promise<Message[] | null>;
     protected fetchItemsBefore(): Promise<Message[] | null>;
     protected fetchLatestItems(): Promise<Message[]>;
     private getTopic;
     private getLatestMessageId;
     protected isLatestItemLoaded(): Promise<boolean>;
+    private handleNewMessage;
+    private handleMessagesRedacted;
 }
