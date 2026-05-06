@@ -2470,14 +2470,14 @@ var RoomsManager = /*#__PURE__*/function () {
             // or user is not in room
             continue;
           }
-          var roomMember = roomMembers.get(ev.userId);
-          var user = roomMember.spaceMember.user;
 
-          // Update space member but first fill user object (it's null in event object)
-          roomMember.spaceMember = RoomsManager_objectSpread(RoomsManager_objectSpread({}, ev.member), {}, {
-            user: user
-          });
-          roomMembers.set(roomMember);
+          // Update space member in roomMember, but first fill the user object (it's null in event)
+          var roomMember = roomMembers.get(ev.userId);
+          var spaceMember = ev.member;
+          spaceMember.user = roomMember.spaceMember.user;
+          roomMembers.set(RoomsManager_objectSpread(RoomsManager_objectSpread({}, roomMember), {}, {
+            spaceMember: spaceMember
+          }));
         }
       } catch (err) {
         _iterator2.e(err);
@@ -2577,8 +2577,9 @@ var RoomsManager = /*#__PURE__*/function () {
         this.topics.get(ev.location.roomId).set(ev.topic);
       }
       if (room.defaultTopic.id === ev.topic.id) {
-        room.defaultTopic = ev.topic;
-        this.list.set(room);
+        var newRoom = RoomsManager_objectSpread({}, room);
+        newRoom.defaultTopic = ev.topic;
+        this.list.set(newRoom);
       }
     }
   }, {

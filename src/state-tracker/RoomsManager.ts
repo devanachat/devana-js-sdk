@@ -153,18 +153,17 @@ export class RoomsManager {
         for (const room of this.list.findBy('spaceId', ev.spaceId).items) {
             const roomMembers = this.members.get(room.id);
 
-            if (! roomMembers || ! roomMembers.has(ev.userId)) {
+            if (!roomMembers || !roomMembers.has(ev.userId)) {
                 // Skip update if member list for this room is not loaded
                 // or user is not in room
                 continue;
             }
 
+            // Update space member in roomMember, but first fill the user object (it's null in event)
             const roomMember = roomMembers.get(ev.userId);
-            const user = roomMember.spaceMember.user;
-
-            // Update space member but first fill user object (it's null in event object)
-            roomMember.spaceMember = {...ev.member, user};
-            roomMembers.set(roomMember);
+            const spaceMember = ev.member;
+            spaceMember.user = roomMember.spaceMember.user;
+            roomMembers.set({ ...roomMember, spaceMember });
         }
     }
 
@@ -243,8 +242,9 @@ export class RoomsManager {
         }
 
         if (room.defaultTopic.id === ev.topic.id) {
-            room.defaultTopic = ev.topic;
-            this.list.set(room);
+            const newRoom = { ...room };
+            newRoom.defaultTopic = ev.topic;
+            this.list.set(newRoom);
         }
     }
 
