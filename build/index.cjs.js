@@ -2101,6 +2101,9 @@ var RoomsManager = /*#__PURE__*/function () {
     this.tracker.client.on('NewMessage', function (ev) {
       return _this.handleNewMessage(ev);
     });
+    this.tracker.client.on('MessagesRedacted', function (ev) {
+      return _this.handleMessagesRedacted(ev);
+    });
     this.tracker.client.on('NewTopic', function (ev) {
       return _this.handleNewTopic(ev);
     });
@@ -2633,6 +2636,21 @@ var RoomsManager = /*#__PURE__*/function () {
           defaultTopic: newTopic
         }));
       }
+    }
+  }, {
+    key: "handleMessagesRedacted",
+    value: function handleMessagesRedacted(ev) {
+      // Remove redacted messages from topic.lastMessage
+      var topics = this.topics.get(ev.location.roomId);
+      var updatedTopics = topics.items.filter(function (topic) {
+        var _topic$lastMessage;
+        return ((_topic$lastMessage = topic.lastMessage) === null || _topic$lastMessage === void 0 ? void 0 : _topic$lastMessage.id) && ev.ids.includes(topic.lastMessage.id);
+      }).map(function (topic) {
+        return RoomsManager_objectSpread(RoomsManager_objectSpread({}, topic), {}, {
+          lastMessage: null
+        });
+      });
+      topics.set.apply(topics, RoomsManager_toConsumableArray(updatedTopics));
     }
   }]);
 }();

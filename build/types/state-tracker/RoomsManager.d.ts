@@ -55,4 +55,5 @@ export declare class RoomsManager {
     private handleSession;
     private handleUserUpdated;
     private handleNewMessage;
+    private handleMessagesRedacted;
 }

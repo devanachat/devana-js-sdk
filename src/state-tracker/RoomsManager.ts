@@ -1,5 +1,6 @@
 import {IndexedCollection, ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
 import {
+    MessagesRedacted,
     NewMessage,
     NewTopic,
     Room, RoomDeleted,
@@ -29,6 +30,7 @@ export class RoomsManager {
         this.messages = new MessagesManager(tracker);
 
         this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
+        this.tracker.client.on('MessagesRedacted', ev => this.handleMessagesRedacted(ev));
         this.tracker.client.on('NewTopic', ev => this.handleNewTopic(ev));
         this.tracker.client.on('TopicDeleted', ev => this.handleTopicDeleted(ev));
         this.tracker.client.on('RoomJoined', ev => this.handleRoomJoined(ev));
@@ -364,5 +366,14 @@ export class RoomsManager {
         if (room.defaultTopic?.id === ev.message.location.topicId) {
             this.list.set({ ...room, defaultTopic: newTopic });
         }
+    }
+
+    private handleMessagesRedacted(ev: MessagesRedacted): void {
+        // Remove redacted messages from topic.lastMessage
+        const topics = this.topics.get(ev.location.roomId);
+        const updatedTopics: Topic[] = topics.items
+            .filter(topic => topic.lastMessage?.id && ev.ids.includes(topic.lastMessage.id))
+            .map(topic => ({ ...topic, lastMessage: null }));
+        topics.set(...updatedTopics);
     }
 }
