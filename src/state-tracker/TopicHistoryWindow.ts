@@ -202,11 +202,39 @@ export abstract class TraversableRemoteCollection<
         }
     }
 
+    public async jumpTo(id: string): Promise<void> {
+        if (this.internalState.ongoing || this._items.has(id)) {
+            return;
+        }
+
+        let result: ItemT[] | null;
+        const originalState = this.state;
+        this.internalState.ongoing = WindowState.PAST;
+
+        try {
+            result = await this.fetchItemsAround(id);
+            this.internalState.lastFetchCount = result ? result.length : 0;
+        } finally {
+            this.internalState.ongoing = undefined;
+        }
+
+        if (!result) {
+            return;
+        }
+
+        this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
+        this.addItems(result, 'tail');
+        this.internalState.current = WindowState.PAST;
+        this.emitChangeWithDiff(true, originalState);
+    }
+
     protected abstract fetchLatestItems(): Promise<ItemT[]>;
 
     protected abstract fetchItemsBefore(): Promise<ItemT[] | null>;
 
     protected abstract fetchItemsAfter(): Promise<ItemT[] | null>;
+
+    protected abstract fetchItemsAround(id: string): Promise<ItemT[] | null>;
 
     protected abstract isLatestItemLoaded(): Promise<boolean>;
 
@@ -334,6 +362,13 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         return super.fetchPrevious();
     }
 
+    public async jumpTo(id: string): Promise<void> {
+        if (this.internalState.traverseLock) {
+            return;
+        }
+        return super.jumpTo(id);
+    }
+
     /**
      * For internal use.
      * @internal
@@ -358,6 +393,20 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         const result = await this.tracker.client.send('GetMessages', {
             location: {roomId: this.roomId, topicId: this.topicId},
             after: afterId,
+            limit: this.internalState.fetchLimit,
+        });
+
+        if (result.error) {
+            throw new Error(`Cannot fetch messages: ${result.error.message}`);
+        }
+
+        return result.data.messages;
+    }
+
+    protected async fetchItemsAround(id: string): Promise<Message[] | null> {
+        const result = await this.tracker.client.send('GetMessages', {
+            location: {roomId: this.roomId, topicId: this.topicId},
+            around: id,
             limit: this.internalState.fetchLimit,
         });
 

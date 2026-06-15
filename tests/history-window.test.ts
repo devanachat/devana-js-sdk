@@ -18,12 +18,32 @@ const messages: SimpleMessage[] = [
 ];
 
 class TestableHistoryWindow extends TraversableRemoteCollection<SimpleMessage> {
+    declare protected internalState: TraversableRemoteCollection<SimpleMessage>['internalState'] & {
+        traverseLock: boolean,
+    };
+
     public createMirror(): TraversableRemoteCollection<SimpleMessage> {
         throw new Error('Method not implemented.');
     }
 
     public constructor() {
         super('id');
+        this.internalState.traverseLock = false;
+    }
+
+    public async setTraverseLock(lock: boolean): Promise<void> {
+        this.internalState.traverseLock = lock;
+
+        if (lock && (this.state !== WindowState.LIVE && this.state !== WindowState.LATEST)) {
+            await super.resetToLatest();
+        }
+    }
+
+    public async jumpTo(id: string): Promise<void> {
+        if (this.internalState.traverseLock) {
+            return;
+        }
+        return super.jumpTo(id);
     }
 
     public simulateNewMessageReceived(): void {
@@ -47,6 +67,18 @@ class TestableHistoryWindow extends TraversableRemoteCollection<SimpleMessage> {
         }
         // Return only 3 items
         return messages.slice(after + 1, after + 4);
+    }
+
+    protected async fetchItemsAround(id: string): Promise<SimpleMessage[] | null> {
+        const numericId = parseInt(id, 10);
+        const item = messages.find(m => m.id === numericId);
+        if (!item) {
+            return null;
+        }
+        const index = messages.indexOf(item);
+        const start = Math.max(0, index - Math.floor(this.fetchLimit / 2));
+        const end = Math.min(messages.length, index + Math.ceil(this.fetchLimit / 2));
+        return messages.slice(start, end);
     }
 
     protected async fetchItemsBefore(): Promise<SimpleMessage[]> {
@@ -171,6 +203,57 @@ test('history window - reset to latest', async () => {
     expect(window.state).toEqual(WindowState.PAST);
 
     await window.resetToLatest();
+
+    expect(window.state).toEqual(WindowState.LATEST);
+    expect(window.items).toHaveLength(3);
+    [7,8,9].forEach(id => expect(window.items.map(item => item.id)).toContain(id));
+});
+
+test('history window - jump to message', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 5;
+    window.fetchLimit = 3;
+
+    await window.resetToLatest(); // [7,8,9]
+    await window.jumpTo('2'); // [1,2,3]
+
+    expect(window.state).toEqual(WindowState.PAST);
+    expect(window.items).toHaveLength(3);
+    [1,2,3].forEach(id => expect(window.items.map(item => item.id)).toContain(id));
+});
+
+test('history window - jump to message already in window', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 5;
+    window.fetchLimit = 3;
+
+    await window.resetToLatest(); // [7,8,9]
+    const itemsBeforeJump = window.items;
+    await window.jumpTo('8');
+
+    expect(window.items).toEqual(itemsBeforeJump);
+});
+
+test('history window - jump to non-existent message', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 5;
+    window.fetchLimit = 3;
+
+    await window.resetToLatest(); // [7,8,9]
+    const itemsBeforeJump = window.items;
+    await window.jumpTo('99'); // non-existent
+
+    expect(window.items).toEqual(itemsBeforeJump);
+});
+
+test('history window - jump to message with traverseLock', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 5;
+    window.fetchLimit = 3;
+
+    await window.resetToLatest(); // [7,8,9]
+    await window.setTraverseLock(true);
+    await window.jumpTo('2');
 
     expect(window.state).toEqual(WindowState.LATEST);
     expect(window.items).toHaveLength(3);

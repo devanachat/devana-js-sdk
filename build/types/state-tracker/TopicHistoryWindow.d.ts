@@ -67,9 +67,11 @@ export declare abstract class TraversableRemoteCollection<ItemT, EventMapT exten
     resetToLatest(): Promise<void>;
     fetchPrevious(): Promise<void>;
     fetchNext(): Promise<void>;
+    jumpTo(id: string): Promise<void>;
     protected abstract fetchLatestItems(): Promise<ItemT[]>;
     protected abstract fetchItemsBefore(): Promise<ItemT[] | null>;
     protected abstract fetchItemsAfter(): Promise<ItemT[] | null>;
+    protected abstract fetchItemsAround(id: string): Promise<ItemT[] | null>;
     protected abstract isLatestItemLoaded(): Promise<boolean>;
     protected refreshFetchedState(): Promise<void>;
     protected addItems(newItems: ItemT[], to: 'head' | 'tail'): void;
@@ -100,12 +102,14 @@ export declare class TopicHistoryWindow extends TraversableRemoteCollection<Mess
     resetToLatest(): Promise<void>;
     fetchNext(): Promise<void>;
     fetchPrevious(): Promise<void>;
+    jumpTo(id: string): Promise<void>;
     /**
      * For internal use.
      * @internal
      */
     _updateMessageReference(refTopic: Topic): void;
     protected fetchItemsAfter(): Promise<Message[] | null>;
+    protected fetchItemsAround(id: string): Promise<Message[] | null>;
     protected fetchItemsBefore(): Promise<Message[] | null>;
     protected fetchLatestItems(): Promise<Message[]>;
     private getTopic;
