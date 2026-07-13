@@ -77,9 +77,8 @@ import { Owners } from "./schemes/events/Owners";
 import { Ok } from "./schemes/events/Ok";
 import {FollowTopic} from "./schemes/commands/FollowTopic";
 import {FollowedTopics} from "./schemes/events/FollowedTopics";
-import {FollowedTopic} from "./schemes/FollowedTopic";
-import {UnfollowTopic} from "./schemes/commands/UnfollowTopic";
-import {TopicUnfollowed} from "./schemes/events/TopicUnfollowed";
+import {FollowedTopic, NotificationLevel} from "./schemes/FollowedTopic";
+import {UpdateFollowedTopic} from "./schemes/commands/UpdateFollowedTopic";
 import {TopicFollowed} from "./schemes/events/TopicFollowed";
 import {GetFollowedTopics} from "./schemes/commands/GetFollowedTopics";
 import {FollowedTopicUpdated} from "./schemes/events/FollowedTopicUpdated";
@@ -155,6 +154,7 @@ export {
     SpaceMember,
     Topic,
     FollowedTopic,
+    NotificationLevel,
     User,
     UserState,
     PermissionOverwritesValue,
@@ -178,7 +178,6 @@ export {
     NewRoom,
     NewTopic,
     TopicFollowed,
-    TopicUnfollowed,
     FollowedTopics,
     FollowedTopicUpdated,
     ComputedPermissions,
@@ -235,7 +234,7 @@ export {
     CreateSpace,
     CreateTopic,
     FollowTopic,
-    UnfollowTopic,
+    UpdateFollowedTopic,
     GetFollowedTopics,
     DeassignRole,
     DeleteRole,
