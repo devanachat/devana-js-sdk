@@ -8,6 +8,7 @@ export declare class MessagesManager {
     private readonly followedTopics;
     private readonly followedTopicsPromises;
     private readonly deferredSession;
+    private readonly unreadSummariesCache;
     constructor(tracker: ChatStateTracker);
     /**
      * Get history manager for given room ID.
@@ -25,14 +26,17 @@ export declare class MessagesManager {
      */
     getRoomFollowedTopics(roomId: string): Promise<ObservableIndexedObjectCollection<FollowedTopic> | undefined>;
     /**
-     * Batch acknowledge all missed messages from any topics in given room.
+     * Batch acknowledge all messages for given room.
      */
-    ackRoomFollowedTopics(roomId: string): Promise<void>;
+    ackRoom(roomId: string): Promise<void>;
     /**
-     * Calculate missed messages from any topic in given room.
+     * Calculate missed messages with mentions from any topic in given room.
      * @return Undefined if you are not in room.
      */
-    calculateRoomMissedMessages(roomId: string): Promise<number | undefined>;
+    summarizeUnreadMessages(location: ChatLocation): Promise<{
+        mentionCount: number;
+        isUnread: boolean;
+    }>;
     /**
      * For internal use. If you want to delete the message, execute a proper command on client object.
      * @internal
@@ -43,11 +47,15 @@ export declare class MessagesManager {
      * @internal
      */
     _resolveLastMessage(location: ChatLocation): Promise<Message | null>;
+    /**
+     * Wyczyść cache celowo, tylko dla lokalizacji których dotyczy zmiana.
+     */
+    private invalidateUnreadSummaries;
+    private invalidateUnreadSummariesForRooms;
     private createHistoryForNewRoom;
     private handleNewMessage;
     private handleFollowedTopicUpdated;
     private handleTopicFollowed;
-    private handleTopicUnfollowed;
     private handleRoomDeleted;
     private handleRoomJoin;
     private handleRoomLeft;
