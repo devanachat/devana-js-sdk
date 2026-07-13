@@ -1705,12 +1705,12 @@ var RoomMessagesHistory = /*#__PURE__*/function () {
 }();
 ;// ./src/state-tracker/MessagesManager.ts
 function MessagesManager_typeof(o) { "@babel/helpers - typeof"; return MessagesManager_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, MessagesManager_typeof(o); }
+function MessagesManager_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function MessagesManager_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? MessagesManager_ownKeys(Object(t), !0).forEach(function (r) { MessagesManager_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : MessagesManager_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function MessagesManager_toConsumableArray(r) { return MessagesManager_arrayWithoutHoles(r) || MessagesManager_iterableToArray(r) || MessagesManager_unsupportedIterableToArray(r) || MessagesManager_nonIterableSpread(); }
 function MessagesManager_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function MessagesManager_iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
 function MessagesManager_arrayWithoutHoles(r) { if (Array.isArray(r)) return MessagesManager_arrayLikeToArray(r); }
-function MessagesManager_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function MessagesManager_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? MessagesManager_ownKeys(Object(t), !0).forEach(function (r) { MessagesManager_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : MessagesManager_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function MessagesManager_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = MessagesManager_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function MessagesManager_unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return MessagesManager_arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? MessagesManager_arrayLikeToArray(r, a) : void 0; } }
 function MessagesManager_arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
@@ -1735,6 +1735,7 @@ var MessagesManager = /*#__PURE__*/function () {
     MessagesManager_defineProperty(this, "followedTopics", new IndexedCollection());
     MessagesManager_defineProperty(this, "followedTopicsPromises", new PromiseRegistry());
     MessagesManager_defineProperty(this, "deferredSession", new DeferredTask());
+    MessagesManager_defineProperty(this, "unreadSummariesCache", new Map());
     this.tracker = tracker;
     this.tracker.client.on('Session', function (ev) {
       return _this.handleSession(ev);
@@ -1750,9 +1751,6 @@ var MessagesManager = /*#__PURE__*/function () {
     });
     this.tracker.client.on('TopicFollowed', function (ev) {
       return _this.handleTopicFollowed(ev);
-    });
-    this.tracker.client.on('TopicUnfollowed', function (ev) {
-      return _this.handleTopicUnfollowed(ev);
     });
     this.tracker.client.on('NewMessage', function (ev) {
       return _this.handleNewMessage(ev);
@@ -1928,13 +1926,13 @@ var MessagesManager = /*#__PURE__*/function () {
       return getRoomFollowedTopics;
     }()
     /**
-     * Batch acknowledge all missed messages from any topics in given room.
+     * Batch acknowledge all messages for given room.
      */
     )
   }, {
-    key: "ackRoomFollowedTopics",
+    key: "ackRoom",
     value: (function () {
-      var _ackRoomFollowedTopics = MessagesManager_asyncToGenerator(/*#__PURE__*/MessagesManager_regenerator().m(function _callee5(roomId) {
+      var _ackRoom = MessagesManager_asyncToGenerator(/*#__PURE__*/MessagesManager_regenerator().m(function _callee5(roomId) {
         var collection, _iterator, _step, followedTopic, _t2;
         return MessagesManager_regenerator().w(function (_context5) {
           while (1) switch (_context5.p = _context5.n) {
@@ -1958,7 +1956,7 @@ var MessagesManager = /*#__PURE__*/function () {
                 break;
               }
               followedTopic = _step.value;
-              if (!followedTopic.missed) {
+              if (!followedTopic.isUnread) {
                 _context5.n = 5;
                 break;
               }
@@ -1985,45 +1983,160 @@ var MessagesManager = /*#__PURE__*/function () {
           }
         }, _callee5, this, [[3, 7, 8, 9]]);
       }));
-      function ackRoomFollowedTopics(_x4) {
-        return _ackRoomFollowedTopics.apply(this, arguments);
+      function ackRoom(_x4) {
+        return _ackRoom.apply(this, arguments);
       }
-      return ackRoomFollowedTopics;
+      return ackRoom;
     }()
     /**
-     * Calculate missed messages from any topic in given room.
+     * Calculate missed messages with mentions from any topic in given room.
      * @return Undefined if you are not in room.
      */
     )
   }, {
-    key: "calculateRoomMissedMessages",
+    key: "summarizeUnreadMessages",
     value: (function () {
-      var _calculateRoomMissedMessages = MessagesManager_asyncToGenerator(/*#__PURE__*/MessagesManager_regenerator().m(function _callee6(roomId) {
-        var collection;
+      var _summarizeUnreadMessages = MessagesManager_asyncToGenerator(/*#__PURE__*/MessagesManager_regenerator().m(function _callee6(location) {
+        var cacheKey, roomIds, targetTopicId, rooms, mentionCount, isUnread, _iterator2, _step2, roomId, collection, _iterator3, _step3, _topic$mentionCount, topic, result, _t3, _t4;
         return MessagesManager_regenerator().w(function (_context6) {
-          while (1) switch (_context6.n) {
+          while (1) switch (_context6.p = _context6.n) {
             case 0:
-              _context6.n = 1;
-              return this.getRoomFollowedTopics(roomId);
-            case 1:
-              collection = _context6.v;
-              if (!collection) {
-                _context6.n = 2;
+              cacheKey = location.topicId ? "topic:".concat(location.roomId, ":").concat(location.topicId) : location.roomId ? "room:".concat(location.roomId) : location.spaceId ? "space:".concat(location.spaceId) : 'spaceless';
+              if (!this.unreadSummariesCache.has(cacheKey)) {
+                _context6.n = 1;
                 break;
               }
-              return _context6.a(2, collection.items.reduce(function (previousValue, currentValue) {
-                var _currentValue$missed;
-                return previousValue + ((_currentValue$missed = currentValue.missed) !== null && _currentValue$missed !== void 0 ? _currentValue$missed : 0);
-              }, 0));
+              return _context6.a(2, this.unreadSummariesCache.get(cacheKey));
+            case 1:
+              roomIds = [];
+              _context6.n = 2;
+              return this.tracker.rooms.get();
             case 2:
-              return _context6.a(2, undefined);
+              rooms = _context6.v;
+              if (!location.topicId) {
+                _context6.n = 4;
+                break;
+              }
+              if (location.roomId) {
+                _context6.n = 3;
+                break;
+              }
+              throw new Error("roomId is required when querying by topicId");
+            case 3:
+              roomIds = [location.roomId];
+              targetTopicId = location.topicId;
+              _context6.n = 8;
+              break;
+            case 4:
+              if (!location.roomId) {
+                _context6.n = 5;
+                break;
+              }
+              roomIds = [location.roomId];
+              _context6.n = 8;
+              break;
+            case 5:
+              if (!location.spaceId) {
+                _context6.n = 7;
+                break;
+              }
+              _context6.n = 6;
+              return this.cacheSpaceFollowedTopics(location.spaceId);
+            case 6:
+              roomIds = rooms.findBy('spaceId', location.spaceId).items.map(function (r) {
+                return r.id;
+              });
+              _context6.n = 8;
+              break;
+            case 7:
+              roomIds = rooms.items.filter(function (r) {
+                return !r.spaceId;
+              }).map(function (r) {
+                return r.id;
+              });
+            case 8:
+              mentionCount = 0;
+              isUnread = false;
+              _iterator2 = MessagesManager_createForOfIteratorHelper(roomIds);
+              _context6.p = 9;
+              _iterator2.s();
+            case 10:
+              if ((_step2 = _iterator2.n()).done) {
+                _context6.n = 21;
+                break;
+              }
+              roomId = _step2.value;
+              _context6.n = 11;
+              return this.getRoomFollowedTopics(roomId);
+            case 11:
+              collection = _context6.v;
+              if (collection) {
+                _context6.n = 12;
+                break;
+              }
+              return _context6.a(3, 20);
+            case 12:
+              _iterator3 = MessagesManager_createForOfIteratorHelper(collection.items);
+              _context6.p = 13;
+              _iterator3.s();
+            case 14:
+              if ((_step3 = _iterator3.n()).done) {
+                _context6.n = 17;
+                break;
+              }
+              topic = _step3.value;
+              if (!(targetTopicId && topic.location.topicId !== targetTopicId)) {
+                _context6.n = 15;
+                break;
+              }
+              return _context6.a(3, 16);
+            case 15:
+              if (topic.isUnread) {
+                isUnread = true;
+              }
+              mentionCount += (_topic$mentionCount = topic.mentionCount) !== null && _topic$mentionCount !== void 0 ? _topic$mentionCount : 0;
+            case 16:
+              _context6.n = 14;
+              break;
+            case 17:
+              _context6.n = 19;
+              break;
+            case 18:
+              _context6.p = 18;
+              _t3 = _context6.v;
+              _iterator3.e(_t3);
+            case 19:
+              _context6.p = 19;
+              _iterator3.f();
+              return _context6.f(19);
+            case 20:
+              _context6.n = 10;
+              break;
+            case 21:
+              _context6.n = 23;
+              break;
+            case 22:
+              _context6.p = 22;
+              _t4 = _context6.v;
+              _iterator2.e(_t4);
+            case 23:
+              _context6.p = 23;
+              _iterator2.f();
+              return _context6.f(23);
+            case 24:
+              result = {
+                mentionCount: mentionCount,
+                isUnread: isUnread
+              };
+              this.unreadSummariesCache.set(cacheKey, result);
+              return _context6.a(2, result);
           }
-        }, _callee6, this);
+        }, _callee6, this, [[13, 18, 19, 20], [9, 22, 23, 24]]);
       }));
-      function calculateRoomMissedMessages(_x5) {
-        return _calculateRoomMissedMessages.apply(this, arguments);
+      function summarizeUnreadMessages(_x5) {
+        return _summarizeUnreadMessages.apply(this, arguments);
       }
-      return calculateRoomMissedMessages;
+      return summarizeUnreadMessages;
     }()
     /**
      * For internal use. If you want to delete the message, execute a proper command on client object.
@@ -2033,11 +2146,15 @@ var MessagesManager = /*#__PURE__*/function () {
   }, {
     key: "_deleteByTopicIds",
     value: function _deleteByTopicIds(roomId) {
-      var _this$followedTopics$;
+      var _this$followedTopics$,
+        _this4 = this;
       for (var _len = arguments.length, topicIds = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
         topicIds[_key - 1] = arguments[_key];
       }
       (_this$followedTopics$ = this.followedTopics.get(roomId)) === null || _this$followedTopics$ === void 0 || _this$followedTopics$["delete"].apply(_this$followedTopics$, topicIds);
+      topicIds.forEach(function (topicId) {
+        return _this4.invalidateUnreadSummaries(roomId, topicId);
+      });
     }
 
     /**
@@ -2081,7 +2198,82 @@ var MessagesManager = /*#__PURE__*/function () {
         return _resolveLastMessage2.apply(this, arguments);
       }
       return _resolveLastMessage;
-    }())
+    }()
+    /**
+     * Wyczyść cache celowo, tylko dla lokalizacji których dotyczy zmiana.
+     */
+    )
+  }, {
+    key: "invalidateUnreadSummaries",
+    value: function invalidateUnreadSummaries(roomId, topicId) {
+      if (!roomId) {
+        this.unreadSummariesCache.clear();
+        return;
+      }
+      this.unreadSummariesCache["delete"]("room:".concat(roomId));
+      if (topicId) {
+        this.unreadSummariesCache["delete"]("topic:".concat(roomId, ":").concat(topicId));
+      } else {
+        var _iterator4 = MessagesManager_createForOfIteratorHelper(this.unreadSummariesCache.keys()),
+          _step4;
+        try {
+          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+            var key = _step4.value;
+            if (key.startsWith("topic:".concat(roomId, ":"))) {
+              this.unreadSummariesCache["delete"](key);
+            }
+          }
+        } catch (err) {
+          _iterator4.e(err);
+        } finally {
+          _iterator4.f();
+        }
+      }
+      var _iterator5 = MessagesManager_createForOfIteratorHelper(this.unreadSummariesCache.keys()),
+        _step5;
+      try {
+        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+          var _key2 = _step5.value;
+          if (_key2.startsWith('space:') || _key2 === 'spaceless') {
+            this.unreadSummariesCache["delete"](_key2);
+          }
+        }
+      } catch (err) {
+        _iterator5.e(err);
+      } finally {
+        _iterator5.f();
+      }
+    }
+  }, {
+    key: "invalidateUnreadSummariesForRooms",
+    value: function invalidateUnreadSummariesForRooms(roomIds) {
+      var _this5 = this;
+      var roomIdsSet = new Set(roomIds);
+      roomIds.forEach(function (roomId) {
+        _this5.unreadSummariesCache["delete"]("room:".concat(roomId));
+      });
+      var _iterator6 = MessagesManager_createForOfIteratorHelper(this.unreadSummariesCache.keys()),
+        _step6;
+      try {
+        for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+          var key = _step6.value;
+          if (key.startsWith('space:') || key === 'spaceless') {
+            this.unreadSummariesCache["delete"](key);
+            continue;
+          }
+          if (key.startsWith('topic:')) {
+            var parts = key.split(':');
+            if (parts.length >= 2 && roomIdsSet.has(parts[1])) {
+              this.unreadSummariesCache["delete"](key);
+            }
+          }
+        }
+      } catch (err) {
+        _iterator6.e(err);
+      } finally {
+        _iterator6.f();
+      }
+    }
   }, {
     key: "createHistoryForNewRoom",
     value: function createHistoryForNewRoom(room) {
@@ -2090,24 +2282,20 @@ var MessagesManager = /*#__PURE__*/function () {
   }, {
     key: "handleNewMessage",
     value: function handleNewMessage(ev) {
-      this.updateLocallyFollowedTopicOnNewMessage(ev);
+      void this.updateLocallyFollowedTopicOnNewMessage(ev);
     }
   }, {
     key: "handleFollowedTopicUpdated",
     value: function handleFollowedTopicUpdated(ev) {
       var _this$followedTopics$2;
       (_this$followedTopics$2 = this.followedTopics.get(ev.followedTopic.location.roomId)) === null || _this$followedTopics$2 === void 0 || _this$followedTopics$2.set(ev.followedTopic);
+      this.invalidateUnreadSummaries(ev.followedTopic.location.roomId, ev.followedTopic.location.topicId);
     }
   }, {
     key: "handleTopicFollowed",
     value: function handleTopicFollowed(ev) {
       this.setFollowedTopicsArray([ev.followedTopic.location.roomId], [ev.followedTopic]);
-    }
-  }, {
-    key: "handleTopicUnfollowed",
-    value: function handleTopicUnfollowed(ev) {
-      var _this$followedTopics$3;
-      (_this$followedTopics$3 = this.followedTopics.get(ev.location.roomId)) === null || _this$followedTopics$3 === void 0 || _this$followedTopics$3["delete"](ev.location.topicId);
+      this.invalidateUnreadSummaries(ev.followedTopic.location.roomId, ev.followedTopic.location.topicId);
     }
   }, {
     key: "handleRoomDeleted",
@@ -2151,6 +2339,7 @@ var MessagesManager = /*#__PURE__*/function () {
               followedTopic = result.data.followedTopics[0];
               if (followedTopic) {
                 this.followedTopics.get(ev.roomId).set(followedTopic);
+                this.invalidateUnreadSummaries(ev.roomId, ev.topic.id);
               }
             case 2:
               return _context8.a(2);
@@ -2165,51 +2354,98 @@ var MessagesManager = /*#__PURE__*/function () {
   }, {
     key: "handleTopicDeleted",
     value: function handleTopicDeleted(ev) {
-      var _this$followedTopics$4;
-      (_this$followedTopics$4 = this.followedTopics.get(ev.location.roomId)) === null || _this$followedTopics$4 === void 0 || _this$followedTopics$4["delete"](ev.location.topicId);
+      var _this$followedTopics$3;
+      (_this$followedTopics$3 = this.followedTopics.get(ev.location.roomId)) === null || _this$followedTopics$3 === void 0 || _this$followedTopics$3["delete"](ev.location.topicId);
+      this.invalidateUnreadSummaries(ev.location.roomId, ev.location.topicId);
     }
   }, {
     key: "handleSession",
     value: function handleSession(ev) {
-      var _this4 = this;
+      var _this6 = this;
       this.followedTopics.deleteAll();
       this.followedTopicsPromises.forgetAll();
+      this.invalidateUnreadSummaries();
       this.roomHistories.deleteAll();
       ev.state.rooms.forEach(function (room) {
-        return _this4.createHistoryForNewRoom(room);
+        return _this6.createHistoryForNewRoom(room);
       });
       this.deferredSession.resolve();
     }
   }, {
     key: "updateLocallyFollowedTopicOnNewMessage",
-    value: function updateLocallyFollowedTopicOnNewMessage(ev) {
-      var _this$tracker$me;
-      var roomFollowedTopics = this.followedTopics.get(ev.message.location.roomId);
-      var followedTopic = roomFollowedTopics === null || roomFollowedTopics === void 0 ? void 0 : roomFollowedTopics.get(ev.message.location.topicId);
-      if (!roomFollowedTopics || !followedTopic || ev.message.type === 'Ephemeral') {
-        // Skip if we don't follow this room or targeted topic or the message is ephemeral
-        return;
+    value: function () {
+      var _updateLocallyFollowedTopicOnNewMessage = MessagesManager_asyncToGenerator(/*#__PURE__*/MessagesManager_regenerator().m(function _callee9(ev) {
+        var _this$tracker$me;
+        var roomFollowedTopics, followedTopic, isMe, update, _member$spaceMember$r, _member$spaceMember, member, roleIds, mentionHandlers, mentionExists;
+        return MessagesManager_regenerator().w(function (_context9) {
+          while (1) switch (_context9.n) {
+            case 0:
+              roomFollowedTopics = this.followedTopics.get(ev.message.location.roomId);
+              followedTopic = roomFollowedTopics === null || roomFollowedTopics === void 0 ? void 0 : roomFollowedTopics.get(ev.message.location.topicId);
+              if (!(!roomFollowedTopics || !followedTopic || ev.message.type === 'Ephemeral')) {
+                _context9.n = 1;
+                break;
+              }
+              return _context9.a(2);
+            case 1:
+              isMe = ev.message.author.user.id === ((_this$tracker$me = this.tracker.me) === null || _this$tracker$me === void 0 ? void 0 : _this$tracker$me.id);
+              if (!isMe) {
+                _context9.n = 2;
+                break;
+              }
+              // Reset missed messages count if new message is authored by me
+              update = {
+                missed: 0,
+                lastAckMessageId: ev.message.id
+              };
+              _context9.n = 5;
+              break;
+            case 2:
+              if (!(ev.message.type === 'Text')) {
+                _context9.n = 4;
+                break;
+              }
+              _context9.n = 3;
+              return this.tracker.rooms.getMe(ev.message.location.roomId);
+            case 3:
+              member = _context9.v;
+              roleIds = [].concat(MessagesManager_toConsumableArray((_member$spaceMember$r = (_member$spaceMember = member.spaceMember) === null || _member$spaceMember === void 0 ? void 0 : _member$spaceMember.roles) !== null && _member$spaceMember$r !== void 0 ? _member$spaceMember$r : []), MessagesManager_toConsumableArray(member.roles));
+              mentionHandlers = [].concat(MessagesManager_toConsumableArray(roleIds.map(function (id) {
+                return "<@&".concat(id, ">");
+              })), ["<@".concat(ev.message.author.user.id, ">")]);
+              mentionExists = mentionHandlers.some(function (handler) {
+                return ev.message.content.includes(handler);
+              });
+              update = {
+                missed: followedTopic.missed === null ? null : followedTopic.missed + 1,
+                isUnread: true,
+                mentionCount: followedTopic.mentionCount + (mentionExists ? 1 : 0)
+              };
+              _context9.n = 5;
+              break;
+            case 4:
+              // ...or just mark as unread.
+              update = {
+                missed: followedTopic.missed === null ? null : followedTopic.missed + 1,
+                isUnread: true
+              };
+            case 5:
+              roomFollowedTopics.set(MessagesManager_objectSpread(MessagesManager_objectSpread({}, followedTopic), update));
+              this.invalidateUnreadSummaries(ev.message.location.roomId, ev.message.location.topicId);
+            case 6:
+              return _context9.a(2);
+          }
+        }, _callee9, this);
+      }));
+      function updateLocallyFollowedTopicOnNewMessage(_x8) {
+        return _updateLocallyFollowedTopicOnNewMessage.apply(this, arguments);
       }
-      var isMe = ev.message.author.user.id === ((_this$tracker$me = this.tracker.me) === null || _this$tracker$me === void 0 ? void 0 : _this$tracker$me.id);
-      var update;
-      if (isMe) {
-        // Reset missed messages count if new message is authored by me
-        update = {
-          missed: 0,
-          lastAckMessageId: ev.message.id
-        };
-      } else {
-        // ...add 1 otherwise
-        update = {
-          missed: followedTopic.missed === null ? null : followedTopic.missed + 1
-        };
-      }
-      roomFollowedTopics.set(MessagesManager_objectSpread(MessagesManager_objectSpread({}, followedTopic), update));
-    }
+      return updateLocallyFollowedTopicOnNewMessage;
+    }()
   }, {
     key: "setFollowedTopicsArray",
     value: function setFollowedTopicsArray(roomIds, followedTopics) {
-      var _this5 = this;
+      var _this7 = this;
       var roomToTopics = {};
 
       // Reassign followed topics to limit collection change event emit
@@ -2219,22 +2455,24 @@ var MessagesManager = /*#__PURE__*/function () {
         roomToTopics[followedTopic.location.roomId].push(followedTopic);
       });
       roomIds.forEach(function (roomId) {
-        if (!_this5.followedTopics.has(roomId)) {
-          _this5.followedTopics.set([roomId, new ObservableIndexedObjectCollection(function (followedTopic) {
+        if (!_this7.followedTopics.has(roomId)) {
+          _this7.followedTopics.set([roomId, new ObservableIndexedObjectCollection(function (followedTopic) {
             return followedTopic.location.topicId;
           })]);
         }
         if (roomToTopics[roomId]) {
-          var _this5$followedTopics;
-          (_this5$followedTopics = _this5.followedTopics.get(roomId)).set.apply(_this5$followedTopics, MessagesManager_toConsumableArray(roomToTopics[roomId]));
+          var _this7$followedTopics;
+          (_this7$followedTopics = _this7.followedTopics.get(roomId)).set.apply(_this7$followedTopics, MessagesManager_toConsumableArray(roomToTopics[roomId]));
         }
       });
+      this.invalidateUnreadSummariesForRooms(roomIds);
     }
   }, {
     key: "clearRoomFollowedTopicsStructures",
     value: function clearRoomFollowedTopicsStructures(roomId) {
       this.followedTopics["delete"](roomId);
       this.followedTopicsPromises.forget(roomId);
+      this.invalidateUnreadSummaries(roomId);
     }
   }]);
 }();

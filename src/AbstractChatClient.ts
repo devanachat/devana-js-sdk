@@ -109,7 +109,7 @@ import {
     UpdateRoomMember,
     GetRelationships,
     GetUserInfo,
-    UserInfo,
+    UserInfo, SetSessionData,
 } from "./types/src";
 import {EventTarget} from "./EventTarget";
 
@@ -259,6 +259,7 @@ export type CommandsMap = {
     Ping: CommandDefinition<Ping, EventsMap['Pong']>,
     ReportAbuse: CommandDefinition<ReportAbuse, EventsMap['Ok']>,
     GetUserInfo: CommandDefinition<GetUserInfo, EventsMap['UserInfo']>,
+    SetSessionData: CommandDefinition<SetSessionData, EventsMap['Ok']>,
      // Space commands
     GetDiscoverableSpaces: CommandDefinition<GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']>,
     JoinSpace: CommandDefinition<JoinSpace, EventsMap['SpaceJoined']>,
