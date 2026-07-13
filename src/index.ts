@@ -133,6 +133,7 @@ import {GetRelationships} from "./schemes/commands/GetRelationships";
 import {GetUserInfo} from "./schemes/commands/GetUserInfo";
 import {UserInfo} from "./schemes/events/UserInfo";
 import {UserInformation} from "./schemes/UserInformation";
+import {SetSessionData, SessionPush} from "./schemes/commands/SetSessionData";
 
 export {
     // objects
@@ -169,6 +170,7 @@ export {
     UserRelationshipType,
     CreateTopicInitialMessage,
     UserInformation,
+    SessionPush,
     // events
     Bye,
     Error,
@@ -283,4 +285,5 @@ export {
     ReportAbuse,
     RedactMessages,
     GetUserInfo,
+    SetSessionData,
 };
