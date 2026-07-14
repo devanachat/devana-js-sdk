@@ -2,9 +2,11 @@ import { ObservableIndexedObjectCollection } from "../IndexedObjectCollection";
 import { Room, RoomMember, Topic } from "../types/src";
 import { ChatStateTracker } from "./ChatStateTracker";
 import { MessagesManager } from "./MessagesManager";
+import { FollowedTopicsManager } from "./FollowedTopicsManager";
 export declare class RoomsManager {
     private tracker;
     readonly messages: MessagesManager;
+    readonly followedTopics: FollowedTopicsManager;
     private readonly list;
     private readonly topics;
     private readonly members;

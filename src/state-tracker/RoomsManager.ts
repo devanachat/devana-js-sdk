@@ -16,9 +16,11 @@ import {
 import {ChatStateTracker} from "./ChatStateTracker";
 import {DeferredTask, PromiseRegistry} from "./AsyncUtils";
 import {MessagesManager} from "./MessagesManager";
+import {FollowedTopicsManager} from "./FollowedTopicsManager";
 
 export class RoomsManager {
     public readonly messages: MessagesManager;
+    public readonly followedTopics: FollowedTopicsManager;
 
     private readonly list = new ObservableIndexedObjectCollection<Room>('id');
     private readonly topics = new IndexedCollection<string, ObservableIndexedObjectCollection<Topic>>();
@@ -29,6 +31,7 @@ export class RoomsManager {
 
     public constructor(private tracker: ChatStateTracker) {
         this.messages = new MessagesManager(tracker);
+        this.followedTopics = new FollowedTopicsManager(tracker);
 
         this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
         this.tracker.client.on('MessagesRedacted', ev => this.handleMessagesRedacted(ev));
@@ -136,7 +139,7 @@ export class RoomsManager {
 
         for (const roomId of roomIds) {
             const topicIds: string[] = this.topics.get(roomId)?.items.map(topic => topic.id) ?? [];
-            this.messages._deleteByTopicIds(roomId, ...topicIds);
+            this.followedTopics._deleteByTopicIds(roomId, ...topicIds);
         }
 
         this.topics.delete(...roomIds);

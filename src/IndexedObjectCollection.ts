@@ -39,15 +39,14 @@ export class IndexedCollection<KeyT, ValueT> {
         this.items.clear();
     }
 
-    public findBy(field: keyof ValueT, valueToFind: any, limit: number = null): IndexedCollection<KeyT, ValueT> {
+    public findBy(field: keyof ValueT, valueToFind: any, limit: number = Infinity): IndexedCollection<KeyT, ValueT> {
         const result = new IndexedCollection<KeyT, ValueT>();
-        let item;
-        while (!(item = this.items.entries().next().value).done) {
-            if (limit && result.length === limit) {
+        for (const [key, value] of this.items.entries()) {
+            if (result.length >= limit) {
                 break;
             }
-            if (item[1][field] === valueToFind) {
-                result.set(item);
+            if (value[field] === valueToFind) {
+                result.set([key, value]);
             }
         }
         return result;
