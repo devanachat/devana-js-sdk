@@ -57,24 +57,32 @@ export class MessagesManager {
             throw new Error(`You are not in space ${spaceId}`);
         }
 
-        const roomIds = (await this.tracker.rooms.get()).findBy('spaceId', spaceId).items.map(room => room.id);
+        const rooms = await this.tracker.rooms.get();
+        const roomIds = spaceId
+            ? rooms.findBy('spaceId', spaceId).items.map(r => r.id)
+            : rooms.items.filter(r => !r.spaceId).map(r => r.id);
 
-        if (! roomIds.length) {
-            // We don't need to ping server for followed topics for this space, if user has no joined rooms
+        if (!roomIds.length) {
             return;
         }
 
-        const resultPromise = this.tracker.client.send('GetFollowedTopics', {location: {spaceId}});
-
-        roomIds.forEach(roomId => this.followedTopicsPromises.register(resultPromise, roomId));
-
-        const result = await resultPromise;
-
-        if (result.error) {
-            throw result.error;
+        const isAlreadyCached = roomIds.every(roomId => this.followedTopics.has(roomId));
+        if (isAlreadyCached) {
+            return;
         }
 
-        this.setFollowedTopicsArray(roomIds, result.data.followedTopics);
+        const spaceRegistryKey = `space_fetch_${spaceId || 'spaceless'}`;
+
+        if (this.followedTopicsPromises.notExist(spaceRegistryKey)) {
+            this.followedTopicsPromises.registerByFunction(async () => {
+                const result = await this.tracker.client.send('GetFollowedTopics', {location: {spaceId}});
+                if (result.error) throw result.error;
+
+                this.setFollowedTopicsArray(roomIds, result.data.followedTopics);
+            }, spaceRegistryKey);
+        }
+
+        await this.followedTopicsPromises.get(spaceRegistryKey);
     }
 
     /**
@@ -155,6 +163,7 @@ export class MessagesManager {
             await this.cacheSpaceFollowedTopics(location.spaceId);
             roomIds = rooms.findBy('spaceId', location.spaceId).items.map(r => r.id);
         } else {
+            await this.cacheSpaceFollowedTopics(null);
             roomIds = rooms.items.filter(r => !r.spaceId).map(r => r.id);
         }
 
