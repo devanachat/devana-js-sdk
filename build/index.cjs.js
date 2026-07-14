@@ -1924,13 +1924,13 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
   /**
    * Cache followed topics for all joined rooms in a space and fetch them in bulk if necessary.
    * Then you can get them using getRoomFollowedTopics().
-   * @see getRoomFollowedTopics
+   * @see getForRoom
    */
   FollowedTopicsManager_inherits(FollowedTopicsManager, _EventTarget);
   return FollowedTopicsManager_createClass(FollowedTopicsManager, [{
-    key: "cacheSpaceFollowedTopics",
+    key: "cacheForSpace",
     value: (function () {
-      var _cacheSpaceFollowedTopics = FollowedTopicsManager_asyncToGenerator(/*#__PURE__*/FollowedTopicsManager_regenerator().m(function _callee2(spaceId) {
+      var _cacheForSpace = FollowedTopicsManager_asyncToGenerator(/*#__PURE__*/FollowedTopicsManager_regenerator().m(function _callee2(spaceId) {
         var _this2 = this;
         var rooms, roomIds, isAlreadyCached, spaceRegistryKey, _t;
         return FollowedTopicsManager_regenerator().w(function (_context2) {
@@ -2013,10 +2013,10 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
           }
         }, _callee2, this);
       }));
-      function cacheSpaceFollowedTopics(_x) {
-        return _cacheSpaceFollowedTopics.apply(this, arguments);
+      function cacheForSpace(_x) {
+        return _cacheForSpace.apply(this, arguments);
       }
-      return cacheSpaceFollowedTopics;
+      return cacheForSpace;
     }()
     /**
      * Get followed topics for the given room.
@@ -2024,9 +2024,9 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
      */
     )
   }, {
-    key: "getRoomFollowedTopics",
+    key: "getForRoom",
     value: (function () {
-      var _getRoomFollowedTopics = FollowedTopicsManager_asyncToGenerator(/*#__PURE__*/FollowedTopicsManager_regenerator().m(function _callee4(roomId) {
+      var _getForRoom = FollowedTopicsManager_asyncToGenerator(/*#__PURE__*/FollowedTopicsManager_regenerator().m(function _callee4(roomId) {
         var _this3 = this;
         return FollowedTopicsManager_regenerator().w(function (_context4) {
           while (1) switch (_context4.n) {
@@ -2078,10 +2078,10 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
           }
         }, _callee4, this);
       }));
-      function getRoomFollowedTopics(_x2) {
-        return _getRoomFollowedTopics.apply(this, arguments);
+      function getForRoom(_x2) {
+        return _getForRoom.apply(this, arguments);
       }
-      return getRoomFollowedTopics;
+      return getForRoom;
     }()
     /**
      * Batch acknowledge all messages for given room.
@@ -2096,7 +2096,7 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
           while (1) switch (_context5.p = _context5.n) {
             case 0:
               _context5.n = 1;
-              return this.getRoomFollowedTopics(roomId);
+              return this.getForRoom(roomId);
             case 1:
               collection = _context5.v;
               if (collection) {
@@ -2201,7 +2201,7 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
                 break;
               }
               _context6.n = 6;
-              return this.cacheSpaceFollowedTopics(location.spaceId);
+              return this.cacheForSpace(location.spaceId);
             case 6:
               roomIds = rooms.findBy('spaceId', location.spaceId).items.map(function (r) {
                 return r.id;
@@ -2210,7 +2210,7 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
               break;
             case 7:
               _context6.n = 8;
-              return this.cacheSpaceFollowedTopics(null);
+              return this.cacheForSpace(null);
             case 8:
               roomIds = rooms.items.filter(function (r) {
                 return !r.spaceId;
@@ -2230,7 +2230,7 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
               }
               roomId = _step2.value;
               _context6.n = 12;
-              return this.getRoomFollowedTopics(roomId);
+              return this.getForRoom(roomId);
             case 12:
               collection = _context6.v;
               if (collection) {

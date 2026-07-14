@@ -40,9 +40,9 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
     /**
      * Cache followed topics for all joined rooms in a space and fetch them in bulk if necessary.
      * Then you can get them using getRoomFollowedTopics().
-     * @see getRoomFollowedTopics
+     * @see getForRoom
      */
-    public async cacheSpaceFollowedTopics(spaceId: string | null): Promise<void> {
+    public async cacheForSpace(spaceId: string | null): Promise<void> {
         if (spaceId && ! (await this.tracker.spaces.get()).has(spaceId)) {
             throw new Error(`You are not in space ${spaceId}`);
         }
@@ -79,7 +79,7 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
      * Get followed topics for the given room.
      * @return Undefined if you are not in the room, collection otherwise.
      */
-    public async getRoomFollowedTopics(roomId: string): Promise<ObservableIndexedObjectCollection<FollowedTopic> | undefined> {
+    public async getForRoom(roomId: string): Promise<ObservableIndexedObjectCollection<FollowedTopic> | undefined> {
         if (! (await this.tracker.rooms.get()).has(roomId)) {
             return undefined;
         }
@@ -107,7 +107,7 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
      * Batch acknowledge all messages for given room.
      */
     public async ackRoom(roomId: string): Promise<void> {
-        const collection = await this.getRoomFollowedTopics(roomId);
+        const collection = await this.getForRoom(roomId);
 
         if (! collection) {
             return;
@@ -152,10 +152,10 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
         } else if (location.roomId) {
             roomIds = [location.roomId];
         } else if (location.spaceId) {
-            await this.cacheSpaceFollowedTopics(location.spaceId);
+            await this.cacheForSpace(location.spaceId);
             roomIds = rooms.findBy('spaceId', location.spaceId).items.map(r => r.id);
         } else {
-            await this.cacheSpaceFollowedTopics(null);
+            await this.cacheForSpace(null);
             roomIds = rooms.items.filter(r => !r.spaceId).map(r => r.id);
         }
 
@@ -163,7 +163,7 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
         let isUnread = false;
 
         for (const roomId of roomIds) {
-            const collection = await this.getRoomFollowedTopics(roomId);
+            const collection = await this.getForRoom(roomId);
 
             if (!collection) {
                 continue;

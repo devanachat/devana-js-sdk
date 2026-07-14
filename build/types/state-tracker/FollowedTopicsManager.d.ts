@@ -15,14 +15,14 @@ export declare class FollowedTopicsManager extends EventTarget<EventMap> {
     /**
      * Cache followed topics for all joined rooms in a space and fetch them in bulk if necessary.
      * Then you can get them using getRoomFollowedTopics().
-     * @see getRoomFollowedTopics
+     * @see getForRoom
      */
-    cacheSpaceFollowedTopics(spaceId: string | null): Promise<void>;
+    cacheForSpace(spaceId: string | null): Promise<void>;
     /**
      * Get followed topics for the given room.
      * @return Undefined if you are not in the room, collection otherwise.
      */
-    getRoomFollowedTopics(roomId: string): Promise<ObservableIndexedObjectCollection<FollowedTopic> | undefined>;
+    getForRoom(roomId: string): Promise<ObservableIndexedObjectCollection<FollowedTopic> | undefined>;
     /**
      * Batch acknowledge all messages for given room.
      */
