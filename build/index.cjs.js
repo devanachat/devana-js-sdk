@@ -2484,7 +2484,7 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
     key: "updateLocallyFollowedTopicOnNewMessage",
     value: function () {
       var _updateLocallyFollowedTopicOnNewMessage = FollowedTopicsManager_asyncToGenerator(/*#__PURE__*/FollowedTopicsManager_regenerator().m(function _callee8(ev) {
-        var roomFollowedTopics, followedTopic, me, isMe, update, _member$spaceMember$r, _member$spaceMember, member, roleIds, mentionHandlers, mentionExists;
+        var roomFollowedTopics, followedTopic, me, isMe, update, _member$spaceMember$r, _member$spaceMember, _member$roles, member, roleIds, mentionHandlers, mentionExists;
         return FollowedTopicsManager_regenerator().w(function (_context8) {
           while (1) switch (_context8.n) {
             case 0:
@@ -2521,7 +2521,7 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
               return this.tracker.rooms.getMe(ev.message.location.roomId);
             case 4:
               member = _context8.v;
-              roleIds = [].concat(FollowedTopicsManager_toConsumableArray((_member$spaceMember$r = (_member$spaceMember = member.spaceMember) === null || _member$spaceMember === void 0 ? void 0 : _member$spaceMember.roles) !== null && _member$spaceMember$r !== void 0 ? _member$spaceMember$r : []), FollowedTopicsManager_toConsumableArray(member.roles));
+              roleIds = [].concat(FollowedTopicsManager_toConsumableArray((_member$spaceMember$r = (_member$spaceMember = member.spaceMember) === null || _member$spaceMember === void 0 ? void 0 : _member$spaceMember.roles) !== null && _member$spaceMember$r !== void 0 ? _member$spaceMember$r : []), FollowedTopicsManager_toConsumableArray((_member$roles = member.roles) !== null && _member$roles !== void 0 ? _member$roles : []));
               mentionHandlers = [].concat(FollowedTopicsManager_toConsumableArray(roleIds.map(function (id) {
                 return "<@&".concat(id, ">");
               })), ["<@".concat(me.id, ">")]);

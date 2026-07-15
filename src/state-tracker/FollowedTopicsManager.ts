@@ -321,7 +321,7 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
         } else if (ev.message.type === 'Text') {
             // ...check for mentions if it's text message...
             const member = await this.tracker.rooms.getMe(ev.message.location.roomId);
-            const roleIds = [...(member.spaceMember?.roles ?? []), ...member.roles];
+            const roleIds = [...(member.spaceMember?.roles ?? []), ...(member.roles ?? [])];
             const mentionHandlers = [
                 ...roleIds.map(id => `<@&${id}>`),
                 `<@${me.id}>`,
