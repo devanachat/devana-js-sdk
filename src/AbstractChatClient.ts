@@ -109,11 +109,14 @@ import {
     UpdateRoomMember,
     GetRelationships,
     GetUserInfo,
-    UserInfo, SetSessionData,
+    UserInfo,
+    SetSessionData,
+    SessionData,
+    GetSessionData,
+    UnfollowTopic,
+    TopicUnfollowed,
 } from "./types/src";
 import {EventTarget} from "./EventTarget";
-import {SessionData} from "./types/src/schemes/SessionData";
-import {GetSessionData} from "./types/src/schemes/commands/GetSessionData";
 
 type ArrayOfPromiseResolvers = [(value: any) => void, (reason?: any) => void];
 type ExtraEventMap = Record<string, any>;
@@ -226,6 +229,7 @@ export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap
     NewMessage: NewMessage,
     UserUpdated: UserUpdated,
     TopicFollowed: TopicFollowed,
+    TopicUnfollowed: TopicUnfollowed,
     FollowedTopics: FollowedTopics,
     FollowedTopicUpdated: FollowedTopicUpdated,
     Messages: Messages,
@@ -295,6 +299,7 @@ export type CommandsMap = {
     CreateMessage: CommandDefinition<CreateMessage, EventsMap['NewMessage']>,
     Ack: CommandDefinition<Ack, EventsMap['FollowedTopicUpdated'] | EventsMap['Ok']>,
     FollowTopic: CommandDefinition<FollowTopic, EventsMap['TopicFollowed']>,
+    UnfollowTopic: CommandDefinition<UnfollowTopic, EventsMap['TopicUnfollowed']>,
     UpdateFollowedTopic: CommandDefinition<UpdateFollowedTopic, EventsMap['FollowedTopicUpdated']>,
     GetFollowedTopics: CommandDefinition<GetFollowedTopics, EventsMap['FollowedTopics']>,
     GetMessages: CommandDefinition<GetMessages, EventsMap['Messages']>,
