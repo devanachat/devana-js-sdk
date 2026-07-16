@@ -112,6 +112,8 @@ import {
     UserInfo, SetSessionData,
 } from "./types/src";
 import {EventTarget} from "./EventTarget";
+import {SessionData} from "./types/src/schemes/SessionData";
+import {GetSessionData} from "./types/src/schemes/commands/GetSessionData";
 
 type ArrayOfPromiseResolvers = [(value: any) => void, (reason?: any) => void];
 type ExtraEventMap = Record<string, any>;
@@ -185,6 +187,7 @@ export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap
     Emoticons: Emoticons,
     Bans: Bans,
     ClientData: ClientData,
+    SessionData: SessionData,
     NewRelationship: NewRelationship,
     RelationshipDeleted: RelationshipDeleted,
     Relationships: Relationships,
@@ -259,6 +262,7 @@ export type CommandsMap = {
     Ping: CommandDefinition<Ping, EventsMap['Pong']>,
     ReportAbuse: CommandDefinition<ReportAbuse, EventsMap['Ok']>,
     GetUserInfo: CommandDefinition<GetUserInfo, EventsMap['UserInfo']>,
+    GetSessionData: CommandDefinition<GetSessionData, EventsMap['SessionData']>,
     SetSessionData: CommandDefinition<SetSessionData, EventsMap['Ok']>,
      // Space commands
     GetDiscoverableSpaces: CommandDefinition<GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']>,
