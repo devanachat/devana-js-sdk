@@ -46,6 +46,7 @@ export declare class FollowedTopicsManager extends EventTarget<EventMap> {
     private handleNewMessage;
     private handleFollowedTopicUpdated;
     private handleTopicFollowed;
+    private handleTopicUnfollowed;
     private handleRoomDeleted;
     private handleRoomJoin;
     private handleRoomLeft;

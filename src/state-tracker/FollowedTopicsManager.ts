@@ -10,7 +10,7 @@ import {
     RoomDeleted,
     RoomJoined, RoomLeft,
     Session, TopicDeleted,
-    TopicFollowed
+    TopicFollowed, TopicUnfollowed
 } from "../types/src";
 
 interface EventMap {
@@ -31,6 +31,7 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
         this.tracker.client.on('NewTopic', ev => this.handleNewTopic(ev));
         this.tracker.client.on('FollowedTopicUpdated', ev => this.handleFollowedTopicUpdated(ev));
         this.tracker.client.on('TopicFollowed', ev => this.handleTopicFollowed(ev));
+        this.tracker.client.on('TopicUnfollowed', ev => this.handleTopicUnfollowed(ev));
         this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
         this.tracker.client.on('RoomDeleted', ev => this.handleRoomDeleted(ev));
         this.tracker.client.on('RoomLeft', ev => this.handleRoomLeft(ev));
@@ -216,6 +217,11 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
     private handleTopicFollowed(ev: TopicFollowed): void {
         this.setFollowedTopicsArray([ev.followedTopic.location.roomId], [ev.followedTopic]);
         this.invalidateUnreadSummaries(ev.followedTopic.location.roomId, ev.followedTopic.location.topicId);
+    }
+
+    private handleTopicUnfollowed(ev: TopicUnfollowed): void {
+        this.followedTopics.get(ev.location.roomId)?.delete(ev.location.topicId);
+        this.invalidateUnreadSummaries(ev.location.roomId, ev.location.topicId);
     }
 
     private handleRoomDeleted(ev: RoomDeleted): void {

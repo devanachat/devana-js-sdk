@@ -1906,6 +1906,9 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
     _this.tracker.client.on('TopicFollowed', function (ev) {
       return _this.handleTopicFollowed(ev);
     });
+    _this.tracker.client.on('TopicUnfollowed', function (ev) {
+      return _this.handleTopicUnfollowed(ev);
+    });
     _this.tracker.client.on('NewMessage', function (ev) {
       return _this.handleNewMessage(ev);
     });
@@ -2346,6 +2349,13 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
       this.invalidateUnreadSummaries(ev.followedTopic.location.roomId, ev.followedTopic.location.topicId);
     }
   }, {
+    key: "handleTopicUnfollowed",
+    value: function handleTopicUnfollowed(ev) {
+      var _this$followedTopics$3;
+      (_this$followedTopics$3 = this.followedTopics.get(ev.location.roomId)) === null || _this$followedTopics$3 === void 0 || _this$followedTopics$3["delete"](ev.location.topicId);
+      this.invalidateUnreadSummaries(ev.location.roomId, ev.location.topicId);
+    }
+  }, {
     key: "handleRoomDeleted",
     value: function handleRoomDeleted(ev) {
       this.clearRoomFollowedTopicsStructures(ev.id);
@@ -2399,8 +2409,8 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "handleTopicDeleted",
     value: function handleTopicDeleted(ev) {
-      var _this$followedTopics$3;
-      (_this$followedTopics$3 = this.followedTopics.get(ev.location.roomId)) === null || _this$followedTopics$3 === void 0 || _this$followedTopics$3["delete"](ev.location.topicId);
+      var _this$followedTopics$4;
+      (_this$followedTopics$4 = this.followedTopics.get(ev.location.roomId)) === null || _this$followedTopics$4 === void 0 || _this$followedTopics$4["delete"](ev.location.topicId);
       this.invalidateUnreadSummaries(ev.location.roomId, ev.location.topicId);
     }
 
