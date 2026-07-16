@@ -134,6 +134,10 @@ import {GetUserInfo} from "./schemes/commands/GetUserInfo";
 import {UserInfo} from "./schemes/events/UserInfo";
 import {UserInformation} from "./schemes/UserInformation";
 import {SetSessionData, SessionPush} from "./schemes/commands/SetSessionData";
+import {SessionData} from "./schemes/SessionData";
+import {GetSessionData} from "./schemes/commands/GetSessionData";
+import {UnfollowTopic} from "./schemes/commands/UnfollowTopic";
+import {TopicUnfollowed} from "./schemes/events/TopicUnfollowed";
 
 export {
     // objects
@@ -171,6 +175,7 @@ export {
     CreateTopicInitialMessage,
     UserInformation,
     SessionPush,
+    SessionData,
     // events
     Bye,
     Error,
@@ -180,6 +185,7 @@ export {
     NewRoom,
     NewTopic,
     TopicFollowed,
+    TopicUnfollowed,
     FollowedTopics,
     FollowedTopicUpdated,
     ComputedPermissions,
@@ -236,6 +242,7 @@ export {
     CreateSpace,
     CreateTopic,
     FollowTopic,
+    UnfollowTopic,
     UpdateFollowedTopic,
     GetFollowedTopics,
     DeassignRole,
@@ -286,4 +293,5 @@ export {
     RedactMessages,
     GetUserInfo,
     SetSessionData,
+    GetSessionData,
 };
