@@ -5228,7 +5228,7 @@ var WebApiChatClient = /*#__PURE__*/function (_AbstractChatClient) {
     WebApiChatClient_classCallCheck(this, WebApiChatClient);
     _this = WebApiChatClient_callSuper(this, WebApiChatClient);
     WebApiChatClient_defineProperty(_this, "Event", WebApiChatClientEvent);
-    WebApiChatClient_defineProperty(_this, "sendStack", void 0);
+    WebApiChatClient_defineProperty(_this, "sendStack", []);
     _this.options = options;
     return _this;
   }
@@ -5237,17 +5237,18 @@ var WebApiChatClient = /*#__PURE__*/function (_AbstractChatClient) {
     key: "send",
     value: function () {
       var _send = WebApiChatClient_asyncToGenerator(/*#__PURE__*/WebApiChatClient_regenerator().m(function _callee(commandType, commandData) {
-        var envelope;
+        var envelope, item;
         return WebApiChatClient_regenerator().w(function (_context) {
           while (1) switch (_context.n) {
             case 0:
               envelope = this.createEnvelope(commandType, commandData);
-              this.sendStack.push({
+              item = {
                 data: envelope,
                 attempts: 0,
                 lastTimeoutId: null
-              });
-              this.makeApiCall(this.sendStack.length - 1);
+              };
+              this.sendStack.push(item);
+              this.makeApiCall(item);
               return _context.a(2, this.createPromiseFromCommandEnvelope(envelope));
           }
         }, _callee, this);
@@ -5261,36 +5262,53 @@ var WebApiChatClient = /*#__PURE__*/function (_AbstractChatClient) {
     key: "destroy",
     value: function destroy() {
       var _this2 = this;
-      // Cancel all awaiting requests
-      this.sendStack.forEach(function (item) {
+      // Cancel all awaiting requests, rejecting their promises so no caller
+      // is left awaiting forever
+      var pending = this.sendStack;
+      this.sendStack = [];
+      pending.forEach(function (item) {
         if (item.lastTimeoutId) {
           clearTimeout(item.lastTimeoutId);
         }
-        _this2.awaitingResponse["delete"](item.data.ref);
+        _this2.handleEnvelopeSendError(item.data, new Error('Client destroyed'));
       });
-      this.sendStack = [];
       this.emit(this.Event.destroy, false);
     }
   }, {
     key: "onMessage",
     value: function () {
-      var _onMessage = WebApiChatClient_asyncToGenerator(/*#__PURE__*/WebApiChatClient_regenerator().m(function _callee2(reqId, response) {
-        var envelope;
+      var _onMessage = WebApiChatClient_asyncToGenerator(/*#__PURE__*/WebApiChatClient_regenerator().m(function _callee2(item, response) {
+        var envelope, _t;
         return WebApiChatClient_regenerator().w(function (_context2) {
-          while (1) switch (_context2.n) {
+          while (1) switch (_context2.p = _context2.n) {
             case 0:
-              this.sendStack.splice(reqId, 1);
+              _context2.p = 0;
               _context2.n = 1;
               return response.json();
             case 1:
               envelope = _context2.v;
+              _context2.n = 3;
+              break;
+            case 2:
+              _context2.p = 2;
+              _t = _context2.v;
+              // Non-envelope response (e.g. a proxy error page) - failed attempt
+              this.onError(item, "envelope ".concat(item.data.ref, " (HTTP ").concat(response.status, ", unparsable body)"));
+              return _context2.a(2);
+            case 3:
+              if (this.removeFromStack(item)) {
+                _context2.n = 4;
+                break;
+              }
+              return _context2.a(2);
+            case 4:
               this.handleIncomingEnvelope(envelope);
               this.emit(envelope.type, envelope.data);
               this.emit(this.Event.message, envelope);
-            case 2:
+            case 5:
               return _context2.a(2);
           }
-        }, _callee2, this);
+        }, _callee2, this, [[0, 2]]);
       }));
       function onMessage(_x3, _x4) {
         return _onMessage.apply(this, arguments);
@@ -5299,42 +5317,59 @@ var WebApiChatClient = /*#__PURE__*/function (_AbstractChatClient) {
     }()
   }, {
     key: "onError",
-    value: function onError(reqId, body) {
+    value: function onError(item, body) {
       var _this$options$attempt,
         _this3 = this,
         _this$options$attempt2;
-      if (this.sendStack[reqId].attempts >= ((_this$options$attempt = this.options.attemptsToSend) !== null && _this$options$attempt !== void 0 ? _this$options$attempt : 10)) {
-        this.sendStack.splice(reqId, 1);
-        this.handleEnvelopeSendError(this.sendStack[reqId].data, new Error("Cannot send ".concat(body, "; aborting after reaching the maximum connection errors")));
+      if (!this.sendStack.includes(item)) {
+        return; // Destroyed in the meantime
+      }
+      if (item.attempts >= ((_this$options$attempt = this.options.attemptsToSend) !== null && _this$options$attempt !== void 0 ? _this$options$attempt : 10)) {
+        this.removeFromStack(item);
+        this.handleEnvelopeSendError(item.data, new Error("Cannot send ".concat(body, "; aborting after reaching the maximum connection errors")));
         return;
       }
-      this.sendStack[reqId].lastTimeoutId = setTimeout(function () {
-        return _this3.makeApiCall(reqId);
+      item.lastTimeoutId = setTimeout(function () {
+        return _this3.makeApiCall(item);
       }, (_this$options$attempt2 = this.options.attemptDelayMs) !== null && _this$options$attempt2 !== void 0 ? _this$options$attempt2 : 3000);
     }
   }, {
     key: "makeApiCall",
-    value: function makeApiCall(reqId) {
+    value: function makeApiCall(item) {
       var _this$options$queryPa,
         _this4 = this;
-      this.sendStack[reqId].attempts++;
-      var bodyJson = JSON.stringify(this.sendStack[reqId].data);
+      if (!this.sendStack.includes(item)) {
+        return; // Destroyed before this (re)try fired
+      }
+      item.attempts++;
+      item.lastTimeoutId = null;
+      var bodyJson = JSON.stringify(item.data);
       var headers = {
         'Content-Type': 'application/json',
         Accept: 'application/json'
       };
       headers.Authorization = "Bearer ".concat(this.options.token);
-      var params = new URLSearchParams((_this$options$queryPa = this.options.queryParams) !== null && _this$options$queryPa !== void 0 ? _this$options$queryPa : {});
-      var url = "".concat(this.options.url).concat(params ? '?' + params : '');
+      var query = new URLSearchParams((_this$options$queryPa = this.options.queryParams) !== null && _this$options$queryPa !== void 0 ? _this$options$queryPa : {}).toString();
+      var url = query ? "".concat(this.options.url, "?").concat(query) : this.options.url;
       fetch(url, {
         headers: headers,
         body: bodyJson,
         method: 'POST'
       }).then(function (response) {
-        return _this4.onMessage(reqId, response);
+        return _this4.onMessage(item, response);
       })["catch"](function () {
-        return _this4.onError(reqId, bodyJson);
+        return _this4.onError(item, bodyJson);
       });
+    }
+  }, {
+    key: "removeFromStack",
+    value: function removeFromStack(item) {
+      var index = this.sendStack.indexOf(item);
+      if (index === -1) {
+        return false;
+      }
+      this.sendStack.splice(index, 1);
+      return true;
     }
   }]);
 }(AbstractChatClient);

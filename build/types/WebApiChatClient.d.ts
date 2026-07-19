@@ -18,19 +18,21 @@ type WebApiEventMap = EventsMap & {
     [WebApiChatClientEvent.error]: Error;
     [WebApiChatClientEvent.destroy]: boolean;
 };
+interface SendStackItem {
+    data: Envelope;
+    attempts: number;
+    lastTimeoutId: any;
+}
 export declare class WebApiChatClient extends AbstractChatClient<Pick<WebApiEventMap, keyof WebApiEventMap>> implements ObservableInterface {
     private readonly options;
     readonly Event: typeof WebApiChatClientEvent;
-    protected sendStack: {
-        data: any;
-        attempts: number;
-        lastTimeoutId: any;
-    }[];
+    protected sendStack: SendStackItem[];
     constructor(options: WebApiChatClientOptions);
     send<CommandType extends keyof CommandsMap>(commandType: CommandType, commandData: CommandRequest<CommandType>): Promise<CommandResult<CommandResponse<CommandType>>>;
     destroy(): void;
-    protected onMessage(reqId: number, response: Response): Promise<void>;
-    protected onError(reqId: number, body: string): void;
-    protected makeApiCall(reqId: number): void;
+    protected onMessage(item: SendStackItem, response: Response): Promise<void>;
+    protected onError(item: SendStackItem, body: string): void;
+    protected makeApiCall(item: SendStackItem): void;
+    private removeFromStack;
 }
 export {};
