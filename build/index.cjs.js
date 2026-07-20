@@ -960,22 +960,21 @@ var TraversableRemoteCollection = /*#__PURE__*/function (_ObservableIndexedObj) 
             case 3:
               result = _context4.v;
               this.internalState.lastFetchCount = result ? result.length : 0;
+              if (!result) {
+                _context4.n = 4;
+                break;
+              }
+              this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
+              this.addItems(result, 'tail');
+              _context4.n = 4;
+              return this.refreshFetchedState();
             case 4:
               _context4.p = 4;
               this.internalState.ongoing = undefined;
               return _context4.f(4);
             case 5:
-              if (result) {
-                _context4.n = 6;
-                break;
-              }
-              return _context4.a(2);
+              this.emitChangeWithDiff(!!result, originalState);
             case 6:
-              this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
-              this.addItems(result, 'tail');
-              this.internalState.current = WindowState.PAST;
-              this.emitChangeWithDiff(true, originalState);
-            case 7:
               return _context4.a(2);
           }
         }, _callee4, this, [[2,, 4, 5]]);

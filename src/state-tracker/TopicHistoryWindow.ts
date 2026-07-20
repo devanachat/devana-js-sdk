@@ -214,18 +214,17 @@ export abstract class TraversableRemoteCollection<
         try {
             result = await this.fetchItemsAround(id);
             this.internalState.lastFetchCount = result ? result.length : 0;
+
+            if (result) {
+                this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
+                this.addItems(result, 'tail');
+                await this.refreshFetchedState();
+            }
         } finally {
             this.internalState.ongoing = undefined;
         }
 
-        if (!result) {
-            return;
-        }
-
-        this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
-        this.addItems(result, 'tail');
-        this.internalState.current = WindowState.PAST;
-        this.emitChangeWithDiff(true, originalState);
+        this.emitChangeWithDiff(!!result, originalState);
     }
 
     protected abstract fetchLatestItems(): Promise<ItemT[]>;
