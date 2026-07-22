@@ -203,7 +203,7 @@ export abstract class TraversableRemoteCollection<
     }
 
     public async jumpTo(id: string): Promise<void> {
-        if (this.internalState.ongoing || this._items.has(id)) {
+        if (this.internalState.ongoing || (this.state !== WindowState.LIVE && this._items.has(id))) {
             return;
         }
 

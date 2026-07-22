@@ -946,7 +946,7 @@ var TraversableRemoteCollection = /*#__PURE__*/function (_ObservableIndexedObj) 
         return _regenerator().w(function (_context4) {
           while (1) switch (_context4.p = _context4.n) {
             case 0:
-              if (!(this.internalState.ongoing || this._items.has(id))) {
+              if (!(this.internalState.ongoing || this.state !== WindowState.LIVE && this._items.has(id))) {
                 _context4.n = 1;
                 break;
               }
