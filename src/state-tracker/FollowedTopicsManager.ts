@@ -20,6 +20,7 @@ interface EventMap {
 export interface UnreadSummary {
     mentionCount: number;
     unreadTopicCount: number;
+    unreadRoomCount: number;
     isUnread: boolean;
 }
 
@@ -168,6 +169,7 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
 
         let mentionCount = 0;
         let unreadTopicCount = 0;
+        let unreadRoomCount = 0;
 
         for (const roomId of roomIds) {
             const collection = await this.getForRoom(roomId);
@@ -176,12 +178,17 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
                 continue;
             }
 
+            let isRoomUnreadCount = false;
             for (const topic of collection.items) {
                 if (targetTopicId && topic.location.topicId !== targetTopicId) {
                     continue;
                 }
 
                 if (topic.isUnread) {
+                    if (!isRoomUnreadCount) {
+                        unreadRoomCount++;
+                        isRoomUnreadCount = true;
+                    }
                     unreadTopicCount++;
                 }
 
@@ -189,7 +196,7 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
             }
         }
 
-        const result = { mentionCount, unreadTopicCount, isUnread: unreadTopicCount > 0 };
+        const result = { mentionCount, unreadTopicCount, unreadRoomCount, isUnread: unreadTopicCount > 0 };
         this.summariesCache.set(cacheKey, result);
 
         return result;

@@ -8,6 +8,7 @@ interface EventMap {
 export interface UnreadSummary {
     mentionCount: number;
     unreadTopicCount: number;
+    unreadRoomCount: number;
     isUnread: boolean;
 }
 export declare class FollowedTopicsManager extends EventTarget<EventMap> {
