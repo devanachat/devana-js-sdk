@@ -14,6 +14,12 @@ export declare abstract class AbstractChatClient<AdditionalEvents extends ExtraE
     protected createPromiseFromCommandEnvelope<CommandT extends keyof CommandsMap>(envelope: Envelope<CommandRequest<CommandT>>): Promise<CommandResult<CommandResponse<CommandT>>>;
     protected handleIncomingEnvelope(envelope: Envelope): void;
     protected handleEnvelopeSendError(envelope: Envelope, error: any): void;
+    /**
+     * Reject every command that is still waiting for a response.
+     * Call this whenever the transport can no longer deliver an answer (the
+     * connection dropped).
+     */
+    protected failAwaitingResponses(error: any): void;
 }
 export type CommandResult<ResultT> = {
     data?: ResultT;

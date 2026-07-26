@@ -14,6 +14,12 @@ export class PromiseRegistry {
 
     public register<T = any>(promise: Promise<T>, key: string): void {
         this.promises.set([key, promise]);
+
+        promise.catch(() => {
+            if (this.promises.get(key) === promise) {
+                this.promises.delete(key);
+            }
+        });
     }
 
     public registerByFunction(fn: () => Promise<any>, key: string): void {

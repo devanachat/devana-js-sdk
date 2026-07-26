@@ -308,7 +308,11 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
     }
 
     private handleSession(ev: Session): void {
-        this.overwrites.deleteAll();
+        // Drop the fetch guards so permission checks recompute against fresh
+        // overwrites (getOverwrites refetches and upserts on the next access),
+        // and notify consumers to recompute so bound permission UI is never
+        // left showing stale results after a reconnect.
         this.overwritesPromises.forgetAll();
+        this.emit('change');
     }
 }

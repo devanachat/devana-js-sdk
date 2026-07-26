@@ -759,4 +759,96 @@ describe('ObservableIndexedObjectCollection', () => {
         expect(mirror.get('2')).toBeDefined();
         expect(mirror.length).toBe(2);
     });
+
+    test('reconcile - upserts new/changed items and deletes absent ones', () => {
+        const collection = new ObservableIndexedObjectCollection<TestItem>('id', [
+            createItem('1', 'first'),
+            createItem('2', 'second'),
+            createItem('3', 'third'),
+        ]);
+
+        // Keep 1 (changed), keep 3 (unchanged), drop 2, add 4.
+        collection.reconcile(
+            createItem('1', 'first-renamed'),
+            createItem('3', 'third'),
+            createItem('4', 'fourth'),
+        );
+
+        expect(collection.length).toBe(3);
+        expect(collection.get('1')?.name).toBe('first-renamed');
+        expect(collection.get('2')).toBeUndefined();
+        expect(collection.get('3')?.name).toBe('third');
+        expect(collection.get('4')?.name).toBe('fourth');
+    });
+
+    test('reconcile - emits a single change event with set and deleted ids', () => {
+        const collection = new ObservableIndexedObjectCollection<TestItem>('id', [
+            createItem('1', 'first'),
+            createItem('2', 'second'),
+        ]);
+        const handler = jest.fn();
+        collection.on('change', handler);
+
+        collection.reconcile(createItem('1', 'first'), createItem('3', 'third'));
+
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(handler).toHaveBeenCalledWith({ setItems: ['1', '3'], deletedItems: ['2'] });
+    });
+
+    test('reconcile - never blanks: existing item stays present the whole time', () => {
+        const collection = new ObservableIndexedObjectCollection<TestItem>('id', [
+            createItem('1', 'first'),
+            createItem('2', 'second'),
+        ]);
+
+        // A change listener that reads the collection while it is being
+        // reconciled must never observe an empty/partial intermediate state.
+        const seenLengths: number[] = [];
+        collection.on('change', () => seenLengths.push(collection.length));
+
+        collection.reconcile(createItem('1', 'first'), createItem('3', 'third'));
+
+        // Only the final state (2 items) is ever visible - no 0-length frame.
+        expect(seenLengths).toEqual([2]);
+    });
+
+    test('reconcile - does not emit when nothing changes structurally on empty input', () => {
+        const collection = new ObservableIndexedObjectCollection<TestItem>('id');
+        const handler = jest.fn();
+        collection.on('change', handler);
+
+        collection.reconcile();
+
+        expect(handler).not.toHaveBeenCalled();
+        expect(collection.length).toBe(0);
+    });
+
+    test('reconcile - reconciling to empty clears the collection', () => {
+        const collection = new ObservableIndexedObjectCollection<TestItem>('id', [
+            createItem('1', 'first'),
+        ]);
+        const handler = jest.fn();
+        collection.on('change', handler);
+
+        collection.reconcile();
+
+        expect(collection.length).toBe(0);
+        expect(handler).toHaveBeenCalledWith({ setItems: [], deletedItems: ['1'] });
+    });
+
+    test('reconcile - preserves collection identity (mirror sees updates)', () => {
+        const collection = new ObservableIndexedObjectCollection<TestItem>('id', [
+            createItem('1', 'first'),
+            createItem('2', 'second'),
+        ]);
+        const mirror = collection.createMirror();
+
+        collection.reconcile(createItem('2', 'second'), createItem('3', 'third'));
+
+        // The mirror shares the same underlying items, so it reflects the
+        // reconcile without being re-created.
+        expect(mirror.get('1')).toBeUndefined();
+        expect(mirror.get('3')?.name).toBe('third');
+        expect(mirror.length).toBe(2);
+    });
 });

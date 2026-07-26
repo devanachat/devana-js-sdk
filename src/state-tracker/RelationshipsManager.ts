@@ -43,10 +43,9 @@ export class RelationshipsManager {
     }
 
     private handleRelationships(ev: Relationships): void {
-        this.relationships.deleteAll();
-        ev.relationships.forEach(relationship => {
-            this.relationships.set(relationship);
-        });
+        // Full list from the server: reconcile in place so a reconnect refetch
+        // updates a bound (visible) list without an intermediate empty state.
+        this.relationships.reconcile(...ev.relationships);
     }
 
     private handleNewRelationship(ev: NewRelationship): void {
@@ -62,7 +61,8 @@ export class RelationshipsManager {
     }
 
     private handleSession(): void {
+        // Keep the (possibly bound) collection; just drop the fetch guard so the
+        // next get() refetches and reconciles it in place.
         this.promises.forgetAll();
-        this.relationships.deleteAll();
     }
 }

@@ -45,7 +45,8 @@ export declare class WebSocketChatClient extends AbstractChatClient<Pick<WebSock
     protected sendQueue: Envelope[];
     protected connectingTimeoutId: any;
     protected authenticated: boolean;
-    protected authenticatedResolvers: [() => void, (error: Error) => void];
+    protected authenticatedResolvers: [() => void, (error: Error) => void] | null;
+    protected connectPromise: Promise<void> | null;
     protected pingMonitorInterval?: NodeJS.Timeout;
     protected inFlightPingTimeout: NodeJS.Timeout;
     protected lastReceivedMessageAt?: number;
@@ -57,6 +58,16 @@ export declare class WebSocketChatClient extends AbstractChatClient<Pick<WebSock
     private sendEnvelope;
     private onMessage;
     private onClose;
+    /**
+     * Resolve (or reject, when an error is given) a pending connect() promise.
+     * No-op when there is nothing pending.
+     */
+    private settleConnect;
+    /**
+     * Reject every command that has not been answered yet - both the ones still
+     * waiting in the send queue and the ones already sent to the server.
+     */
+    private failPendingCommands;
     private sendFromQueue;
     private triggerConnectionTimeout;
     private isConnectingWsState;

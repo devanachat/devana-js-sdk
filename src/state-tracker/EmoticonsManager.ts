@@ -44,8 +44,10 @@ export class EmoticonsManager {
             this.list.set([spaceId, new ObservableIndexedObjectCollection<Emoticon>('id')]);
         }
 
-        const collection = this.list.get(spaceId);
-        collection.set(...event.emoticons);
+        // handleEmoticons always carries the full list for a location, so
+        // reconcile in place: a reconnect refetch drops removed emoticons and
+        // adds new ones without blanking a bound (visible) collection.
+        this.list.get(spaceId).reconcile(...event.emoticons);
     }
 
     private handleNewEmoticon(ev: NewEmoticon): void {
@@ -63,7 +65,9 @@ export class EmoticonsManager {
     }
 
     private handleSession(): void {
-        this.list.deleteAll();
+        // Keep cached emoticon collections (they may be bound to visible
+        // pickers); just drop the fetch guards so the next access refetches and
+        // reconciles them in place.
         this.emoticonsPromises.forgetAll();
     }
 }

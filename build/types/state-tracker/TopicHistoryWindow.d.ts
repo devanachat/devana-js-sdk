@@ -64,7 +64,7 @@ export declare abstract class TraversableRemoteCollection<ItemT, EventMapT exten
     get hasLatest(): boolean;
     get hasOldest(): boolean;
     abstract createMirror(): TraversableRemoteCollection<ItemT, EventMapT>;
-    resetToLatest(): Promise<void>;
+    resetToLatest(force?: boolean): Promise<void>;
     fetchPrevious(): Promise<void>;
     fetchNext(): Promise<void>;
     jumpTo(id: string): Promise<void>;
@@ -99,7 +99,7 @@ export declare class TopicHistoryWindow extends TraversableRemoteCollection<Mess
     createMirror(): TopicHistoryWindow;
     get isTraverseLocked(): boolean;
     setTraverseLock(lock: boolean): Promise<void>;
-    resetToLatest(): Promise<void>;
+    resetToLatest(force?: boolean): Promise<void>;
     fetchNext(): Promise<void>;
     fetchPrevious(): Promise<void>;
     jumpTo(id: string): Promise<void>;

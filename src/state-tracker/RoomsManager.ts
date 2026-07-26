@@ -303,16 +303,33 @@ export class RoomsManager {
                     ev.members,
                 )
             ]);
+        } else {
+            // Reconcile into the existing (bound) collection so a reconnect
+            // refetch updates it in place instead of leaving stale members.
+            this.members.get(ev.id).reconcile(...ev.members);
         }
     }
 
     private handleSession(ev: Session): void {
-        this.list.deleteAll();
-        this.topics.deleteAll();
-        this.topicsPromises.forgetAll();
-        this.members.deleteAll();
-        this.membersPromises.forgetAll();
+        const stateRoomIds = new Set(ev.state.rooms.map(room => room.id));
 
+        // Remove only rooms that were left/deleted on the server during the
+        // downtime, reusing the cascade cleanup (members, topics, followed
+        // topics). Surviving rooms keep their identity and bindings.
+        const removedRoomIds = this.list.items
+            .filter(room => ! stateRoomIds.has(room.id))
+            .map(room => room.id);
+        if (removedRoomIds.length) {
+            this.deleteRoom(...removedRoomIds);
+        }
+
+        // Invalidate lazy caches so the next access refetches fresh data, but
+        // keep the collection objects: handleRoomMembers reconciles into them,
+        // so bound views refresh in place without blanking.
+        this.membersPromises.forgetAll();
+        this.topicsPromises.forgetAll();
+
+        // Upsert surviving/new rooms from the authoritative snapshot.
         this.addJoinedRooms(...ev.state.rooms);
 
         this.deferredSession.resolve();

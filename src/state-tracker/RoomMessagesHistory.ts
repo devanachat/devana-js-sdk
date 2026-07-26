@@ -1,7 +1,7 @@
 import {ChatStateTracker} from "./ChatStateTracker";
 import {NewTopic, Room, RoomUpdated, Topic, TopicDeleted} from "../types/src";
 import {IndexedCollection,} from "../IndexedObjectCollection";
-import {TopicHistoryWindow} from "./TopicHistoryWindow";
+import {TopicHistoryWindow, WindowState} from "./TopicHistoryWindow";
 
 export class RoomMessagesHistory {
     private historyWindows = new IndexedCollection<string, TopicHistoryWindow>();
@@ -37,6 +37,46 @@ export class RoomMessagesHistory {
         }
 
         return this.historyWindows.get(topicId);
+    }
+
+    /**
+     * Re-synchronise this room's history after a reconnect without discarding
+     * the existing window objects (which would blank the UI and, for ephemeral
+     * rooms, permanently drop live-only history).
+     *
+     * The window bindings are preserved; only windows that the application had
+     * actually pulled to the latest page (state === LATEST) are refreshed, with
+     * a single resetToLatest instead of a chain of catch-up requests. Windows
+     * that were never pulled (LIVE) or belong to an ephemeral room are left
+     * untouched so their in-memory context survives the reconnect.
+     */
+    public async resync(room: Room): Promise<void> {
+        this.room = room;
+        this.updateTraverseLock(room);
+
+        if (this.room.defaultTopic) {
+            this.createHistoryWindowForTopic(this.room.defaultTopic);
+        }
+
+        for (const [, window] of Array.from(this.historyWindows.items)) {
+            try {
+                await window.setTraverseLock(this.traverseLock);
+
+                // Ephemeral history lives only in memory (the server does not
+                // persist it), so never refetch/replace it on reconnect.
+                if (this.traverseLock) {
+                    continue;
+                }
+
+                if (window.state === WindowState.LATEST) {
+                    await window.resetToLatest(true);
+                }
+            } catch (_e) {
+                // Best effort: the connection can drop again mid-resync. The
+                // window keeps its current content and stays usable, so the
+                // application can refresh it on demand.
+            }
+        }
     }
 
     private async handleRoomUpdated(ev: RoomUpdated): Promise<void> {

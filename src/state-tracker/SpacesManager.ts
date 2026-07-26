@@ -227,14 +227,20 @@ export class SpacesManager {
                 ev.id,
                 new ObservableIndexedObjectCollection(member => member?.user.id, ev.members)
             ]);
+        } else {
+            // Reconcile into the existing (bound) collection so a reconnect
+            // refetch updates it in place instead of leaving stale members.
+            this.members.get(ev.id).reconcile(...ev.members);
         }
     }
 
     private handleSpaceRooms(ev: SpaceRooms): void {
-        if (!this.rooms.has(ev.id)) {
+        if (! this.rooms.has(ev.id)) {
             this.rooms.set([ev.id, new ObservableIndexedObjectCollection('id', ev.summaries)]);
-            ev.summaries.forEach(summary => this.roomIdToSpaceId.set([summary.id, ev.id]));
+        } else {
+            this.rooms.get(ev.id).reconcile(...ev.summaries);
         }
+        ev.summaries.forEach(summary => this.roomIdToSpaceId.set([summary.id, ev.id]));
     }
 
     private async handleRoomSummaryUpdated(ev: RoomSummaryUpdated): Promise<void> {
@@ -286,15 +292,36 @@ export class SpacesManager {
     }
 
     private handleSession(ev: Session): void {
-        this.list.deleteAll();
-        this.roles.deleteAll();
-        this.rooms.deleteAll();
-        this.roomsPromises.forgetAll();
-        this.members.deleteAll();
-        this.membersPromises.forgetAll();
-        this.roomIdToSpaceId.deleteAll();
+        const stateSpaceIds = new Set(ev.state.spaces.map(space => space.id));
 
-        this.addJoinedSpaces(...ev.state.spaces);
+        // Remove only spaces that were left/deleted on the server during the
+        // downtime, reusing the cascade cleanup (roles, rooms, members, index).
+        const removedSpaceIds = this.list.items
+            .filter(space => ! stateSpaceIds.has(space.id))
+            .map(space => space.id);
+        for (const spaceId of removedSpaceIds) {
+            this.handleSpaceDeleted({ id: spaceId } as SpaceDeleted);
+        }
+
+        // Invalidate lazy caches (rooms/members) but keep their objects so the
+        // next access refetches and reconciles them in place.
+        this.roomsPromises.forgetAll();
+        this.membersPromises.forgetAll();
+
+        // Reconcile roles in place (kept, possibly bound object) and upsert the
+        // spaces from the authoritative snapshot.
+        for (const space of ev.state.spaces) {
+            if (this.roles.has(space.id)) {
+                this.roles.get(space.id).reconcile(...space.roles);
+            } else {
+                this.roles.set([
+                    space.id,
+                    new ObservableIndexedObjectCollection<Role>('id', space.roles),
+                ]);
+            }
+        }
+
+        this.list.set(...ev.state.spaces);
 
         this.deferredSession.resolve();
     }

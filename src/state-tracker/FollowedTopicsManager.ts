@@ -30,6 +30,12 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
     private readonly deferredSession = new DeferredTask();
     private readonly summariesCache = new Map<string, UnreadSummary>();
 
+    /**
+     * Rooms whose cached followed-topics are stale after a reconnect and must
+     * be refetched (and reconciled in place) the next time they are accessed.
+     */
+    private readonly staleRooms = new Set<string>();
+
     public constructor(private tracker: ChatStateTracker) {
         super();
 
@@ -64,8 +70,8 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
             return;
         }
 
-        const isAlreadyCached = roomIds.every(roomId => this.followedTopics.has(roomId));
-        if (isAlreadyCached) {
+        const needsFetch = roomIds.some(roomId => ! this.followedTopics.has(roomId) || this.staleRooms.has(roomId));
+        if (! needsFetch) {
             return;
         }
 
@@ -76,7 +82,7 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
                 const result = await this.tracker.client.send('GetFollowedTopics', {location: {spaceId}});
                 if (result.error) throw result.error;
 
-                this.setFollowedTopicsArray(roomIds, result.data.followedTopics);
+                this.reconcileRoomsFollowedTopics(roomIds, result.data.followedTopics);
             }, spaceRegistryKey);
         }
 
@@ -92,7 +98,7 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
             return undefined;
         }
 
-        if (! this.followedTopics.has(roomId)) {
+        if (! this.followedTopics.has(roomId) || this.staleRooms.has(roomId)) {
             if (this.followedTopicsPromises.notExist(roomId)) {
                 this.followedTopicsPromises.registerByFunction(async () => {
                     const result = await this.tracker.client.send('GetFollowedTopics', {location: {roomId}});
@@ -101,7 +107,8 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
                         throw result.error;
                     }
 
-                    this.setFollowedTopicsArray([roomId], result.data.followedTopics);
+                    this.applyRoomFollowedTopics(roomId, result.data.followedTopics);
+                    this.invalidateUnreadSummaries(roomId);
                 }, roomId);
             }
 
@@ -212,7 +219,13 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
     }
 
     private handleSession(ev: Session): void {
-        this.followedTopics.deleteAll();
+        // Keep cached followed-topic collections (they drive unread indicators
+        // that would otherwise blank on reconnect), but mark them stale and drop
+        // the fetch guards so the next access/caching refetches and reconciles
+        // them in place.
+        for (const roomId of this.followedTopics.items.keys()) {
+            this.staleRooms.add(roomId);
+        }
         this.followedTopicsPromises.forgetAll();
         this.invalidateUnreadSummaries();
         this.deferredSession.resolve();
@@ -364,6 +377,40 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
         this.invalidateUnreadSummaries(ev.message.location.roomId, ev.message.location.topicId);
     }
 
+    /**
+     * Reconcile the followed-topics collection for a single room to exactly
+     * match the provided list (upsert present, drop absent) without emitting an
+     * intermediate empty state, and clear its stale marker. Does not touch the
+     * unread summaries cache - callers decide how to invalidate it.
+     */
+    private applyRoomFollowedTopics(roomId: string, followedTopics: FollowedTopic[]): void {
+        if (! this.followedTopics.has(roomId)) {
+            this.followedTopics.set([roomId, new ObservableIndexedObjectCollection<FollowedTopic>(
+                followedTopic => followedTopic.location.topicId
+            )]);
+        }
+
+        this.followedTopics.get(roomId).reconcile(...followedTopics);
+        this.staleRooms.delete(roomId);
+    }
+
+    /**
+     * Reconcile a batch of rooms from a single bulk GetFollowedTopics response.
+     * Rooms with no followed topics in the response are reconciled to empty, so
+     * topics unfollowed/removed during the downtime are correctly dropped.
+     */
+    private reconcileRoomsFollowedTopics(roomIds: string[], followedTopics: FollowedTopic[]): void {
+        const roomToTopics: {[roomId: string]: FollowedTopic[]} = {};
+
+        followedTopics.forEach(followedTopic => {
+            (roomToTopics[followedTopic.location.roomId] ??= []).push(followedTopic);
+        });
+
+        roomIds.forEach(roomId => this.applyRoomFollowedTopics(roomId, roomToTopics[roomId] ?? []));
+
+        this.invalidateUnreadSummariesForRooms(roomIds);
+    }
+
     private setFollowedTopicsArray(roomIds: string[], followedTopics: FollowedTopic[]): void {
         const roomToTopics: {[roomId: string]: FollowedTopic[]} = {};
 
@@ -391,6 +438,7 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
     private clearRoomFollowedTopicsStructures(roomId: string): void {
         this.followedTopics.delete(roomId);
         this.followedTopicsPromises.forget(roomId);
+        this.staleRooms.delete(roomId);
         this.invalidateUnreadSummaries(roomId);
     }
 }

@@ -51,6 +51,14 @@ export declare class ObservableIndexedObjectCollection<ItemT, EventMapT extends 
     set(...items: ItemT[]): void;
     delete(...ids: string[]): void;
     deleteAll(): void;
+    /**
+     * Bring the collection to exactly match the provided items: upsert every
+     * provided item and remove any existing item whose id is not present in the
+     * provided set. Emits at most a single `change` event describing both the
+     * set and the deleted ids, so bound consumers can update in place without
+     * ever observing an intermediate empty state (unlike deleteAll + set).
+     */
+    reconcile(...items: ItemT[]): void;
     createMirror(): ObservableIndexedObjectCollection<ItemT, EventMapT>;
     on<EventName extends keyof EventMapT & string>(eventName: EventName, handler: EventHandler<EventMapT[EventName]>): this;
     once<EventName extends keyof EventMapT & string>(eventName: EventName, handler: EventHandler<EventMapT[EventName]>): this;

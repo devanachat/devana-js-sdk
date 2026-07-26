@@ -48,7 +48,8 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
     protected sendQueue: Envelope[] = [];
     protected connectingTimeoutId: any;
     protected authenticated: boolean;
-    protected authenticatedResolvers: [() => void, (error: Error) => void];
+    protected authenticatedResolvers: [() => void, (error: Error) => void] | null = null;
+    protected connectPromise: Promise<void> | null = null;
     protected pingMonitorInterval?: NodeJS.Timeout;
     protected inFlightPingTimeout: NodeJS.Timeout;
     protected lastReceivedMessageAt?: number;
@@ -67,8 +68,13 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
 
     public async connect(): Promise<void> {
         if (this.isOpenWsState() || this.isConnectingWsState()) {
-            return;
+            return this.connectPromise ?? undefined;
         }
+
+        // Reuse the promise of an attempt that has not settled yet (an
+        // automatic reconnect), so the caller that started connecting is
+        // resolved by whichever attempt eventually authenticates.
+        this.connectPromise ??= new Promise<void>((...args) => this.authenticatedResolvers = args);
 
         const params = new URLSearchParams(this.options.queryParams ?? {});
         params.set('token', this.options.token);
@@ -81,11 +87,12 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
             this.options.connectingTimeoutMs ?? 10000
         );
         this.authenticated = false;
-        return new Promise((...args) => this.authenticatedResolvers = args);
+
+        return this.connectPromise;
     }
 
     public disconnect(): void {
-        this.sendQueue = [];
+        this.failPendingCommands(new Error('Client disconnected before the command was answered'));
         this.ws?.close(1000); // Normal closure
         this.ws = null;
     }
@@ -133,11 +140,11 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
             this.authenticated = isAuthenticated;
             if (isAuthenticated) {
                 this.startConnectionMonitor();
-                this.authenticatedResolvers[0]();
+                this.settleConnect();
                 this.emit(this.Event.connect);
                 this.sendFromQueue();
             } else {
-                this.authenticatedResolvers[1](envelope.data);
+                this.settleConnect(envelope.data);
             }
         }
     }
@@ -146,10 +153,52 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
         this.stopConnectionMonitor();
         clearTimeout(this.connectingTimeoutId);
         const reconnect = event.code !== 1000; // Connection was closed because of error
+
+        // The server can no longer answer anything that was queued or in
+        // flight, so settle those promises instead of leaving them pending.
+        this.failPendingCommands(new Error('Connection closed before the command was answered'));
+
         if (reconnect) {
+            // Keep a pending connect() promise unsettled - the retry below is
+            // expected to authenticate and will resolve it.
             void this.connect();
+        } else {
+            this.settleConnect(new Error('Connection closed before authentication'));
         }
+
         this.emit(this.Event.disconnect, reconnect);
+    }
+
+    /**
+     * Resolve (or reject, when an error is given) a pending connect() promise.
+     * No-op when there is nothing pending.
+     */
+    private settleConnect(error?: any): void {
+        const resolvers = this.authenticatedResolvers;
+
+        this.authenticatedResolvers = null;
+        this.connectPromise = null;
+
+        if (! resolvers) {
+            return;
+        }
+
+        error ? resolvers[1](error) : resolvers[0]();
+    }
+
+    /**
+     * Reject every command that has not been answered yet - both the ones still
+     * waiting in the send queue and the ones already sent to the server.
+     */
+    private failPendingCommands(error: Error): void {
+        const queued = this.sendQueue;
+        this.sendQueue = [];
+
+        for (const envelope of queued) {
+            this.handleEnvelopeSendError(envelope, error);
+        }
+
+        this.failAwaitingResponses(error);
     }
 
     private sendFromQueue(): void {
@@ -198,7 +247,9 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
                 this.ws.close(3000); // Service Restart (reconnect)
             }, this.options.ping.pongBackTimeoutMs);
 
-            this.send('Ping', {}).then(() => {
+            // A rejection here means the connection dropped while the ping was
+            // in flight; onClose already handles that, so just stop waiting.
+            this.send('Ping', {}).catch(() => undefined).then(() => {
                 clearTimeout(this.inFlightPingTimeout);
                 this.inFlightPingTimeout = undefined;
             });

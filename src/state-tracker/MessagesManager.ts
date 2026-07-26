@@ -71,8 +71,27 @@ export class MessagesManager {
     }
 
     private handleSession(ev: Session): void {
-        this.roomHistories.deleteAll();
-        ev.state.rooms.forEach(room => this.createHistoryForNewRoom(room));
+        const stateRoomIds = new Set(ev.state.rooms.map(room => room.id));
+
+        // Drop histories only for rooms that no longer exist server-side.
+        for (const roomId of Array.from(this.roomHistories.items.keys())) {
+            if (! stateRoomIds.has(roomId)) {
+                this.roomHistories.delete(roomId);
+            }
+        }
+
+        // Keep existing histories (preserving loaded messages and, crucially,
+        // live-only ephemeral history), create histories for newly joined
+        // rooms, and resync survivors against the fresh room snapshot.
+        for (const room of ev.state.rooms) {
+            const history = this.roomHistories.get(room.id);
+            if (history) {
+                void history.resync(room);
+            } else {
+                this.createHistoryForNewRoom(room);
+            }
+        }
+
         this.deferredSession.resolve();
     }
 }

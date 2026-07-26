@@ -17,6 +17,11 @@ export declare class FollowedTopicsManager extends EventTarget<EventMap> {
     private readonly followedTopicsPromises;
     private readonly deferredSession;
     private readonly summariesCache;
+    /**
+     * Rooms whose cached followed-topics are stale after a reconnect and must
+     * be refetched (and reconciled in place) the next time they are accessed.
+     */
+    private readonly staleRooms;
     constructor(tracker: ChatStateTracker);
     /**
      * Cache followed topics for all joined rooms in a space and fetch them in bulk if necessary.
@@ -61,6 +66,19 @@ export declare class FollowedTopicsManager extends EventTarget<EventMap> {
     private invalidateUnreadSummaries;
     private invalidateUnreadSummariesForRooms;
     private updateLocallyFollowedTopicOnNewMessage;
+    /**
+     * Reconcile the followed-topics collection for a single room to exactly
+     * match the provided list (upsert present, drop absent) without emitting an
+     * intermediate empty state, and clear its stale marker. Does not touch the
+     * unread summaries cache - callers decide how to invalidate it.
+     */
+    private applyRoomFollowedTopics;
+    /**
+     * Reconcile a batch of rooms from a single bulk GetFollowedTopics response.
+     * Rooms with no followed topics in the response are reconciled to empty, so
+     * topics unfollowed/removed during the downtime are correctly dropped.
+     */
+    private reconcileRoomsFollowedTopics;
     private setFollowedTopicsArray;
     private clearRoomFollowedTopicsStructures;
 }

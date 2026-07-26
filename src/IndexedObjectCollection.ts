@@ -226,6 +226,37 @@ export class ObservableIndexedObjectCollection<
         }
     }
 
+    /**
+     * Bring the collection to exactly match the provided items: upsert every
+     * provided item and remove any existing item whose id is not present in the
+     * provided set. Emits at most a single `change` event describing both the
+     * set and the deleted ids, so bound consumers can update in place without
+     * ever observing an intermediate empty state (unlike deleteAll + set).
+     */
+    public reconcile(...items: ItemT[]) {
+        const incomingIds = new Set(items.map(item => this.getId(item)));
+        const deletedItems: string[] = [];
+
+        for (const existing of this.items) {
+            const id = this.getId(existing);
+            if (! incomingIds.has(id)) {
+                deletedItems.push(id);
+            }
+        }
+
+        if (! items.length && ! deletedItems.length) {
+            return;
+        }
+
+        this._items.delete(...deletedItems);
+        super.set(...items);
+
+        this.eventTarget.emit('change', {
+            setItems: items.map(item => this.getId(item)),
+            deletedItems,
+        });
+    }
+
     public createMirror(): ObservableIndexedObjectCollection<ItemT, EventMapT> {
         const copy = new ObservableIndexedObjectCollection<ItemT, EventMapT>(this.id);
         copy.eventTarget = this.eventTarget;

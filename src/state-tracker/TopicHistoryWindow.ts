@@ -111,8 +111,8 @@ export abstract class TraversableRemoteCollection<
 
     public abstract createMirror(): TraversableRemoteCollection<ItemT, EventMapT>;
 
-    public async resetToLatest(): Promise<void> {
-        if (this.internalState.ongoing || this.internalState.current === WindowState.LATEST) {
+    public async resetToLatest(force: boolean = false): Promise<void> {
+        if (this.internalState.ongoing || (! force && this.internalState.current === WindowState.LATEST)) {
             return;
         }
 
@@ -340,11 +340,11 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         }
     }
 
-    public async resetToLatest(): Promise<void> {
+    public async resetToLatest(force: boolean = false): Promise<void> {
         if (this.internalState.traverseLock) {
             return;
         }
-        return super.resetToLatest();
+        return super.resetToLatest(force);
     }
 
     public async fetchNext(): Promise<void> {

@@ -33,7 +33,9 @@ export class UsersManager {
     }
 
     private handleSession(session: Session): void {
-        this.users.deleteAll();
+        // Keep the "seen users" cache across reconnects so bound user lists do
+        // not blank out; just ensure our own user is present/updated. Stale
+        // entries are refreshed as member/message collections refetch.
         this.handleUsers([session.user]);
     }
 
