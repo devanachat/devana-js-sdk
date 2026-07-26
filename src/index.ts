@@ -11,6 +11,7 @@ import { Permissions, PermissionDefinition, Layer } from "./Permissions";
 import * as ChatTypes from './types/src';
 import {extractUserFromMember} from "./state-tracker/functions";
 import {AbstractRestClient} from "./AbstractRestClient";
+import {UnreadSummary} from "./state-tracker/FollowedTopicsManager";
 
 export {
     IndexedCollection, ObservableIndexedCollection,
@@ -25,4 +26,5 @@ export {
 export type {
     ChatTypes,
     File,
+    UnreadSummary,
 };

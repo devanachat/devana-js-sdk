@@ -5,6 +5,11 @@ import { ChatLocation, FollowedTopic } from "../types/src";
 interface EventMap {
     change: {};
 }
+export interface UnreadSummary {
+    mentionCount: number;
+    unreadTopicCount: number;
+    isUnread: boolean;
+}
 export declare class FollowedTopicsManager extends EventTarget<EventMap> {
     private tracker;
     private readonly followedTopics;
@@ -33,10 +38,7 @@ export declare class FollowedTopicsManager extends EventTarget<EventMap> {
      * Capture the 'change' event to determine when it's worth calling this method again due to data changes.
      * @return Undefined if you are not in room.
      */
-    summarize(location: ChatLocation): Promise<{
-        mentionCount: number;
-        isUnread: boolean;
-    }>;
+    summarize(location: ChatLocation): Promise<UnreadSummary>;
     /**
      * For internal use. If you want to delete the message, execute a proper command on client object.
      * @internal

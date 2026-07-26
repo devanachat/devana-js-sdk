@@ -6,5 +6,6 @@ import { Permissions, PermissionDefinition, Layer } from "./Permissions";
 import * as ChatTypes from './types/src';
 import { extractUserFromMember } from "./state-tracker/functions";
 import { AbstractRestClient } from "./AbstractRestClient";
+import { UnreadSummary } from "./state-tracker/FollowedTopicsManager";
 export { IndexedCollection, ObservableIndexedCollection, IndexedObjectCollection, ObservableIndexedObjectCollection, Permissions, PermissionDefinition, Layer, WebSocketChatClient, WebApiChatClient, FilesClient, AbstractRestClient, extractUserFromMember, };
-export type { ChatTypes, File, };
+export type { ChatTypes, File, UnreadSummary, };

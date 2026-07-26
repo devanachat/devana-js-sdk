@@ -17,11 +17,17 @@ interface EventMap {
     change: {};
 }
 
+export interface UnreadSummary {
+    mentionCount: number;
+    unreadTopicCount: number;
+    isUnread: boolean;
+}
+
 export class FollowedTopicsManager extends EventTarget<EventMap> {
     private readonly followedTopics = new IndexedCollection<string, ObservableIndexedObjectCollection<FollowedTopic>>();
     private readonly followedTopicsPromises = new PromiseRegistry();
     private readonly deferredSession = new DeferredTask();
-    private readonly summariesCache = new Map<string, { mentionCount: number, isUnread: boolean }>();
+    private readonly summariesCache = new Map<string, UnreadSummary>();
 
     public constructor(private tracker: ChatStateTracker) {
         super();
@@ -127,7 +133,7 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
      * Capture the 'change' event to determine when it's worth calling this method again due to data changes.
      * @return Undefined if you are not in room.
      */
-    public async summarize(location: ChatLocation): Promise<{ mentionCount: number, isUnread: boolean }> {
+    public async summarize(location: ChatLocation): Promise<UnreadSummary> {
         const cacheKey = location.topicId
             ? `topic:${location.roomId}:${location.topicId}`
             : location.roomId
@@ -161,7 +167,7 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
         }
 
         let mentionCount = 0;
-        let isUnread = false;
+        let unreadTopicCount = 0;
 
         for (const roomId of roomIds) {
             const collection = await this.getForRoom(roomId);
@@ -176,14 +182,14 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
                 }
 
                 if (topic.isUnread) {
-                    isUnread = true;
+                    unreadTopicCount++;
                 }
 
                 mentionCount += (topic.mentionCount ?? 0);
             }
         }
 
-        const result = { mentionCount, isUnread };
+        const result = { mentionCount, unreadTopicCount, isUnread: unreadTopicCount > 0 };
         this.summariesCache.set(cacheKey, result);
 
         return result;

@@ -2159,7 +2159,7 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
     key: "summarize",
     value: (function () {
       var _summarize = FollowedTopicsManager_asyncToGenerator(/*#__PURE__*/FollowedTopicsManager_regenerator().m(function _callee6(location) {
-        var cacheKey, roomIds, targetTopicId, rooms, mentionCount, isUnread, _iterator2, _step2, roomId, collection, _iterator3, _step3, _topic$mentionCount, topic, result, _t3, _t4;
+        var cacheKey, roomIds, targetTopicId, rooms, mentionCount, unreadTopicCount, _iterator2, _step2, roomId, collection, _iterator3, _step3, _topic$mentionCount, topic, result, _t3, _t4;
         return FollowedTopicsManager_regenerator().w(function (_context6) {
           while (1) switch (_context6.p = _context6.n) {
             case 0:
@@ -2221,7 +2221,7 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
               });
             case 9:
               mentionCount = 0;
-              isUnread = false;
+              unreadTopicCount = 0;
               _iterator2 = FollowedTopicsManager_createForOfIteratorHelper(roomIds);
               _context6.p = 10;
               _iterator2.s();
@@ -2257,7 +2257,7 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
               return _context6.a(3, 17);
             case 16:
               if (topic.isUnread) {
-                isUnread = true;
+                unreadTopicCount++;
               }
               mentionCount += (_topic$mentionCount = topic.mentionCount) !== null && _topic$mentionCount !== void 0 ? _topic$mentionCount : 0;
             case 17:
@@ -2291,7 +2291,8 @@ var FollowedTopicsManager = /*#__PURE__*/function (_EventTarget) {
             case 25:
               result = {
                 mentionCount: mentionCount,
-                isUnread: isUnread
+                unreadTopicCount: unreadTopicCount,
+                isUnread: unreadTopicCount > 0
               };
               this.summariesCache.set(cacheKey, result);
               return _context6.a(2, result);
