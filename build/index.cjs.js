@@ -2917,8 +2917,8 @@ var RoomsManager = /*#__PURE__*/function () {
     this.tracker.client.on('TopicUpdated', function (ev) {
       return _this.handleTopicUpdated(ev);
     });
-    this.tracker.client.on('RoomMemberJoined', function (ev) {
-      return _this.handleRoomMemberJoined(ev);
+    this.tracker.client.on('RoomMembersJoined', function (ev) {
+      return _this.handleRoomMembersJoined(ev);
     });
     this.tracker.client.on('RoomMemberLeft', function (ev) {
       return _this.handleRoomMemberLeft(ev);
@@ -3340,10 +3340,11 @@ var RoomsManager = /*#__PURE__*/function () {
       this.deleteRoom(ev.id);
     }
   }, {
-    key: "handleRoomMemberJoined",
-    value: function handleRoomMemberJoined(ev) {
+    key: "handleRoomMembersJoined",
+    value: function handleRoomMembersJoined(ev) {
       if (this.members.has(ev.roomId)) {
-        this.members.get(ev.roomId).set(ev.member);
+        var _this$members$get;
+        (_this$members$get = this.members.get(ev.roomId)).set.apply(_this$members$get, RoomsManager_toConsumableArray(ev.members));
       }
     }
   }, {
@@ -3362,10 +3363,10 @@ var RoomsManager = /*#__PURE__*/function () {
           return (_member$user$id2 = (_member$user2 = member.user) === null || _member$user2 === void 0 ? void 0 : _member$user2.id) !== null && _member$user$id2 !== void 0 ? _member$user$id2 : member.spaceMember.user.id;
         }, ev.members)]);
       } else {
-        var _this$members$get;
+        var _this$members$get2;
         // Reconcile into the existing (bound) collection so a reconnect
         // refetch updates it in place instead of leaving stale members.
-        (_this$members$get = this.members.get(ev.id)).reconcile.apply(_this$members$get, RoomsManager_toConsumableArray(ev.members));
+        (_this$members$get2 = this.members.get(ev.id)).reconcile.apply(_this$members$get2, RoomsManager_toConsumableArray(ev.members));
       }
     }
   }, {
@@ -3713,50 +3714,73 @@ var SpacesManager = /*#__PURE__*/function () {
       return getRooms;
     }()
     /**
+     * Drop the cached room listing of the space and fetch it again from the server.
+     * Room visibility depends on things this client is not notified about (invitations,
+     * permission changes), so the listing needs a way to be pulled anew on demand.
+     */
+    )
+  }, {
+    key: "refreshRooms",
+    value: (function () {
+      var _refreshRooms = SpacesManager_asyncToGenerator(/*#__PURE__*/SpacesManager_regenerator().m(function _callee5(spaceId) {
+        return SpacesManager_regenerator().w(function (_context5) {
+          while (1) switch (_context5.n) {
+            case 0:
+              this.roomsPromises.forget(spaceId);
+              return _context5.a(2, this.getRooms(spaceId));
+          }
+        }, _callee5, this);
+      }));
+      function refreshRooms(_x3) {
+        return _refreshRooms.apply(this, arguments);
+      }
+      return refreshRooms;
+    }()
+    /**
      * Get collection of space members.
      */
     )
   }, {
     key: "getMembers",
     value: (function () {
-      var _getMembers = SpacesManager_asyncToGenerator(/*#__PURE__*/SpacesManager_regenerator().m(function _callee6(spaceId) {
+      var _getMembers = SpacesManager_asyncToGenerator(/*#__PURE__*/SpacesManager_regenerator().m(function _callee7(spaceId) {
         var _this3 = this;
-        return SpacesManager_regenerator().w(function (_context6) {
-          while (1) switch (_context6.n) {
+        return SpacesManager_regenerator().w(function (_context7) {
+          while (1) switch (_context7.n) {
             case 0:
               if (this.membersPromises.notExist(spaceId)) {
-                this.membersPromises.registerByFunction(/*#__PURE__*/SpacesManager_asyncToGenerator(/*#__PURE__*/SpacesManager_regenerator().m(function _callee5() {
+                this.membersPromises.registerByFunction(/*#__PURE__*/SpacesManager_asyncToGenerator(/*#__PURE__*/SpacesManager_regenerator().m(function _callee6() {
                   var result;
-                  return SpacesManager_regenerator().w(function (_context5) {
-                    while (1) switch (_context5.n) {
+                  return SpacesManager_regenerator().w(function (_context6) {
+                    while (1) switch (_context6.n) {
                       case 0:
-                        _context5.n = 1;
+                        _context6.n = 1;
                         return _this3.tracker.client.send('GetSpaceMembers', {
                           id: spaceId
                         });
                       case 1:
-                        result = _context5.v;
+                        result = _context6.v;
                         if (!result.error) {
-                          _context5.n = 2;
+                          _context6.n = 2;
                           break;
                         }
                         throw result.error;
                       case 2:
                         _this3.handleSpaceMembers(result.data);
                       case 3:
-                        return _context5.a(2);
+                        return _context6.a(2);
                     }
-                  }, _callee5);
+                  }, _callee6);
                 })), spaceId);
               }
-              _context6.n = 1;
+              _context7.n = 1;
               return this.membersPromises.get(spaceId);
             case 1:
-              return _context6.a(2, this.members.get(spaceId));
+              return _context7.a(2, this.members.get(spaceId));
           }
-        }, _callee6, this);
+        }, _callee7, this);
       }));
-      function getMembers(_x3) {
+      function getMembers(_x4) {
         return _getMembers.apply(this, arguments);
       }
       return getMembers;
@@ -3768,32 +3792,32 @@ var SpacesManager = /*#__PURE__*/function () {
   }, {
     key: "getMe",
     value: (function () {
-      var _getMe = SpacesManager_asyncToGenerator(/*#__PURE__*/SpacesManager_regenerator().m(function _callee7(spaceId) {
+      var _getMe = SpacesManager_asyncToGenerator(/*#__PURE__*/SpacesManager_regenerator().m(function _callee8(spaceId) {
         var userId, members;
-        return SpacesManager_regenerator().w(function (_context7) {
-          while (1) switch (_context7.n) {
+        return SpacesManager_regenerator().w(function (_context8) {
+          while (1) switch (_context8.n) {
             case 0:
-              _context7.n = 1;
+              _context8.n = 1;
               return this.tracker.getMe();
             case 1:
-              userId = _context7.v.id;
+              userId = _context8.v.id;
               if (this.list.has(spaceId)) {
-                _context7.n = 2;
+                _context8.n = 2;
                 break;
               }
-              return _context7.a(2, undefined);
+              return _context8.a(2, undefined);
             case 2:
-              _context7.n = 3;
+              _context8.n = 3;
               return this.getMembers(spaceId);
             case 3:
-              members = _context7.v;
-              return _context7.a(2, members === null || members === void 0 ? void 0 : members.items.find(function (member) {
+              members = _context8.v;
+              return _context8.a(2, members === null || members === void 0 ? void 0 : members.items.find(function (member) {
                 return member.user.id === userId;
               }));
           }
-        }, _callee7, this);
+        }, _callee8, this);
       }));
-      function getMe(_x4) {
+      function getMe(_x5) {
         return _getMe.apply(this, arguments);
       }
       return getMe;
@@ -3826,19 +3850,19 @@ var SpacesManager = /*#__PURE__*/function () {
   }, {
     key: "handleRoomDeleted",
     value: function () {
-      var _handleRoomDeleted = SpacesManager_asyncToGenerator(/*#__PURE__*/SpacesManager_regenerator().m(function _callee8(ev) {
+      var _handleRoomDeleted = SpacesManager_asyncToGenerator(/*#__PURE__*/SpacesManager_regenerator().m(function _callee9(ev) {
         var _this$rooms$get2;
         var spaceId, space, spaceChanged;
-        return SpacesManager_regenerator().w(function (_context8) {
-          while (1) switch (_context8.n) {
+        return SpacesManager_regenerator().w(function (_context9) {
+          while (1) switch (_context9.n) {
             case 0:
               spaceId = this.roomIdToSpaceId.get(ev.id);
               this.roomIdToSpaceId["delete"](ev.id);
               if (spaceId) {
-                _context8.n = 1;
+                _context9.n = 1;
                 break;
               }
-              return _context8.a(2);
+              return _context9.a(2);
             case 1:
               space = this.list.get(spaceId);
               spaceChanged = false;
@@ -3857,11 +3881,11 @@ var SpacesManager = /*#__PURE__*/function () {
                 this.list.set(space);
               }
             case 2:
-              return _context8.a(2);
+              return _context9.a(2);
           }
-        }, _callee8, this);
+        }, _callee9, this);
       }));
-      function handleRoomDeleted(_x5) {
+      function handleRoomDeleted(_x6) {
         return _handleRoomDeleted.apply(this, arguments);
       }
       return handleRoomDeleted;
@@ -3955,10 +3979,10 @@ var SpacesManager = /*#__PURE__*/function () {
   }, {
     key: "handleRoomSummaryUpdated",
     value: function () {
-      var _handleRoomSummaryUpdated = SpacesManager_asyncToGenerator(/*#__PURE__*/SpacesManager_regenerator().m(function _callee9(ev) {
+      var _handleRoomSummaryUpdated = SpacesManager_asyncToGenerator(/*#__PURE__*/SpacesManager_regenerator().m(function _callee0(ev) {
         var spaceId, summariesPromise, summaries, oldSummary, newSummary;
-        return SpacesManager_regenerator().w(function (_context9) {
-          while (1) switch (_context9.n) {
+        return SpacesManager_regenerator().w(function (_context0) {
+          while (1) switch (_context0.n) {
             case 0:
               spaceId = this.roomIdToSpaceId.get(ev.summary.id);
               summariesPromise = this.roomsPromises.get(spaceId);
@@ -3967,10 +3991,10 @@ var SpacesManager = /*#__PURE__*/function () {
                * RoomSummaryUpdated event has a partial summary, so we need to update the existing summary by merging it.
                */
               if (!(spaceId && summariesPromise)) {
-                _context9.n = 2;
+                _context0.n = 2;
                 break;
               }
-              _context9.n = 1;
+              _context0.n = 1;
               return summariesPromise;
             case 1:
               summaries = this.rooms.get(spaceId);
@@ -3982,11 +4006,11 @@ var SpacesManager = /*#__PURE__*/function () {
               }
               summaries.set(newSummary);
             case 2:
-              return _context9.a(2);
+              return _context0.a(2);
           }
-        }, _callee9, this);
+        }, _callee0, this);
       }));
-      function handleRoomSummaryUpdated(_x6) {
+      function handleRoomSummaryUpdated(_x7) {
         return _handleRoomSummaryUpdated.apply(this, arguments);
       }
       return handleRoomSummaryUpdated;
@@ -4210,6 +4234,10 @@ Permissions_defineProperty(Permissions, "list", {
   RedactMessages: {
     value: 1 << 19,
     maxLayer: Layer.Topic
+  },
+  AddMembers: {
+    value: 1 << 20,
+    maxLayer: Layer.Space
   }
 });
 ;// ./src/state-tracker/PermissionsManager.ts
@@ -4968,8 +4996,8 @@ var UsersManager = /*#__PURE__*/function () {
     tracker.client.on('UserUpdated', function (event) {
       return _this.handleUsers([event.user]);
     });
-    tracker.client.on('RoomMemberJoined', function (event) {
-      return _this.handleMembers([event.member]);
+    tracker.client.on('RoomMembersJoined', function (event) {
+      return _this.handleMembers(event.members);
     });
     tracker.client.on('SpaceMemberJoined', function (event) {
       return _this.handleMembers([event.member]);

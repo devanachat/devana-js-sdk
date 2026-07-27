@@ -32,6 +32,7 @@ export class Permissions {
         ChangeOwnNick: {value: 1 << 17, maxLayer: Layer.Space},
         ChangeOwnColor: {value: 1 << 18, maxLayer: Layer.Room},
         RedactMessages: {value: 1 << 19, maxLayer: Layer.Topic},
+        AddMembers: {value: 1 << 20, maxLayer: Layer.Space},
     };
 
     public static getNames(): (keyof typeof this.list)[] {

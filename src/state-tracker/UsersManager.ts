@@ -12,7 +12,7 @@ export class UsersManager {
     public constructor(private tracker: ChatStateTracker) {
         // RoomMemberUpdated & SpaceMemberUpdated events are not contains user object
         tracker.client.on('UserUpdated', event => this.handleUsers([event.user]));
-        tracker.client.on('RoomMemberJoined', event => this.handleMembers([event.member]));
+        tracker.client.on('RoomMembersJoined', event => this.handleMembers(event.members));
         tracker.client.on('SpaceMemberJoined', event => this.handleMembers([event.member]));
         tracker.client.on('SpaceMembers', event => this.handleMembers(event.members));
         tracker.client.on('RoomMembers', event => this.handleMembers(event.members));

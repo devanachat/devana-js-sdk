@@ -6,7 +6,7 @@ import {
     NewTopic,
     Room, RoomDeleted,
     RoomJoined, RoomLeft,
-    RoomMember, RoomMemberJoined, RoomMemberLeft, RoomMembers,
+    RoomMember, RoomMemberLeft, RoomMembers, RoomMembersJoined,
     RoomMemberUpdated, RoomUpdated, Session, SpaceDeleted, SpaceLeft, SpaceMemberLeft,
     SpaceMemberUpdated,
     Topic,
@@ -42,7 +42,7 @@ export class RoomsManager {
         this.tracker.client.on('RoomUpdated', ev => this.handleRoomUpdated(ev));
         this.tracker.client.on('RoomDeleted', ev => this.handleRoomDeleted(ev));
         this.tracker.client.on('TopicUpdated', ev => this.handleTopicUpdated(ev));
-        this.tracker.client.on('RoomMemberJoined', ev => this.handleRoomMemberJoined(ev));
+        this.tracker.client.on('RoomMembersJoined', ev => this.handleRoomMembersJoined(ev));
         this.tracker.client.on('RoomMemberLeft', ev => this.handleRoomMemberLeft(ev));
         this.tracker.client.on('RoomMembers', ev => this.handleRoomMembers(ev));
         this.tracker.client.on('RoomMemberUpdated', ev => this.handleRoomMemberUpdated(ev));
@@ -282,9 +282,9 @@ export class RoomsManager {
         this.deleteRoom(ev.id);
     }
 
-    private handleRoomMemberJoined(ev: RoomMemberJoined): void {
+    private handleRoomMembersJoined(ev: RoomMembersJoined): void {
         if (this.members.has(ev.roomId)) {
-            this.members.get(ev.roomId).set(ev.member);
+            this.members.get(ev.roomId).set(...ev.members);
         }
     }
 

@@ -93,6 +93,16 @@ export class SpacesManager {
     }
 
     /**
+     * Drop the cached room listing of the space and fetch it again from the server.
+     * Room visibility depends on things this client is not notified about (invitations,
+     * permission changes), so the listing needs a way to be pulled anew on demand.
+     */
+    public async refreshRooms(spaceId: string): Promise<ObservableIndexedObjectCollection<RoomSummary> | undefined> {
+        this.roomsPromises.forget(spaceId);
+        return this.getRooms(spaceId);
+    }
+
+    /**
      * Get collection of space members.
      */
     public async getMembers(spaceId: string): Promise<ObservableIndexedObjectCollection<SpaceMember> | undefined> {

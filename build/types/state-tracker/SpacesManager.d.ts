@@ -25,6 +25,12 @@ export declare class SpacesManager {
      */
     getRooms(spaceId: string): Promise<ObservableIndexedObjectCollection<RoomSummary> | undefined>;
     /**
+     * Drop the cached room listing of the space and fetch it again from the server.
+     * Room visibility depends on things this client is not notified about (invitations,
+     * permission changes), so the listing needs a way to be pulled anew on demand.
+     */
+    refreshRooms(spaceId: string): Promise<ObservableIndexedObjectCollection<RoomSummary> | undefined>;
+    /**
      * Get collection of space members.
      */
     getMembers(spaceId: string): Promise<ObservableIndexedObjectCollection<SpaceMember> | undefined>;

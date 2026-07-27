@@ -17,7 +17,7 @@ import {
     RoomJoined,
     RoomLeft,
     RoomMemberLeft,
-    RoomMemberJoined,
+    RoomMembersJoined,
     RoomMembers,
     NewRoom,
     NewTopic,
@@ -118,6 +118,10 @@ import {
     GetUserData,
     UnfollowTopic,
     TopicUnfollowed,
+    Invite,
+    Uninvite,
+    GetInvited,
+    Invited,
 } from "./types/src";
 import {EventTarget} from "./EventTarget";
 
@@ -236,7 +240,7 @@ export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap
     // Room events
     RoomJoined: RoomJoined,
     RoomLeft: RoomLeft,
-    RoomMemberJoined: RoomMemberJoined,
+    RoomMembersJoined: RoomMembersJoined,
     RoomMemberLeft: RoomMemberLeft,
     RoomMemberUpdated: RoomMemberUpdated,
     RoomMembers: RoomMembers,
@@ -245,6 +249,7 @@ export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap
     RoomUpdated: RoomUpdated,
     RoomSummaryEvent: RoomSummaryEvent,
     RoomSummaryUpdated: RoomSummaryUpdated,
+    Invited: Invited,
     // Topic events
     NewTopic: NewTopic,
     TopicDeleted: TopicDeleted,
@@ -317,6 +322,9 @@ export type CommandsMap = {
     GetRoomMembers: CommandDefinition<GetRoomMembers, EventsMap['RoomMembers']>,
     GetRoomSummary: CommandDefinition<GetRoomSummary, EventsMap['RoomSummaryEvent']>,
     UpdateRoomMember: CommandDefinition<UpdateRoomMember, EventsMap['RoomMemberUpdated']>,
+    Invite: CommandDefinition<Invite, EventsMap['Invited']>,
+    Uninvite: CommandDefinition<Uninvite, EventsMap['Invited']>,
+    GetInvited: CommandDefinition<GetInvited, EventsMap['Invited']>,
      // Topic commands
     CreateTopic: CommandDefinition<CreateTopic, EventsMap['NewTopic']>,
     DeleteTopic: CommandDefinition<DeleteTopic, EventsMap['TopicDeleted']>,

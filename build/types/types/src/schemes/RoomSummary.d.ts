@@ -1,6 +1,7 @@
 import { RoomType } from "./Room";
 export interface RoomSummaryExtras {
     isPrivate: boolean;
+    isInvitationOnly: boolean;
 }
 export interface RoomSummary {
     id: string;

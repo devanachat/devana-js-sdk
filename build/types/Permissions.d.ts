@@ -86,6 +86,10 @@ export declare class Permissions {
             value: number;
             maxLayer: Layer;
         };
+        AddMembers: {
+            value: number;
+            maxLayer: Layer;
+        };
     };
     static getNames(): (keyof typeof this.list)[];
     static getByName(name: keyof typeof this.list): PermissionDefinition | undefined;

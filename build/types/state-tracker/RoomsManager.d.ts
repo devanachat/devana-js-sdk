@@ -51,7 +51,7 @@ export declare class RoomsManager {
     private handleTopicUpdated;
     private addJoinedRooms;
     private handleRoomLeft;
-    private handleRoomMemberJoined;
+    private handleRoomMembersJoined;
     private handleRoomMemberLeft;
     private handleRoomMembers;
     private handleSession;
