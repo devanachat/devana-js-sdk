@@ -136,6 +136,9 @@ import {UserInformation} from "./schemes/UserInformation";
 import {SetSessionData, SessionPush} from "./schemes/commands/SetSessionData";
 import {SessionData} from "./schemes/SessionData";
 import {GetSessionData} from "./schemes/commands/GetSessionData";
+import {UserData, PrivateMessagePolicy} from "./schemes/UserData";
+import {SetUserData} from "./schemes/commands/SetUserData";
+import {GetUserData} from "./schemes/commands/GetUserData";
 import {UnfollowTopic} from "./schemes/commands/UnfollowTopic";
 import {TopicUnfollowed} from "./schemes/events/TopicUnfollowed";
 
@@ -176,6 +179,8 @@ export {
     UserInformation,
     SessionPush,
     SessionData,
+    UserData,
+    PrivateMessagePolicy,
     // events
     Bye,
     Error,
@@ -294,4 +299,6 @@ export {
     GetUserInfo,
     SetSessionData,
     GetSessionData,
+    SetUserData,
+    GetUserData,
 };
