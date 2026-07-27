@@ -113,6 +113,9 @@ import {
     SetSessionData,
     SessionData,
     GetSessionData,
+    SetUserData,
+    UserData,
+    GetUserData,
     UnfollowTopic,
     TopicUnfollowed,
 } from "./types/src";
@@ -209,6 +212,7 @@ export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap
     Bans: Bans,
     ClientData: ClientData,
     SessionData: SessionData,
+    UserData: UserData,
     NewRelationship: NewRelationship,
     RelationshipDeleted: RelationshipDeleted,
     Relationships: Relationships,
@@ -286,6 +290,8 @@ export type CommandsMap = {
     GetUserInfo: CommandDefinition<GetUserInfo, EventsMap['UserInfo']>,
     GetSessionData: CommandDefinition<GetSessionData, EventsMap['SessionData']>,
     SetSessionData: CommandDefinition<SetSessionData, EventsMap['Ok']>,
+    GetUserData: CommandDefinition<GetUserData, EventsMap['UserData']>,
+    SetUserData: CommandDefinition<SetUserData, EventsMap['Ok']>,
      // Space commands
     GetDiscoverableSpaces: CommandDefinition<GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']>,
     JoinSpace: CommandDefinition<JoinSpace, EventsMap['SpaceJoined']>,
