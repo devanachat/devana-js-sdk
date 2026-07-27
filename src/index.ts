@@ -26,7 +26,7 @@ import {NewRole} from "./schemes/events/NewRole";
 import {RoleDeleted} from "./schemes/events/RoleDeleted";
 import {RoomJoined} from "./schemes/events/RoomJoined";
 import {RoomLeft} from "./schemes/events/RoomLeft";
-import {RoomMemberJoined} from "./schemes/events/RoomMemberJoined";
+import {RoomMembersJoined} from "./schemes/events/RoomMembersJoined";
 import {RoomMemberLeft} from "./schemes/events/RoomMemberLeft";
 import {RoomMembers} from "./schemes/events/RoomMembers";
 import {RoomMemberUpdated} from "./schemes/events/RoomMemberUpdated";
@@ -140,6 +140,10 @@ import {UserData, PrivateMessagePolicy} from "./schemes/UserData";
 import {SetUserData} from "./schemes/commands/SetUserData";
 import {GetUserData} from "./schemes/commands/GetUserData";
 import {UnfollowTopic} from "./schemes/commands/UnfollowTopic";
+import {Invite} from "./schemes/commands/Invite";
+import {Uninvite} from "./schemes/commands/Uninvite";
+import {GetInvited} from "./schemes/commands/GetInvited";
+import {Invited} from "./schemes/events/Invited";
 import {TopicUnfollowed} from "./schemes/events/TopicUnfollowed";
 
 export {
@@ -202,7 +206,7 @@ export {
     RoomUpdated,
     RoomJoined,
     RoomLeft,
-    RoomMemberJoined,
+    RoomMembersJoined,
     RoomMemberLeft,
     RoomMembers,
     RoomMemberUpdated,
@@ -237,6 +241,7 @@ export {
     Pong,
     MessagesRedacted,
     UserInfo,
+    Invited,
     // commands
     AssignRole,
     GetMessages,
@@ -301,4 +306,7 @@ export {
     GetSessionData,
     SetUserData,
     GetUserData,
+    Invite,
+    Uninvite,
+    GetInvited,
 };
