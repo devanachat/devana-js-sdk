@@ -1,9 +1,13 @@
 import {ChatLocation} from "../ChatLocation";
 import {Role} from "../Role";
-import {SpaceMember} from "../SpaceMember";
 
 export interface Invited {
     location: ChatLocation;
-    spaceMembers: SpaceMember[];
+
+    /**
+     * Ids of the invited users. Join them with the space member collection to display them.
+     */
+    userIds: string[];
+
     roles: Role[];
 }
