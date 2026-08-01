@@ -74,7 +74,7 @@ export declare class Permissions {
             value: number;
             maxLayer: Layer;
         };
-        ChangeOwnNick: {
+        ChangeOwnProfile: {
             value: number;
             maxLayer: Layer;
         };

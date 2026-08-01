@@ -3325,6 +3325,7 @@ var RoomsManager = /*#__PURE__*/function () {
                 roles: null,
                 customColor: null,
                 customNick: null,
+                customAvatar: null,
                 extras: ''
               };
             })
@@ -4223,7 +4224,7 @@ Permissions_defineProperty(Permissions, "list", {
     value: 1 << 16,
     maxLayer: Layer.Room
   },
-  ChangeOwnNick: {
+  ChangeOwnProfile: {
     value: 1 << 17,
     maxLayer: Layer.Space
   },

@@ -29,7 +29,7 @@ export class Permissions {
         ManageEmoticons: {value: 1 << 14, maxLayer: Layer.Space},
         ManageBans: {value: 1 << 15, maxLayer: Layer.Room},
         Kick: {value: 1 << 16, maxLayer: Layer.Room},
-        ChangeOwnNick: {value: 1 << 17, maxLayer: Layer.Space},
+        ChangeOwnProfile: {value: 1 << 17, maxLayer: Layer.Space},
         ChangeOwnColor: {value: 1 << 18, maxLayer: Layer.Room},
         RedactMessages: {value: 1 << 19, maxLayer: Layer.Topic},
         AddMembers: {value: 1 << 20, maxLayer: Layer.Space},

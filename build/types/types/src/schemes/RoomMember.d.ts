@@ -6,5 +6,6 @@ export interface RoomMember {
     roles: string[] | null;
     customNick: string | null;
     customColor: string | null;
+    customAvatar: string | null;
     extras: string;
 }
