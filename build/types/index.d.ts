@@ -4,8 +4,9 @@ import { IndexedCollection, IndexedObjectCollection, ObservableIndexedCollection
 import { FilesClient, File } from "./FilesClient";
 import { Permissions, PermissionDefinition, Layer } from "./Permissions";
 import * as ChatTypes from './types/src';
+import { UserStatus } from './types/src';
 import { extractUserFromMember } from "./state-tracker/functions";
 import { AbstractRestClient } from "./AbstractRestClient";
 import { UnreadSummary } from "./state-tracker/FollowedTopicsManager";
-export { IndexedCollection, ObservableIndexedCollection, IndexedObjectCollection, ObservableIndexedObjectCollection, Permissions, PermissionDefinition, Layer, WebSocketChatClient, WebApiChatClient, FilesClient, AbstractRestClient, extractUserFromMember, };
+export { IndexedCollection, ObservableIndexedCollection, IndexedObjectCollection, ObservableIndexedObjectCollection, Permissions, PermissionDefinition, Layer, WebSocketChatClient, WebApiChatClient, FilesClient, AbstractRestClient, extractUserFromMember, UserStatus, };
 export type { ChatTypes, File, UnreadSummary, };

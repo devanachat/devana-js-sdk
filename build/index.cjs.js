@@ -48,6 +48,7 @@ __webpack_require__.d(__webpack_exports__, {
   ObservableIndexedObjectCollection: () => (/* reexport */ ObservableIndexedObjectCollection),
   PermissionDefinition: () => (/* reexport */ PermissionDefinition),
   Permissions: () => (/* reexport */ Permissions),
+  UserStatus: () => (/* reexport */ UserStatus),
   WebApiChatClient: () => (/* reexport */ WebApiChatClient),
   WebSocketChatClient: () => (/* reexport */ WebSocketChatClient),
   extractUserFromMember: () => (/* reexport */ extractUserFromMember)
@@ -5061,7 +5062,7 @@ var UsersManager = /*#__PURE__*/function () {
         _this$users;
       users.forEach(function (newUser) {
         var oldUser = _this2.users.get(newUser.id);
-        if (oldUser && oldUser.online !== newUser.online) {
+        if (oldUser && oldUser.status !== newUser.status) {
           _this2.onlineStatus.emit('change', newUser);
         }
       });
@@ -6047,7 +6048,172 @@ var FilesClient = /*#__PURE__*/function (_AbstractRestClient) {
     }()
   }]);
 }(AbstractRestClient);
+;// ./src/types/src/schemes/User.ts
+/**
+ * Availability of a user, aggregated over all of their sessions.
+ *
+ * - `Offline` - no session is connected and none can be reached asynchronously.
+ * - `Online` - at least one session holds a live connection.
+ * - `OnlineAsync` - no live connection, but a push-registered device was active
+ *   recently, so a message will still reach the user.
+ */
+var UserStatus = /*#__PURE__*/function (UserStatus) {
+  UserStatus[UserStatus["Offline"] = 0] = "Offline";
+  UserStatus[UserStatus["Online"] = 1] = "Online";
+  UserStatus[UserStatus["OnlineAsync"] = 2] = "OnlineAsync";
+  return UserStatus;
+}({});
+;// ./src/types/src/index.ts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ;// ./src/index.ts
+
 
 
 

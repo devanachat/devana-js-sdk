@@ -42,7 +42,7 @@ export class UsersManager {
     private handleUsers(users: User[]): void {
         users.forEach(newUser => {
             const oldUser = this.users.get(newUser.id);
-            if (oldUser && oldUser.online !== newUser.online) {
+            if (oldUser && oldUser.status !== newUser.status) {
                 this.onlineStatus.emit('change', newUser);
             }
         });
