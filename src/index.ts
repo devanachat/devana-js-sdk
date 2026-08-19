@@ -8,7 +8,7 @@ import {RoomSummary, RoomSummaryExtras} from "./schemes/RoomSummary";
 import {Space, SpaceDiscoverable} from "./schemes/Space";
 import {SpaceMember} from "./schemes/SpaceMember";
 import {Topic} from "./schemes/Topic";
-import {User} from "./schemes/User";
+import {User, UserStatus} from "./schemes/User";
 import {UserState} from "./schemes/UserState";
 import {Bye} from "./schemes/events/Bye";
 import {Error} from "./schemes/events/Error";
@@ -134,7 +134,7 @@ import {GetUserInfo} from "./schemes/commands/GetUserInfo";
 import {UserInfo} from "./schemes/events/UserInfo";
 import {UserInformation} from "./schemes/UserInformation";
 import {SetSessionData, SessionPush} from "./schemes/commands/SetSessionData";
-import {SessionData} from "./schemes/SessionData";
+import {SessionData, SessionPlatform} from "./schemes/SessionData";
 import {GetSessionData} from "./schemes/commands/GetSessionData";
 import {UserData, PrivateMessagePolicy} from "./schemes/UserData";
 import {SetUserData} from "./schemes/commands/SetUserData";
@@ -168,6 +168,7 @@ export {
     FollowedTopic,
     NotificationLevel,
     User,
+    UserStatus,
     UserState,
     PermissionOverwritesValue,
     ChatLocation,
@@ -183,6 +184,7 @@ export {
     UserInformation,
     SessionPush,
     SessionData,
+    SessionPlatform,
     UserData,
     PrivateMessagePolicy,
     // events
