@@ -1,4 +1,14 @@
-import {Message, MessagesRedacted, NewMessage, Topic} from "../types/src";
+import {
+    GetMessages,
+    Message,
+    MessageReaction,
+    ReactionUpdated,
+    MessagesRedacted,
+    NewMessage,
+    Reacted,
+    Topic,
+    UserReaction,
+} from "../types/src";
 import {ChatStateTracker} from "./ChatStateTracker";
 import {CollectionEventMap, ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
 
@@ -302,6 +312,8 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
 
     declare protected internalState: typeof TraversableRemoteCollection<Message>['prototype']['internalState'] & {
         traverseLock: boolean,
+        includeMyReactions: boolean,
+        myReactions: Record<string, UserReaction[]>,
     };
 
     public constructor(
@@ -313,10 +325,14 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         super('id');
 
         this.internalState.traverseLock = false;
+        this.internalState.includeMyReactions = true;
+        this.internalState.myReactions = {};
 
         if (bindEvents) {
             this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
             this.tracker.client.on('MessagesRedacted', ev => this.handleMessagesRedacted(ev));
+            this.tracker.client.on('ReactionUpdated', ev => this.handleReactionUpdated(ev));
+            this.tracker.client.on('Reacted', ev => this.handleReacted(ev));
         }
     }
 
@@ -330,6 +346,26 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
 
     public get isTraverseLocked(): boolean {
         return this.internalState.traverseLock;
+    }
+
+    /**
+     * What the connected user has reacted with, keyed by message id. Kept apart from
+     * the messages, so the history itself is identical for every user.
+     */
+    public get myReactions(): Readonly<Record<string, UserReaction[]>> {
+        return this.internalState.myReactions;
+    }
+
+    /**
+     * Whether the history is fetched together with the reactions of the connected
+     * user. Turn it off only where the active state of a reaction is never rendered.
+     */
+    public get includeMyReactions(): boolean {
+        return this.internalState.includeMyReactions;
+    }
+
+    public set includeMyReactions(value: boolean) {
+        this.internalState.includeMyReactions = value;
     }
 
     public async setTraverseLock(lock: boolean): Promise<void> {
@@ -384,70 +420,60 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
     protected async fetchItemsAfter(): Promise<Message[] | null> {
         const afterId = this.getAt(this.length - 1)?.id;
 
-        if (! afterId) {
-            // If there is no message to refer, fetch latest
-            return null;
-        }
-
-        const result = await this.tracker.client.send('GetMessages', {
-            location: {roomId: this.roomId, topicId: this.topicId},
-            after: afterId,
-            limit: this.internalState.fetchLimit,
-        });
-
-        if (result.error) {
-            throw new Error(`Cannot fetch messages: ${result.error.message}`);
-        }
-
-        return result.data.messages;
+        // If there is no message to refer, fetch latest
+        return afterId ? this.fetchMessages({after: afterId}) : null;
     }
 
     protected async fetchItemsAround(id: string): Promise<Message[] | null> {
-        const result = await this.tracker.client.send('GetMessages', {
-            location: {roomId: this.roomId, topicId: this.topicId},
-            around: id,
-            limit: this.internalState.fetchLimit,
-        });
-
-        if (result.error) {
-            throw new Error(`Cannot fetch messages: ${result.error.message}`);
-        }
-
-        return result.data.messages;
+        return this.fetchMessages({around: id});
     }
 
     protected async fetchItemsBefore(): Promise<Message[] | null> {
         const beforeId = this.getAt(0)?.id;
 
-        if (! beforeId) {
-            // If there is no message to refer, fetch latest
-            return null;
-        }
+        // If there is no message to refer, fetch latest
+        return beforeId ? this.fetchMessages({before: beforeId}) : null;
+    }
 
+    protected async fetchLatestItems(): Promise<Message[]> {
+        return this.fetchMessages({});
+    }
+
+    private async fetchMessages(criteria: Partial<GetMessages>): Promise<Message[]> {
         const result = await this.tracker.client.send('GetMessages', {
             location: {roomId: this.roomId, topicId: this.topicId},
-            before: beforeId,
             limit: this.internalState.fetchLimit,
+            includeMyReactions: this.internalState.includeMyReactions,
+            ...criteria,
         });
 
         if (result.error) {
             throw new Error(`Cannot fetch messages: ${result.error.message}`);
         }
+
+        this.storeMyReactions(result.data.messages, result.data.myReactions);
 
         return result.data.messages;
     }
 
-    protected async fetchLatestItems(): Promise<Message[]> {
-        const result = await this.tracker.client.send('GetMessages', {
-            location: {roomId: this.roomId, topicId: this.topicId},
-            limit: this.internalState.fetchLimit,
-        });
-
-        if (result.error) {
-            throw new Error(`Cannot fetch messages: ${result.error.message}`);
+    /**
+     * The response is the truth for every message it covers, so a message it does not
+     * mention has no reaction of this user left on it.
+     */
+    private storeMyReactions(messages: Message[], myReactions?: Record<string, UserReaction[]>): void {
+        if (! this.internalState.includeMyReactions) {
+            return;
         }
 
-        return result.data.messages;
+        for (const message of messages) {
+            const own = myReactions?.[message.id];
+
+            if (own?.length) {
+                this.internalState.myReactions[message.id] = own;
+            } else {
+                delete this.internalState.myReactions[message.id];
+            }
+        }
     }
 
     private async getTopic(): Promise<Topic | undefined> {
@@ -473,6 +499,59 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
             this.addItems([ev.message], 'tail');
             this.emitChangeWithDiff(true, originalState);
         }
+    }
+
+    /**
+     * The counter arrives as the global source of truth - only it is overwritten, and
+     * a reaction nobody holds any more (count 0) leaves the message.
+     */
+    private handleReactionUpdated(ev: ReactionUpdated): void {
+        const message = this.get(ev.messageId);
+
+        if (! message) {
+            return;
+        }
+
+        const index = message.reactions.findIndex(
+            reaction => reaction.type === ev.reaction.type && reaction.value === ev.reaction.value);
+
+        if (index === -1 && ! ev.reaction.count) {
+            return;
+        }
+
+        const reactions: MessageReaction[] = [...message.reactions];
+
+        if (index === -1) {
+            reactions.push(ev.reaction);
+        } else if (ev.reaction.count) {
+            reactions[index] = ev.reaction; // In place - a pill must not jump around as its counter moves
+        } else {
+            reactions.splice(index, 1);
+        }
+
+        this.set({...message, reactions});
+    }
+
+    private handleReacted(ev: Reacted): void {
+        if (! this.has(ev.messageId)) {
+            return;
+        }
+
+        const {type, value, isAdded} = ev.reaction;
+        const own = (this.internalState.myReactions[ev.messageId] ?? [])
+            .filter(reaction => reaction.type !== type || reaction.value !== value);
+
+        if (isAdded) {
+            own.push({type, value});
+        }
+
+        if (own.length) {
+            this.internalState.myReactions[ev.messageId] = own;
+        } else {
+            delete this.internalState.myReactions[ev.messageId];
+        }
+
+        this.eventTarget.emit('change', {setItems: [ev.messageId]});
     }
 
     private async handleMessagesRedacted(ev: MessagesRedacted): Promise<void> {

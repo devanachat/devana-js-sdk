@@ -122,6 +122,12 @@ import {
     Uninvite,
     GetInvited,
     Invited,
+    React,
+    Unreact,
+    GetReactionDetails,
+    ReactionUpdated,
+    Reacted,
+    ReactionDetails,
 } from "./types/src";
 import {EventTarget} from "./EventTarget";
 
@@ -263,6 +269,9 @@ export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap
     Topics: Topics,
     TopicUpdated: TopicUpdated,
     MessagesRedacted: MessagesRedacted,
+    ReactionUpdated: ReactionUpdated,
+    Reacted: Reacted,
+    ReactionDetails: ReactionDetails,
 };
 
 /**
@@ -338,4 +347,7 @@ export type CommandsMap = {
     GetTopics: CommandDefinition<GetTopics, EventsMap['Topics']>,
     UpdateTopic: CommandDefinition<UpdateTopic, EventsMap['TopicUpdated']>,
     RedactMessages: CommandDefinition<RedactMessages, EventsMap['MessagesRedacted']>,
+    React: CommandDefinition<React, EventsMap['Reacted']>,
+    Unreact: CommandDefinition<Unreact, EventsMap['Reacted']>,
+    GetReactionDetails: CommandDefinition<GetReactionDetails, EventsMap['ReactionDetails']>,
  }
