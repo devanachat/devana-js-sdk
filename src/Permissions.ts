@@ -33,6 +33,8 @@ export class Permissions {
         ChangeOwnColor: {value: 1 << 18, maxLayer: Layer.Room},
         RedactMessages: {value: 1 << 19, maxLayer: Layer.Topic},
         AddMembers: {value: 1 << 20, maxLayer: Layer.Space},
+        React: {value: 1 << 21, maxLayer: Layer.Topic},
+        CreatePolls: {value: 1 << 22, maxLayer: Layer.Topic},
     };
 
     public static getNames(): (keyof typeof this.list)[] {
