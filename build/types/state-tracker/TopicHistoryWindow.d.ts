@@ -1,4 +1,4 @@
-import { Message, Topic } from "../types/src";
+import { Message, Topic, UserReaction } from "../types/src";
 import { ChatStateTracker } from "./ChatStateTracker";
 import { CollectionEventMap, ObservableIndexedObjectCollection } from "../IndexedObjectCollection";
 export declare enum WindowState {
@@ -94,10 +94,23 @@ export declare class TopicHistoryWindow extends TraversableRemoteCollection<Mess
     readonly WindowState: typeof WindowState;
     protected internalState: typeof TraversableRemoteCollection<Message>['prototype']['internalState'] & {
         traverseLock: boolean;
+        includeMyReactions: boolean;
+        myReactions: Record<string, UserReaction[]>;
     };
     constructor(roomId: string, topicId: string, tracker: ChatStateTracker, bindEvents?: boolean);
     createMirror(): TopicHistoryWindow;
     get isTraverseLocked(): boolean;
+    /**
+     * What the connected user has reacted with, keyed by message id. Kept apart from
+     * the messages, so the history itself is identical for every user.
+     */
+    get myReactions(): Readonly<Record<string, UserReaction[]>>;
+    /**
+     * Whether the history is fetched together with the reactions of the connected
+     * user. Turn it off only where the active state of a reaction is never rendered.
+     */
+    get includeMyReactions(): boolean;
+    set includeMyReactions(value: boolean);
     setTraverseLock(lock: boolean): Promise<void>;
     resetToLatest(force?: boolean): Promise<void>;
     fetchNext(): Promise<void>;
@@ -112,9 +125,21 @@ export declare class TopicHistoryWindow extends TraversableRemoteCollection<Mess
     protected fetchItemsAround(id: string): Promise<Message[] | null>;
     protected fetchItemsBefore(): Promise<Message[] | null>;
     protected fetchLatestItems(): Promise<Message[]>;
+    private fetchMessages;
+    /**
+     * The response is the truth for every message it covers, so a message it does not
+     * mention has no reaction of this user left on it.
+     */
+    private storeMyReactions;
     private getTopic;
     private getLatestMessageId;
     protected isLatestItemLoaded(): Promise<boolean>;
     private handleNewMessage;
+    /**
+     * The counter arrives as the global source of truth - only it is overwritten, and
+     * a reaction nobody holds any more (count 0) leaves the message.
+     */
+    private handleReactionUpdated;
+    private handleReacted;
     private handleMessagesRedacted;
 }

@@ -718,6 +718,7 @@ var PromiseRegistry = /*#__PURE__*/function () {
 }();
 ;// ./src/state-tracker/TopicHistoryWindow.ts
 function TopicHistoryWindow_typeof(o) { "@babel/helpers - typeof"; return TopicHistoryWindow_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, TopicHistoryWindow_typeof(o); }
+function TopicHistoryWindow_createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = TopicHistoryWindow_unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { TopicHistoryWindow_defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function TopicHistoryWindow_superPropGet(t, o, e, r) { var p = TopicHistoryWindow_get(TopicHistoryWindow_getPrototypeOf(1 & r ? t.prototype : t), o, e); return 2 & r && "function" == typeof p ? function (t) { return p.apply(e, t); } : p; }
@@ -1164,12 +1165,20 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
     _this3.topicId = topicId;
     _this3.tracker = tracker;
     _this3.internalState.traverseLock = false;
+    _this3.internalState.includeMyReactions = true;
+    _this3.internalState.myReactions = {};
     if (bindEvents) {
       _this3.tracker.client.on('NewMessage', function (ev) {
         return _this3.handleNewMessage(ev);
       });
       _this3.tracker.client.on('MessagesRedacted', function (ev) {
         return _this3.handleMessagesRedacted(ev);
+      });
+      _this3.tracker.client.on('ReactionUpdated', function (ev) {
+        return _this3.handleReactionUpdated(ev);
+      });
+      _this3.tracker.client.on('Reacted', function (ev) {
+        return _this3.handleReacted(ev);
       });
     }
     return _this3;
@@ -1188,6 +1197,29 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
     key: "isTraverseLocked",
     get: function get() {
       return this.internalState.traverseLock;
+    }
+
+    /**
+     * What the connected user has reacted with, keyed by message id. Kept apart from
+     * the messages, so the history itself is identical for every user.
+     */
+  }, {
+    key: "myReactions",
+    get: function get() {
+      return this.internalState.myReactions;
+    }
+
+    /**
+     * Whether the history is fetched together with the reactions of the connected
+     * user. Turn it off only where the active state of a reaction is never rendered.
+     */
+  }, {
+    key: "includeMyReactions",
+    get: function get() {
+      return this.internalState.includeMyReactions;
+    },
+    set: function set(value) {
+      this.internalState.includeMyReactions = value;
     }
   }, {
     key: "setTraverseLock",
@@ -1324,35 +1356,14 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
     value: function () {
       var _fetchItemsAfter = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
         var _this$getAt;
-        var afterId, result;
+        var afterId;
         return _regenerator().w(function (_context1) {
           while (1) switch (_context1.n) {
             case 0:
-              afterId = (_this$getAt = this.getAt(this.length - 1)) === null || _this$getAt === void 0 ? void 0 : _this$getAt.id;
-              if (afterId) {
-                _context1.n = 1;
-                break;
-              }
-              return _context1.a(2, null);
-            case 1:
-              _context1.n = 2;
-              return this.tracker.client.send('GetMessages', {
-                location: {
-                  roomId: this.roomId,
-                  topicId: this.topicId
-                },
-                after: afterId,
-                limit: this.internalState.fetchLimit
-              });
-            case 2:
-              result = _context1.v;
-              if (!result.error) {
-                _context1.n = 3;
-                break;
-              }
-              throw new Error("Cannot fetch messages: ".concat(result.error.message));
-            case 3:
-              return _context1.a(2, result.data.messages);
+              afterId = (_this$getAt = this.getAt(this.length - 1)) === null || _this$getAt === void 0 ? void 0 : _this$getAt.id; // If there is no message to refer, fetch latest
+              return _context1.a(2, afterId ? this.fetchMessages({
+                after: afterId
+              }) : null);
           }
         }, _callee1, this);
       }));
@@ -1365,28 +1376,12 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
     key: "fetchItemsAround",
     value: function () {
       var _fetchItemsAround = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10(id) {
-        var result;
         return _regenerator().w(function (_context10) {
           while (1) switch (_context10.n) {
             case 0:
-              _context10.n = 1;
-              return this.tracker.client.send('GetMessages', {
-                location: {
-                  roomId: this.roomId,
-                  topicId: this.topicId
-                },
-                around: id,
-                limit: this.internalState.fetchLimit
-              });
-            case 1:
-              result = _context10.v;
-              if (!result.error) {
-                _context10.n = 2;
-                break;
-              }
-              throw new Error("Cannot fetch messages: ".concat(result.error.message));
-            case 2:
-              return _context10.a(2, result.data.messages);
+              return _context10.a(2, this.fetchMessages({
+                around: id
+              }));
           }
         }, _callee10, this);
       }));
@@ -1400,35 +1395,14 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
     value: function () {
       var _fetchItemsBefore = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11() {
         var _this$getAt2;
-        var beforeId, result;
+        var beforeId;
         return _regenerator().w(function (_context11) {
           while (1) switch (_context11.n) {
             case 0:
-              beforeId = (_this$getAt2 = this.getAt(0)) === null || _this$getAt2 === void 0 ? void 0 : _this$getAt2.id;
-              if (beforeId) {
-                _context11.n = 1;
-                break;
-              }
-              return _context11.a(2, null);
-            case 1:
-              _context11.n = 2;
-              return this.tracker.client.send('GetMessages', {
-                location: {
-                  roomId: this.roomId,
-                  topicId: this.topicId
-                },
-                before: beforeId,
-                limit: this.internalState.fetchLimit
-              });
-            case 2:
-              result = _context11.v;
-              if (!result.error) {
-                _context11.n = 3;
-                break;
-              }
-              throw new Error("Cannot fetch messages: ".concat(result.error.message));
-            case 3:
-              return _context11.a(2, result.data.messages);
+              beforeId = (_this$getAt2 = this.getAt(0)) === null || _this$getAt2 === void 0 ? void 0 : _this$getAt2.id; // If there is no message to refer, fetch latest
+              return _context11.a(2, beforeId ? this.fetchMessages({
+                before: beforeId
+              }) : null);
           }
         }, _callee11, this);
       }));
@@ -1441,27 +1415,10 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
     key: "fetchLatestItems",
     value: function () {
       var _fetchLatestItems = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12() {
-        var result;
         return _regenerator().w(function (_context12) {
           while (1) switch (_context12.n) {
             case 0:
-              _context12.n = 1;
-              return this.tracker.client.send('GetMessages', {
-                location: {
-                  roomId: this.roomId,
-                  topicId: this.topicId
-                },
-                limit: this.internalState.fetchLimit
-              });
-            case 1:
-              result = _context12.v;
-              if (!result.error) {
-                _context12.n = 2;
-                break;
-              }
-              throw new Error("Cannot fetch messages: ".concat(result.error.message));
-            case 2:
-              return _context12.a(2, result.data.messages);
+              return _context12.a(2, this.fetchMessages({}));
           }
         }, _callee12, this);
       }));
@@ -1471,18 +1428,81 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
       return fetchLatestItems;
     }()
   }, {
-    key: "getTopic",
+    key: "fetchMessages",
     value: function () {
-      var _getTopic = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13() {
+      var _fetchMessages = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13(criteria) {
+        var result;
         return _regenerator().w(function (_context13) {
           while (1) switch (_context13.n) {
             case 0:
               _context13.n = 1;
-              return this.tracker.rooms.getTopics(this.roomId, [this.topicId]);
+              return this.tracker.client.send('GetMessages', _objectSpread({
+                location: {
+                  roomId: this.roomId,
+                  topicId: this.topicId
+                },
+                limit: this.internalState.fetchLimit,
+                includeMyReactions: this.internalState.includeMyReactions
+              }, criteria));
             case 1:
-              return _context13.a(2, _context13.v.get(this.topicId));
+              result = _context13.v;
+              if (!result.error) {
+                _context13.n = 2;
+                break;
+              }
+              throw new Error("Cannot fetch messages: ".concat(result.error.message));
+            case 2:
+              this.storeMyReactions(result.data.messages, result.data.myReactions);
+              return _context13.a(2, result.data.messages);
           }
         }, _callee13, this);
+      }));
+      function fetchMessages(_x5) {
+        return _fetchMessages.apply(this, arguments);
+      }
+      return fetchMessages;
+    }()
+    /**
+     * The response is the truth for every message it covers, so a message it does not
+     * mention has no reaction of this user left on it.
+     */
+  }, {
+    key: "storeMyReactions",
+    value: function storeMyReactions(messages, myReactions) {
+      if (!this.internalState.includeMyReactions) {
+        return;
+      }
+      var _iterator = TopicHistoryWindow_createForOfIteratorHelper(messages),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var message = _step.value;
+          var own = myReactions === null || myReactions === void 0 ? void 0 : myReactions[message.id];
+          if (own !== null && own !== void 0 && own.length) {
+            this.internalState.myReactions[message.id] = own;
+          } else {
+            delete this.internalState.myReactions[message.id];
+          }
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+    }
+  }, {
+    key: "getTopic",
+    value: function () {
+      var _getTopic = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee14() {
+        return _regenerator().w(function (_context14) {
+          while (1) switch (_context14.n) {
+            case 0:
+              _context14.n = 1;
+              return this.tracker.rooms.getTopics(this.roomId, [this.topicId]);
+            case 1:
+              return _context14.a(2, _context14.v.get(this.topicId));
+          }
+        }, _callee14, this);
       }));
       function getTopic() {
         return _getTopic.apply(this, arguments);
@@ -1492,43 +1512,43 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
   }, {
     key: "getLatestMessageId",
     value: function () {
-      var _getLatestMessageId = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee14() {
+      var _getLatestMessageId = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee15() {
         var _yield$this$getTopic;
         var _t2, _t3, _t4, _t5;
-        return _regenerator().w(function (_context14) {
-          while (1) switch (_context14.n) {
+        return _regenerator().w(function (_context15) {
+          while (1) switch (_context15.n) {
             case 0:
-              _context14.n = 1;
+              _context15.n = 1;
               return this.getTopic();
             case 1:
-              _t4 = _yield$this$getTopic = _context14.v;
+              _t4 = _yield$this$getTopic = _context15.v;
               _t3 = _t4 === null;
               if (_t3) {
-                _context14.n = 2;
+                _context15.n = 2;
                 break;
               }
               _t3 = _yield$this$getTopic === void 0;
             case 2:
               _t2 = _t3;
               if (_t2) {
-                _context14.n = 3;
+                _context15.n = 3;
                 break;
               }
               _t2 = (_yield$this$getTopic = _yield$this$getTopic.lastMessage) === null || _yield$this$getTopic === void 0;
             case 3:
               if (!_t2) {
-                _context14.n = 4;
+                _context15.n = 4;
                 break;
               }
               _t5 = void 0;
-              _context14.n = 5;
+              _context15.n = 5;
               break;
             case 4:
               _t5 = _yield$this$getTopic.id;
             case 5:
-              return _context14.a(2, _t5);
+              return _context15.a(2, _t5);
           }
-        }, _callee14, this);
+        }, _callee15, this);
       }));
       function getLatestMessageId() {
         return _getLatestMessageId.apply(this, arguments);
@@ -1538,18 +1558,18 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
   }, {
     key: "isLatestItemLoaded",
     value: function () {
-      var _isLatestItemLoaded = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee15() {
+      var _isLatestItemLoaded = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee16() {
         var lastMessageId;
-        return _regenerator().w(function (_context15) {
-          while (1) switch (_context15.n) {
+        return _regenerator().w(function (_context16) {
+          while (1) switch (_context16.n) {
             case 0:
-              _context15.n = 1;
+              _context16.n = 1;
               return this.getLatestMessageId();
             case 1:
-              lastMessageId = _context15.v;
-              return _context15.a(2, lastMessageId ? this.has(lastMessageId) : true);
+              lastMessageId = _context16.v;
+              return _context16.a(2, lastMessageId ? this.has(lastMessageId) : true);
           }
-        }, _callee15, this);
+        }, _callee16, this);
       }));
       function isLatestItemLoaded() {
         return _isLatestItemLoaded.apply(this, arguments);
@@ -1559,10 +1579,10 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
   }, {
     key: "handleNewMessage",
     value: function () {
-      var _handleNewMessage = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee16(ev) {
+      var _handleNewMessage = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17(ev) {
         var originalState;
-        return _regenerator().w(function (_context16) {
-          while (1) switch (_context16.n) {
+        return _regenerator().w(function (_context17) {
+          while (1) switch (_context17.n) {
             case 0:
               if ([WindowState.LATEST, WindowState.LIVE].includes(this.state) && ev.message.location.roomId === this.roomId && ev.message.location.topicId === this.topicId) {
                 originalState = this.state;
@@ -1570,28 +1590,86 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
                 this.emitChangeWithDiff(true, originalState);
               }
             case 1:
-              return _context16.a(2);
+              return _context17.a(2);
           }
-        }, _callee16, this);
+        }, _callee17, this);
       }));
-      function handleNewMessage(_x5) {
+      function handleNewMessage(_x6) {
         return _handleNewMessage.apply(this, arguments);
       }
       return handleNewMessage;
     }()
+    /**
+     * The counter arrives as the global source of truth - only it is overwritten, and
+     * a reaction nobody holds any more (count 0) leaves the message.
+     */
+  }, {
+    key: "handleReactionUpdated",
+    value: function handleReactionUpdated(ev) {
+      var message = this.get(ev.messageId);
+      if (!message) {
+        return;
+      }
+      var index = message.reactions.findIndex(function (reaction) {
+        return reaction.type === ev.reaction.type && reaction.value === ev.reaction.value;
+      });
+      if (index === -1 && !ev.reaction.count) {
+        return;
+      }
+      var reactions = TopicHistoryWindow_toConsumableArray(message.reactions);
+      if (index === -1) {
+        reactions.push(ev.reaction);
+      } else if (ev.reaction.count) {
+        reactions[index] = ev.reaction; // In place - a pill must not jump around as its counter moves
+      } else {
+        reactions.splice(index, 1);
+      }
+      this.set(_objectSpread(_objectSpread({}, message), {}, {
+        reactions: reactions
+      }));
+    }
+  }, {
+    key: "handleReacted",
+    value: function handleReacted(ev) {
+      var _this$internalState$m;
+      if (!this.has(ev.messageId)) {
+        return;
+      }
+      var _ev$reaction = ev.reaction,
+        type = _ev$reaction.type,
+        value = _ev$reaction.value,
+        isAdded = _ev$reaction.isAdded;
+      var own = ((_this$internalState$m = this.internalState.myReactions[ev.messageId]) !== null && _this$internalState$m !== void 0 ? _this$internalState$m : []).filter(function (reaction) {
+        return reaction.type !== type || reaction.value !== value;
+      });
+      if (isAdded) {
+        own.push({
+          type: type,
+          value: value
+        });
+      }
+      if (own.length) {
+        this.internalState.myReactions[ev.messageId] = own;
+      } else {
+        delete this.internalState.myReactions[ev.messageId];
+      }
+      this.eventTarget.emit('change', {
+        setItems: [ev.messageId]
+      });
+    }
   }, {
     key: "handleMessagesRedacted",
     value: function () {
-      var _handleMessagesRedacted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17(ev) {
+      var _handleMessagesRedacted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee18(ev) {
         var refTopicIds;
-        return _regenerator().w(function (_context17) {
-          while (1) switch (_context17.n) {
+        return _regenerator().w(function (_context18) {
+          while (1) switch (_context18.n) {
             case 0:
               if (!(ev.location.topicId !== this.topicId || ev.location.roomId !== this.roomId)) {
-                _context17.n = 1;
+                _context18.n = 1;
                 break;
               }
-              return _context17.a(2);
+              return _context18.a(2);
             case 1:
               refTopicIds = this.items.filter(function (msg) {
                 return msg.topicRef && ev.ids.includes(msg.id);
@@ -1600,21 +1678,21 @@ var TopicHistoryWindow = /*#__PURE__*/function (_TraversableRemoteCol) {
               });
               this["delete"].apply(this, TopicHistoryWindow_toConsumableArray(ev.ids));
               if (!(this.length === 0)) {
-                _context17.n = 2;
+                _context18.n = 2;
                 break;
               }
-              _context17.n = 2;
+              _context18.n = 2;
               return this.resetToLatest();
             case 2:
               if (refTopicIds.length > 0) {
                 this.eventTarget.emit('reftopicsdeleted', refTopicIds);
               }
             case 3:
-              return _context17.a(2);
+              return _context18.a(2);
           }
-        }, _callee17, this);
+        }, _callee18, this);
       }));
-      function handleMessagesRedacted(_x6) {
+      function handleMessagesRedacted(_x7) {
         return _handleMessagesRedacted.apply(this, arguments);
       }
       return handleMessagesRedacted;
@@ -4240,6 +4318,14 @@ Permissions_defineProperty(Permissions, "list", {
   AddMembers: {
     value: 1 << 20,
     maxLayer: Layer.Space
+  },
+  React: {
+    value: 1 << 21,
+    maxLayer: Layer.Topic
+  },
+  CreatePolls: {
+    value: 1 << 22,
+    maxLayer: Layer.Topic
   }
 });
 ;// ./src/state-tracker/PermissionsManager.ts
@@ -6064,6 +6150,14 @@ var UserStatus = /*#__PURE__*/function (UserStatus) {
   return UserStatus;
 }({});
 ;// ./src/types/src/index.ts
+
+
+
+
+
+
+
+
 
 
 

@@ -90,6 +90,14 @@ export declare class Permissions {
             value: number;
             maxLayer: Layer;
         };
+        React: {
+            value: number;
+            maxLayer: Layer;
+        };
+        CreatePolls: {
+            value: number;
+            maxLayer: Layer;
+        };
     };
     static getNames(): (keyof typeof this.list)[];
     static getByName(name: keyof typeof this.list): PermissionDefinition | undefined;

@@ -1,6 +1,8 @@
 import { User } from "./User";
 import { ChatLocation } from "./ChatLocation";
-export type MessageType = 'Text' | 'RoomJoin' | 'RoomMemberAdd' | 'RoomLeave' | 'SpaceJoin' | 'SpaceLeave' | 'TopicChange' | 'CustomNickChange' | 'Ephemeral';
+import { MessageReaction } from "./Reaction";
+import { MessagePoll } from "./MessagePoll";
+export type MessageType = 'Text' | 'RoomJoin' | 'RoomMemberAdd' | 'RoomLeave' | 'SpaceJoin' | 'SpaceLeave' | 'TopicChange' | 'CustomNickChange' | 'Ephemeral' | 'Poll';
 export interface MessageAuthor {
     user: User;
     customNick?: string;
@@ -15,4 +17,6 @@ export interface Message {
     content?: string;
     topicRef: string | null;
     attachments: string[] | null;
+    reactions: MessageReaction[];
+    poll?: MessagePoll;
 }
