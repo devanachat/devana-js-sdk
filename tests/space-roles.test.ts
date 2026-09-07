@@ -5,11 +5,11 @@ import {reorderRolesOnPriorityUpdate} from "../src/state-tracker/functions";
 const createCollection = () => new IndexedObjectCollection<Role>(
     role => role.id,
     [
-        {id: 'id1', name: 'everyone', priority: 0, color: '#ff0000'},
-        {id: 'id2', name: 'roleA', priority: 1, color: '#ff0000'},
-        {id: 'id3', name: 'roleB', priority: 2, color: '#ff0000'},
-        {id: 'id4', name: 'roleC', priority: 3, color: '#ff0000'},
-        {id: 'id5', name: 'roleD', priority: 4, color: '#ff0000'},
+        {id: 'id1', name: 'everyone', priority: 0, color: '#ff0000', flags: 0},
+        {id: 'id2', name: 'roleA', priority: 1, color: '#ff0000', flags: 0},
+        {id: 'id3', name: 'roleB', priority: 2, color: '#ff0000', flags: 0},
+        {id: 'id4', name: 'roleC', priority: 3, color: '#ff0000', flags: 0},
+        {id: 'id5', name: 'roleD', priority: 4, color: '#ff0000', flags: 0},
     ],
 );
 

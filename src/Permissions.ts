@@ -35,6 +35,7 @@ export class Permissions {
         AddMembers: {value: 1 << 20, maxLayer: Layer.Space},
         React: {value: 1 << 21, maxLayer: Layer.Topic},
         CreatePolls: {value: 1 << 22, maxLayer: Layer.Topic},
+        MentionAllRoles: {value: 1 << 23, maxLayer: Layer.Topic},
     };
 
     public static getNames(): (keyof typeof this.list)[] {
