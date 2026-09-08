@@ -1,7 +1,7 @@
 import {Envelope} from "./schemes/Envelope";
-import {Message, MessageType, MessageAuthor} from "./schemes/Message";
+import {Message, MessageType, MessageAuthor, MessageMentions} from "./schemes/Message";
 import {PermissionOverwritesValue} from "./schemes/PermissionOverwritesValue";
-import {Role} from "./schemes/Role";
+import {Role, RoleFlag} from "./schemes/Role";
 import {Room, RoomType} from "./schemes/Room";
 import {RoomMember} from "./schemes/RoomMember";
 import {RoomSummary, RoomSummaryExtras} from "./schemes/RoomSummary";
@@ -160,7 +160,9 @@ export {
     Message,
     MessageType,
     MessageAuthor,
+    MessageMentions,
     Role,
+    RoleFlag,
     Room,
     RoomType,
     RoomStream,
