@@ -4,4 +4,5 @@ export interface UpdateRole {
     priority?: number;
     name?: string;
     color?: string;
+    flags?: number;
 }

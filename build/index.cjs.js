@@ -48,6 +48,7 @@ __webpack_require__.d(__webpack_exports__, {
   ObservableIndexedObjectCollection: () => (/* reexport */ ObservableIndexedObjectCollection),
   PermissionDefinition: () => (/* reexport */ PermissionDefinition),
   Permissions: () => (/* reexport */ Permissions),
+  RoleFlag: () => (/* reexport */ RoleFlag),
   UserStatus: () => (/* reexport */ UserStatus),
   WebApiChatClient: () => (/* reexport */ WebApiChatClient),
   WebSocketChatClient: () => (/* reexport */ WebSocketChatClient),
@@ -4326,6 +4327,10 @@ Permissions_defineProperty(Permissions, "list", {
   CreatePolls: {
     value: 1 << 22,
     maxLayer: Layer.Topic
+  },
+  MentionAllRoles: {
+    value: 1 << 23,
+    maxLayer: Layer.Topic
   }
 });
 ;// ./src/state-tracker/PermissionsManager.ts
@@ -6134,6 +6139,21 @@ var FilesClient = /*#__PURE__*/function (_AbstractRestClient) {
     }()
   }]);
 }(AbstractRestClient);
+;// ./src/types/src/schemes/Role.ts
+/**
+ * Bit flags of a role, stored in {@link Role.flags}.
+ *
+ * - `SeparateOnMembersList` - available holders of the role are listed in their
+ *   own group of the members list, headed by the role name.
+ * - `MentionableByEveryone` - anybody may mention the role with notification
+ *   effects; without it the mention is decorative only, unless the author holds
+ *   the `MentionAllRoles` permission.
+ */
+var RoleFlag = /*#__PURE__*/function (RoleFlag) {
+  RoleFlag[RoleFlag["SeparateOnMembersList"] = 1] = "SeparateOnMembersList";
+  RoleFlag[RoleFlag["MentionableByEveryone"] = 2] = "MentionableByEveryone";
+  return RoleFlag;
+}({});
 ;// ./src/types/src/schemes/User.ts
 /**
  * Availability of a user, aggregated over all of their sessions.
