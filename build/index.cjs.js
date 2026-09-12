@@ -5439,6 +5439,9 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
     WebSocketChatClient_defineProperty(_this, "pingMonitorInterval", void 0);
     WebSocketChatClient_defineProperty(_this, "inFlightPingTimeout", void 0);
     WebSocketChatClient_defineProperty(_this, "lastReceivedMessageAt", void 0);
+    WebSocketChatClient_defineProperty(_this, "reconnectEnabled", false);
+    WebSocketChatClient_defineProperty(_this, "reconnectTimeoutId", void 0);
+    WebSocketChatClient_defineProperty(_this, "reconnectAttempts", 0);
     _this.options = options;
     if ((_this$options$stateTr = _this.options.stateTracking) !== null && _this$options$stateTr !== void 0 ? _this$options$stateTr : true) {
       _this.state = new ChatStateTracker(_this);
@@ -5454,14 +5457,14 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
     key: "connect",
     value: function () {
       var _connect = WebSocketChatClient_asyncToGenerator(/*#__PURE__*/WebSocketChatClient_regenerator().m(function _callee() {
-        var _this$connectPromise2,
-          _this2 = this,
-          _this$options$queryPa,
-          _this$options$connect;
-        var _this$connectPromise, params;
+        var _this2 = this;
+        var _this$connectPromise, connectPromise;
         return WebSocketChatClient_regenerator().w(function (_context) {
           while (1) switch (_context.n) {
             case 0:
+              this.reconnectEnabled = true;
+              // A manual call does not wait for a scheduled retry.
+              this.cancelScheduledReconnect();
               if (!(this.isOpenWsState() || this.isConnectingWsState())) {
                 _context.n = 1;
                 break;
@@ -5471,26 +5474,23 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
               // Reuse the promise of an attempt that has not settled yet (an
               // automatic reconnect), so the caller that started connecting is
               // resolved by whichever attempt eventually authenticates.
-              (_this$connectPromise2 = this.connectPromise) !== null && _this$connectPromise2 !== void 0 ? _this$connectPromise2 : this.connectPromise = new Promise(function () {
-                for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-                  args[_key] = arguments[_key];
-                }
-                return _this2.authenticatedResolvers = args;
-              });
-              params = new URLSearchParams((_this$options$queryPa = this.options.queryParams) !== null && _this$options$queryPa !== void 0 ? _this$options$queryPa : {});
-              params.set('token', this.options.token);
-              this.ws = new WebSocket("".concat(this.options.url, "?").concat(params));
-              this.ws.onclose = function (ev) {
-                return _this2.onClose(ev);
-              };
-              this.ws.onmessage = function (ev) {
-                return _this2.onMessage(ev);
-              };
-              this.connectingTimeoutId = setTimeout(function () {
-                return _this2.triggerConnectionTimeout();
-              }, (_this$options$connect = this.options.connectingTimeoutMs) !== null && _this$options$connect !== void 0 ? _this$options$connect : 10000);
-              this.authenticated = false;
-              return _context.a(2, this.connectPromise);
+              if (!this.connectPromise) {
+                this.connectPromise = new Promise(function () {
+                  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+                    args[_key] = arguments[_key];
+                  }
+                  return _this2.authenticatedResolvers = args;
+                });
+                // Automatic reconnects create this promise with no one awaiting it,
+                // so its rejection must not surface as an unhandled one. Callers
+                // awaiting it still receive the rejection.
+                this.connectPromise["catch"](function () {
+                  return undefined;
+                });
+              }
+              connectPromise = this.connectPromise;
+              this.openSocket();
+              return _context.a(2, connectPromise);
           }
         }, _callee, this);
       }));
@@ -5502,10 +5502,16 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
   }, {
     key: "disconnect",
     value: function disconnect() {
-      var _this$ws;
+      var wasActive = this.ws !== null || this.reconnectTimeoutId !== undefined;
+      this.reconnectEnabled = false;
+      this.reconnectAttempts = 0;
+      this.cancelScheduledReconnect();
+      this.releaseSocket(1000); // Normal closure
       this.failPendingCommands(new Error('Client disconnected before the command was answered'));
-      (_this$ws = this.ws) === null || _this$ws === void 0 || _this$ws.close(1000); // Normal closure
-      this.ws = null;
+      this.settleConnect(new Error('Client disconnected before authentication'));
+      if (wasActive) {
+        this.emit(this.Event.disconnect, false);
+      }
     }
   }, {
     key: "send",
@@ -5540,14 +5546,51 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
       return this.isOpenWsState() && this.authenticated;
     }
   }, {
+    key: "openSocket",
+    value: function openSocket() {
+      var _this$options$queryPa,
+        _this3 = this,
+        _this$options$connect;
+      // Never leave a previous socket attached (e.g. one still closing).
+      this.releaseSocket(1000);
+      var params = new URLSearchParams((_this$options$queryPa = this.options.queryParams) !== null && _this$options$queryPa !== void 0 ? _this$options$queryPa : {});
+      params.set('token', this.options.token);
+      var ws;
+      try {
+        ws = new WebSocket("".concat(this.options.url, "?").concat(params));
+      } catch (error) {
+        // Invalid URL - no retry can fix that.
+        this.settleConnect(error);
+        return;
+      }
+
+      // Events of an abandoned socket must not touch the current connection.
+      ws.onmessage = function (ev) {
+        return ws === _this3.ws && _this3.onMessage(ev);
+      };
+      ws.onclose = function (ev) {
+        return ws === _this3.ws && _this3.onClose(ev);
+      };
+      // Not every implementation follows a failed handshake with a close
+      // event (e.g. Node.js), so an error alone means the connection is lost.
+      ws.onerror = function () {
+        return ws === _this3.ws && _this3.handleConnectionLoss(true);
+      };
+      this.ws = ws;
+      this.authenticated = false;
+      this.connectingTimeoutId = setTimeout(function () {
+        return _this3.triggerConnectionTimeout();
+      }, (_this$options$connect = this.options.connectingTimeoutMs) !== null && _this$options$connect !== void 0 ? _this$options$connect : 10000);
+    }
+  }, {
     key: "sendEnvelope",
     value: function sendEnvelope(envelope) {
-      var _this$ws$readyState, _this$ws2;
+      var _this$ws$readyState, _this$ws;
       if (this.isReady) {
         this.ws.send(JSON.stringify(envelope));
         return;
       }
-      this.handleEnvelopeSendError(envelope, new Error("Cannot send - client is not ready (state=".concat((_this$ws$readyState = (_this$ws2 = this.ws) === null || _this$ws2 === void 0 ? void 0 : _this$ws2.readyState) !== null && _this$ws$readyState !== void 0 ? _this$ws$readyState : '[no connection]', "; authenticated=").concat(this.authenticated, ")")));
+      this.handleEnvelopeSendError(envelope, new Error("Cannot send - client is not ready (state=".concat((_this$ws$readyState = (_this$ws = this.ws) === null || _this$ws === void 0 ? void 0 : _this$ws.readyState) !== null && _this$ws$readyState !== void 0 ? _this$ws$readyState : '[no connection]', "; authenticated=").concat(this.authenticated, ")")));
     }
   }, {
     key: "onMessage",
@@ -5563,33 +5606,108 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
         var isAuthenticated = envelope.type !== 'Bye';
         this.authenticated = isAuthenticated;
         if (isAuthenticated) {
+          this.reconnectAttempts = 0;
           this.startConnectionMonitor();
           this.settleConnect();
           this.emit(this.Event.connect);
           this.sendFromQueue();
         } else {
+          var _envelope$data;
           this.settleConnect(envelope.data);
+          var error = (_envelope$data = envelope.data) === null || _envelope$data === void 0 || (_envelope$data = _envelope$data.reason) === null || _envelope$data === void 0 ? void 0 : _envelope$data.error;
+          if ((error === null || error === void 0 ? void 0 : error.code) === 'AuthenticationException') {
+            // Invalid token - retrying would be rejected the same way.
+            this.handleConnectionLoss(false);
+            this.emit(this.Event.error, new Error("Authentication rejected: ".concat(error.message)));
+          }
         }
       }
     }
   }, {
     key: "onClose",
     value: function onClose(event) {
-      this.stopConnectionMonitor();
-      clearTimeout(this.connectingTimeoutId);
-      var reconnect = event.code !== 1000; // Connection was closed because of error
+      // Connection was closed because of error
+      this.handleConnectionLoss(event.code !== 1000);
+    }
+
+    /**
+     * Abandon the current socket without waiting for its close event (which
+     * may never come, or take minutes on a dead TCP connection), settle
+     * everything that depended on it and schedule a retry when requested.
+     */
+  }, {
+    key: "handleConnectionLoss",
+    value: function handleConnectionLoss(reconnect) {
+      this.releaseSocket(reconnect ? 3000 : 1000);
 
       // The server can no longer answer anything that was queued or in
       // flight, so settle those promises instead of leaving them pending.
       this.failPendingCommands(new Error('Connection closed before the command was answered'));
+      reconnect && (reconnect = this.reconnectEnabled);
       if (reconnect) {
         // Keep a pending connect() promise unsettled - the retry below is
         // expected to authenticate and will resolve it.
-        void this.connect();
+        this.scheduleReconnect();
       } else {
+        this.reconnectEnabled = false;
         this.settleConnect(new Error('Connection closed before authentication'));
       }
       this.emit(this.Event.disconnect, reconnect);
+    }
+
+    /**
+     * Detach the current socket from the client and close it if it is still
+     * alive, together with all timers bound to it.
+     */
+  }, {
+    key: "releaseSocket",
+    value: function releaseSocket(closeCode) {
+      this.stopConnectionMonitor();
+      clearTimeout(this.connectingTimeoutId);
+      this.connectingTimeoutId = undefined;
+      this.authenticated = false;
+      var ws = this.ws;
+      this.ws = null;
+      if (!ws) {
+        return;
+      }
+      ws.onmessage = ws.onclose = ws.onerror = null;
+      if (ws.readyState === ws.CONNECTING || ws.readyState === ws.OPEN) {
+        try {
+          ws.close(closeCode);
+        } catch (_unused) {
+          // Nothing more can be done with a broken socket.
+        }
+      }
+    }
+  }, {
+    key: "scheduleReconnect",
+    value: function scheduleReconnect() {
+      var _this$options$reconne,
+        _this$options$reconne2,
+        _this$options$reconne3,
+        _this$options$reconne4,
+        _this4 = this;
+      this.cancelScheduledReconnect();
+      var minDelay = Math.max(0, (_this$options$reconne = (_this$options$reconne2 = this.options.reconnect) === null || _this$options$reconne2 === void 0 ? void 0 : _this$options$reconne2.minDelayMs) !== null && _this$options$reconne !== void 0 ? _this$options$reconne : 1000);
+      var maxDelay = Math.max(minDelay, (_this$options$reconne3 = (_this$options$reconne4 = this.options.reconnect) === null || _this$options$reconne4 === void 0 ? void 0 : _this$options$reconne4.maxDelayMs) !== null && _this$options$reconne3 !== void 0 ? _this$options$reconne3 : 30000);
+      var delay = Math.min(maxDelay, minDelay * Math.pow(2, Math.min(this.reconnectAttempts, 30)));
+      this.reconnectAttempts++;
+
+      // Random jitter (50-100% of the delay) keeps clients from reconnecting
+      // in lockstep after a server restart.
+      this.reconnectTimeoutId = setTimeout(function () {
+        _this4.reconnectTimeoutId = undefined;
+        _this4.connect()["catch"](function () {
+          return undefined;
+        });
+      }, delay / 2 + Math.random() * delay / 2);
+    }
+  }, {
+    key: "cancelScheduledReconnect",
+    value: function cancelScheduledReconnect() {
+      clearTimeout(this.reconnectTimeoutId);
+      this.reconnectTimeoutId = undefined;
     }
 
     /**
@@ -5634,16 +5752,16 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
   }, {
     key: "sendFromQueue",
     value: function sendFromQueue() {
-      var _this3 = this;
+      var _this5 = this;
       // Send awaiting data to server
       var lastDelay = 0;
       var _loop = function _loop() {
-        var _this3$options$awaitQ;
-        var envelope = _this3.sendQueue[dataIndex];
+        var _this5$options$awaitQ;
+        var envelope = _this5.sendQueue[dataIndex];
         setTimeout(function () {
-          return _this3.sendEnvelope(envelope);
+          return _this5.sendEnvelope(envelope);
         }, lastDelay);
-        lastDelay += (_this3$options$awaitQ = _this3.options.awaitQueueSendDelayMs) !== null && _this3$options$awaitQ !== void 0 ? _this3$options$awaitQ : 500;
+        lastDelay += (_this5$options$awaitQ = _this5.options.awaitQueueSendDelayMs) !== null && _this5$options$awaitQ !== void 0 ? _this5$options$awaitQ : 500;
       };
       for (var dataIndex in this.sendQueue) {
         _loop();
@@ -5654,7 +5772,7 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
   }, {
     key: "triggerConnectionTimeout",
     value: function triggerConnectionTimeout() {
-      this.disconnect();
+      this.handleConnectionLoss(true);
       this.emit(this.Event.error, new Error('Connection timeout'));
     }
   }, {
@@ -5670,7 +5788,8 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
   }, {
     key: "startConnectionMonitor",
     value: function startConnectionMonitor() {
-      var _this4 = this;
+      var _this6 = this;
+      this.stopConnectionMonitor();
       if (!this.options.ping.enabled) {
         return;
       }
@@ -5679,30 +5798,32 @@ var WebSocketChatClient = /*#__PURE__*/function (_AbstractChatClient) {
         return WebSocketChatClient_regenerator().w(function (_context3) {
           while (1) switch (_context3.n) {
             case 0:
-              if (!(!_this4.isReady || _this4.inFlightPingTimeout)) {
+              if (!(!_this6.isReady || _this6.inFlightPingTimeout)) {
                 _context3.n = 1;
                 break;
               }
               return _context3.a(2);
             case 1:
-              if (!(Date.now() - _this4.lastReceivedMessageAt < _this4.options.ping.noActivityTimeoutMs)) {
+              if (!(Date.now() - _this6.lastReceivedMessageAt < _this6.options.ping.noActivityTimeoutMs)) {
                 _context3.n = 2;
                 break;
               }
               return _context3.a(2);
             case 2:
-              _this4.inFlightPingTimeout = setTimeout(function () {
-                _this4.inFlightPingTimeout = undefined;
-                _this4.ws.close(3000); // Service Restart (reconnect)
-              }, _this4.options.ping.pongBackTimeoutMs);
+              _this6.inFlightPingTimeout = setTimeout(function () {
+                _this6.inFlightPingTimeout = undefined;
+                // Closing a dead connection can hang in CLOSING for minutes,
+                // so drop it right away instead of waiting for the close event.
+                _this6.handleConnectionLoss(true);
+              }, _this6.options.ping.pongBackTimeoutMs);
 
               // A rejection here means the connection dropped while the ping was
-              // in flight; onClose already handles that, so just stop waiting.
-              _this4.send('Ping', {})["catch"](function () {
+              // in flight; the loss is already handled, so just stop waiting.
+              _this6.send('Ping', {})["catch"](function () {
                 return undefined;
               }).then(function () {
-                clearTimeout(_this4.inFlightPingTimeout);
-                _this4.inFlightPingTimeout = undefined;
+                clearTimeout(_this6.inFlightPingTimeout);
+                _this6.inFlightPingTimeout = undefined;
               });
             case 3:
               return _context3.a(2);

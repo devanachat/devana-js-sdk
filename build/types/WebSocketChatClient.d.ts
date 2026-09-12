@@ -16,13 +16,28 @@ export interface WebSocketClientOptions {
     ping?: {
         enabled?: boolean;
         /**
-         * Time without activity after which a ping will be sent. Default is 10 seconds.
+         * Time without activity after which a ping will be sent. Default is 15 seconds.
          */
         noActivityTimeoutMs?: number;
         /**
-         * Time to wait for a pong response before considering the connection dead. Default is 2 seconds.
+         * Time to wait for a pong response before considering the connection dead. Default is 5 seconds.
          */
         pongBackTimeoutMs?: number;
+    };
+    /**
+     * Automatic reconnection. After the connection is lost (error, connecting timeout, missing pong
+     * or closure with a code other than 1000) the client retries indefinitely, waiting between attempts
+     * with an exponential backoff. Calling `disconnect()` stops retrying until the next `connect()`.
+     */
+    reconnect?: {
+        /**
+         * Delay before the first retry; each subsequent one doubles it. Default is 1 second.
+         */
+        minDelayMs?: number;
+        /**
+         * Upper limit of the delay between retries. Default is 30 seconds.
+         */
+        maxDelayMs?: number;
     };
 }
 declare enum WebSocketChatClientEvent {
@@ -50,14 +65,31 @@ export declare class WebSocketChatClient extends AbstractChatClient<Pick<WebSock
     protected pingMonitorInterval?: NodeJS.Timeout;
     protected inFlightPingTimeout: NodeJS.Timeout;
     protected lastReceivedMessageAt?: number;
+    protected reconnectEnabled: boolean;
+    protected reconnectTimeoutId?: any;
+    protected reconnectAttempts: number;
     constructor(options: WebSocketClientOptions);
     connect(): Promise<void>;
     disconnect(): void;
     send<CommandType extends keyof CommandsMap>(commandType: CommandType, commandData: CommandRequest<CommandType>): Promise<CommandResult<CommandResponse<CommandType>>>;
     get isReady(): boolean;
+    private openSocket;
     private sendEnvelope;
     private onMessage;
     private onClose;
+    /**
+     * Abandon the current socket without waiting for its close event (which
+     * may never come, or take minutes on a dead TCP connection), settle
+     * everything that depended on it and schedule a retry when requested.
+     */
+    private handleConnectionLoss;
+    /**
+     * Detach the current socket from the client and close it if it is still
+     * alive, together with all timers bound to it.
+     */
+    private releaseSocket;
+    private scheduleReconnect;
+    private cancelScheduledReconnect;
     /**
      * Resolve (or reject, when an error is given) a pending connect() promise.
      * No-op when there is nothing pending.
