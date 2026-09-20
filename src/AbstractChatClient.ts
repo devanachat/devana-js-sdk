@@ -128,6 +128,10 @@ import {
     ReactionUpdated,
     Reacted,
     ReactionDetails,
+    GetEntitlements,
+    Entitlements,
+    CreateAccessTicket,
+    AccessTicket,
 } from "./types/src";
 import {EventTarget} from "./EventTarget";
 
@@ -228,6 +232,8 @@ export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap
     Relationships: Relationships,
     Pong: Pong,
     UserInfo: UserInfo,
+    Entitlements: Entitlements,
+    AccessTicket: AccessTicket,
     // Space events
     DiscoverableSpaces: DiscoverableSpaces,
     SpaceJoined: SpaceJoined,
@@ -306,6 +312,8 @@ export type CommandsMap = {
     SetSessionData: CommandDefinition<SetSessionData, EventsMap['Ok']>,
     GetUserData: CommandDefinition<GetUserData, EventsMap['UserData']>,
     SetUserData: CommandDefinition<SetUserData, EventsMap['Ok']>,
+    GetEntitlements: CommandDefinition<GetEntitlements, EventsMap['Entitlements']>,
+    CreateAccessTicket: CommandDefinition<CreateAccessTicket, EventsMap['AccessTicket']>,
      // Space commands
     GetDiscoverableSpaces: CommandDefinition<GetDiscoverableSpaces, EventsMap['DiscoverableSpaces']>,
     JoinSpace: CommandDefinition<JoinSpace, EventsMap['SpaceJoined']>,

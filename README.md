@@ -63,3 +63,49 @@ objects, which allows you to subscribe to changes.
 
 **Important note:** you can cache these objects for the connection lifetime, but you should refetch them after reconnecting,
 because some structures are rebuild from scratch on `Session` event.
+## Package entitlements
+
+`GetEntitlements` answers what a space or the current account has. A space package and a user
+package describe disjoint features, so their keys live in separate enums and are never mixed:
+
+```js
+const space = await client.send('GetEntitlements', {spaceId: 'space-id'});
+const members = space.data.entitlements[PServ.SpaceFeature.MembersLimit];
+
+if (members !== PServ.NO_LIMIT && memberCount >= members) {
+    // the space package is full
+}
+
+const me = await client.send('GetEntitlements', {});
+const animatedAvatar = me.data.entitlements[PServ.UserFeature.AnimatedAvatar] === true;
+```
+
+A limit of `PServ.NO_LIMIT` (`-1`) means no limit, and a feature the package does not grant is
+absent. The package tells *whether* a feature exists; who may use it is still decided by role
+permissions.
+
+Whenever a package changes, the server pushes the same `Entitlements` event on its own - to every
+member of the space, or to every session of the user:
+
+```js
+client.on('Entitlements', entitlements => {
+    console.log(entitlements.subject, 'now has', entitlements.planCode);
+});
+```
+
+## Access tickets
+
+Services outside the chat server (billing for now) are called by the client directly, with a
+short-lived signed ticket instead of any shared secret. Ask for it right before the request:
+
+```js
+// The space ticket requires the ManageSpace permission; without spaceId the ticket covers the account
+const ticket = await client.send('CreateAccessTicket', {audience: 'billing', spaceId: 'space-id'});
+
+const subscription = await fetch(`https://billing-address/spaces/space-id/subscription`, {
+    headers: {Authorization: `Bearer ${ticket.data.token}`},
+}).then(response => response.json());
+```
+
+The ticket carries the audience, the scope it covers (`space:<id>` or `user:<id>`) and its
+`expiresAt`; the service rejects it outside that scope, for another audience or after it expires.

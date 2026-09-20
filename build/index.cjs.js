@@ -44,11 +44,14 @@ __webpack_require__.d(__webpack_exports__, {
   IndexedCollection: () => (/* reexport */ IndexedCollection),
   IndexedObjectCollection: () => (/* reexport */ IndexedObjectCollection),
   Layer: () => (/* reexport */ Layer),
+  NO_LIMIT: () => (/* reexport */ NO_LIMIT),
   ObservableIndexedCollection: () => (/* reexport */ ObservableIndexedCollection),
   ObservableIndexedObjectCollection: () => (/* reexport */ ObservableIndexedObjectCollection),
   PermissionDefinition: () => (/* reexport */ PermissionDefinition),
   Permissions: () => (/* reexport */ Permissions),
   RoleFlag: () => (/* reexport */ RoleFlag),
+  SpaceFeature: () => (/* reexport */ SpaceFeature),
+  UserFeature: () => (/* reexport */ UserFeature),
   UserStatus: () => (/* reexport */ UserStatus),
   WebApiChatClient: () => (/* reexport */ WebApiChatClient),
   WebSocketChatClient: () => (/* reexport */ WebSocketChatClient),
@@ -6290,7 +6293,63 @@ var UserStatus = /*#__PURE__*/function (UserStatus) {
   UserStatus[UserStatus["OnlineAsync"] = 2] = "OnlineAsync";
   return UserStatus;
 }({});
+;// ./src/types/src/schemes/Entitlements.ts
+/**
+ * What a package is attached to. A space package and a user package never describe the same
+ * feature, so entitlements of the two targets are never merged, summed or prioritised.
+ */
+
+/**
+ * Subject the entitlements belong to, as the billing service knows it.
+ */
+
+/**
+ * Value of a single entitlement: a flag, a numeric limit ({@link NO_LIMIT} means unlimited)
+ * or a setting.
+ */
+
+/**
+ * Entitlement keys granted by the package, keyed by {@link SpaceFeature} or {@link UserFeature}.
+ * A feature the package does not grant is simply absent.
+ */
+
+/**
+ * Value of a numeric limit that is not limited at all.
+ */
+var NO_LIMIT = -1;
+
+/**
+ * Entitlement keys of space packages.
+ */
+var SpaceFeature = /*#__PURE__*/function (SpaceFeature) {
+  SpaceFeature["MembersLimit"] = "space.members.limit";
+  SpaceFeature["RoomsLimit"] = "space.rooms.limit";
+  SpaceFeature["StorageLimitMb"] = "space.storage.limit_mb";
+  SpaceFeature["EmoticonsLimit"] = "space.emoticons.limit";
+  SpaceFeature["BotsLimit"] = "space.bots.limit";
+  SpaceFeature["Insights"] = "space.insights";
+  SpaceFeature["Discoverable"] = "space.discoverable";
+  SpaceFeature["Branding"] = "space.branding";
+  SpaceFeature["Support"] = "space.support";
+  return SpaceFeature;
+}({});
+
+/**
+ * Entitlement keys of user packages.
+ */
+var UserFeature = /*#__PURE__*/function (UserFeature) {
+  UserFeature["BotsLimit"] = "user.bots.limit";
+  UserFeature["UploadMaxFileMb"] = "user.upload.max_file_mb";
+  UserFeature["AnimatedAvatar"] = "user.animated_avatar";
+  UserFeature["Badge"] = "user.badge";
+  return UserFeature;
+}({});
 ;// ./src/types/src/index.ts
+
+
+
+
+
 
 
 
