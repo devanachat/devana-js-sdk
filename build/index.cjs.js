@@ -51,7 +51,6 @@ __webpack_require__.d(__webpack_exports__, {
   PermissionDefinition: () => (/* reexport */ PermissionDefinition),
   Permissions: () => (/* reexport */ Permissions),
   RoleFlag: () => (/* reexport */ RoleFlag),
-  SPACE_STORAGE_LIMIT_UNIT_BYTES: () => (/* reexport */ SPACE_STORAGE_LIMIT_UNIT_BYTES),
   STORAGE_UNIT_BYTES: () => (/* reexport */ STORAGE_UNIT_BYTES),
   SearchRange: () => (/* reexport */ SearchRange),
   SpaceFeature: () => (/* reexport */ SpaceFeature),
@@ -6384,9 +6383,8 @@ var SearchRange = /*#__PURE__*/function (SearchRange) {
 }({});
 
 /**
- * `space.storage.limit` is stated in gigabytes; every other storage key is in megabytes.
+ * Every storage entitlement is stated in megabytes.
  */
-var SPACE_STORAGE_LIMIT_UNIT_BYTES = 1024 * 1024 * 1024;
 var STORAGE_UNIT_BYTES = 1024 * 1024;
 ;// ./src/types/src/index.ts
 

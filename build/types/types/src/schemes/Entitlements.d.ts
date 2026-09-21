@@ -80,7 +80,6 @@ export declare enum SearchRange {
     AvailableRooms = "available_rooms"
 }
 /**
- * `space.storage.limit` is stated in gigabytes; every other storage key is in megabytes.
+ * Every storage entitlement is stated in megabytes.
  */
-export declare const SPACE_STORAGE_LIMIT_UNIT_BYTES: number;
 export declare const STORAGE_UNIT_BYTES: number;

@@ -82,9 +82,8 @@ const whitelist = space.data.entitlements[PServ.SpaceFeature.AccessWhitelist] ==
 
 A limit of `PServ.NO_LIMIT` (`-1`) means no limit, and a feature the package does not grant is
 absent. A dictionary feature states its numbers as strings (`'250'`), and storage is counted in
-megabytes everywhere except `space.storage.limit`, which is in gigabytes - use
-`PServ.STORAGE_UNIT_BYTES` and `PServ.SPACE_STORAGE_LIMIT_UNIT_BYTES` rather than a literal. The
-package tells *whether* a feature exists; who may use it is still decided by role permissions.
+megabytes - use `PServ.STORAGE_UNIT_BYTES` rather than a literal. The package tells *whether* a
+feature exists; who may use it is still decided by role permissions.
 
 The answer to the command also carries what the server knows about the usage, so a client can
 tell that a file will not fit before it uploads it:

@@ -14,7 +14,6 @@ import {
     NO_LIMIT,
     RoleFlag,
     SearchRange,
-    SPACE_STORAGE_LIMIT_UNIT_BYTES,
     SpaceFeature,
     STORAGE_UNIT_BYTES,
     UserFeature,
@@ -39,7 +38,6 @@ export {
     HistoryRotation,
     SearchRange,
     NO_LIMIT,
-    SPACE_STORAGE_LIMIT_UNIT_BYTES,
     STORAGE_UNIT_BYTES,
 };
 
