@@ -130,6 +130,7 @@ import {
     ReactionDetails,
     GetEntitlements,
     Entitlements,
+    EntitlementUsage,
     CreateAccessTicket,
     AccessTicket,
 } from "./types/src";
@@ -233,6 +234,7 @@ export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap
     Pong: Pong,
     UserInfo: UserInfo,
     Entitlements: Entitlements,
+    EntitlementUsage: EntitlementUsage,
     AccessTicket: AccessTicket,
     // Space events
     DiscoverableSpaces: DiscoverableSpaces,

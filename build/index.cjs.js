@@ -41,6 +41,7 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.d(__webpack_exports__, {
   AbstractRestClient: () => (/* reexport */ AbstractRestClient),
   FilesClient: () => (/* reexport */ FilesClient),
+  HistoryRotation: () => (/* reexport */ HistoryRotation),
   IndexedCollection: () => (/* reexport */ IndexedCollection),
   IndexedObjectCollection: () => (/* reexport */ IndexedObjectCollection),
   Layer: () => (/* reexport */ Layer),
@@ -50,6 +51,9 @@ __webpack_require__.d(__webpack_exports__, {
   PermissionDefinition: () => (/* reexport */ PermissionDefinition),
   Permissions: () => (/* reexport */ Permissions),
   RoleFlag: () => (/* reexport */ RoleFlag),
+  SPACE_STORAGE_LIMIT_UNIT_BYTES: () => (/* reexport */ SPACE_STORAGE_LIMIT_UNIT_BYTES),
+  STORAGE_UNIT_BYTES: () => (/* reexport */ STORAGE_UNIT_BYTES),
+  SearchRange: () => (/* reexport */ SearchRange),
   SpaceFeature: () => (/* reexport */ SpaceFeature),
   UserFeature: () => (/* reexport */ UserFeature),
   UserStatus: () => (/* reexport */ UserStatus),
@@ -6305,12 +6309,17 @@ var UserStatus = /*#__PURE__*/function (UserStatus) {
 
 /**
  * Value of a single entitlement: a flag, a numeric limit ({@link NO_LIMIT} means unlimited)
- * or a setting.
+ * or a dictionary value. A dictionary states its numbers as strings.
  */
 
 /**
  * Entitlement keys granted by the package, keyed by {@link SpaceFeature} or {@link UserFeature}.
  * A feature the package does not grant is simply absent.
+ */
+
+/**
+ * What the modules of the chat server add to the answer of `GetEntitlements`. The package says
+ * how much a subject may take, these say how much of it is already gone.
  */
 
 /**
@@ -6323,14 +6332,26 @@ var NO_LIMIT = -1;
  */
 var SpaceFeature = /*#__PURE__*/function (SpaceFeature) {
   SpaceFeature["MembersLimit"] = "space.members.limit";
+  SpaceFeature["MembersGuests"] = "space.members.guests";
   SpaceFeature["RoomsLimit"] = "space.rooms.limit";
-  SpaceFeature["StorageLimitMb"] = "space.storage.limit_mb";
+  SpaceFeature["RoomsPrivateLimit"] = "space.rooms.private_limit";
+  SpaceFeature["RoomsArchive"] = "space.rooms.archive";
+  SpaceFeature["RoomsHistoryRotation"] = "space.rooms.history_rotation";
   SpaceFeature["EmoticonsLimit"] = "space.emoticons.limit";
-  SpaceFeature["BotsLimit"] = "space.bots.limit";
-  SpaceFeature["Insights"] = "space.insights";
-  SpaceFeature["Discoverable"] = "space.discoverable";
-  SpaceFeature["Branding"] = "space.branding";
-  SpaceFeature["Support"] = "space.support";
+  SpaceFeature["MessageLength"] = "space.message.length";
+  SpaceFeature["StorageLimit"] = "space.storage.limit";
+  SpaceFeature["StorageSingleFileLimit"] = "space.storage.single_file_limit";
+  SpaceFeature["AccessWhitelist"] = "space.access.whitelist";
+  SpaceFeature["SearchRange"] = "space.search.range";
+  SpaceFeature["ContentExport"] = "space.content.export";
+  SpaceFeature["ContentAuditLog"] = "space.content.auditlog";
+  SpaceFeature["AvMemberLimit"] = "space.av.member_limit";
+  SpaceFeature["AvBroadcasterLimit"] = "space.av.broadcaster_limit";
+  SpaceFeature["AvQuality"] = "space.av.quality";
+  SpaceFeature["UiErgonomic"] = "app.ui.ergonomic";
+  SpaceFeature["ApiAccess"] = "app.api.access";
+  SpaceFeature["DataSovereignty"] = "app.data.sovereignty";
+  SpaceFeature["Support"] = "app.support";
   return SpaceFeature;
 }({});
 
@@ -6338,13 +6359,37 @@ var SpaceFeature = /*#__PURE__*/function (SpaceFeature) {
  * Entitlement keys of user packages.
  */
 var UserFeature = /*#__PURE__*/function (UserFeature) {
-  UserFeature["BotsLimit"] = "user.bots.limit";
-  UserFeature["UploadMaxFileMb"] = "user.upload.max_file_mb";
-  UserFeature["AnimatedAvatar"] = "user.animated_avatar";
-  UserFeature["Badge"] = "user.badge";
+  UserFeature["MessageLength"] = "user.message.length";
+  UserFeature["StorageLimit"] = "user.storage.limit";
+  UserFeature["StorageSingleFileLimit"] = "user.storage.single_file_limit";
   return UserFeature;
 }({});
+
+/**
+ * How far back a room of the space may be told to keep its history.
+ */
+var HistoryRotation = /*#__PURE__*/function (HistoryRotation) {
+  HistoryRotation["Low"] = "low";
+  HistoryRotation["High"] = "high";
+  return HistoryRotation;
+}({});
+
+/**
+ * How much of the space search reaches.
+ */
+var SearchRange = /*#__PURE__*/function (SearchRange) {
+  SearchRange["JoinedRooms"] = "joined_rooms";
+  SearchRange["AvailableRooms"] = "available_rooms";
+  return SearchRange;
+}({});
+
+/**
+ * `space.storage.limit` is stated in gigabytes; every other storage key is in megabytes.
+ */
+var SPACE_STORAGE_LIMIT_UNIT_BYTES = 1024 * 1024 * 1024;
+var STORAGE_UNIT_BYTES = 1024 * 1024;
 ;// ./src/types/src/index.ts
+
 
 
 

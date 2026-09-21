@@ -77,21 +77,43 @@ if (members !== PServ.NO_LIMIT && memberCount >= members) {
 }
 
 const me = await client.send('GetEntitlements', {});
-const animatedAvatar = me.data.entitlements[PServ.UserFeature.AnimatedAvatar] === true;
+const whitelist = space.data.entitlements[PServ.SpaceFeature.AccessWhitelist] === true;
 ```
 
 A limit of `PServ.NO_LIMIT` (`-1`) means no limit, and a feature the package does not grant is
-absent. The package tells *whether* a feature exists; who may use it is still decided by role
-permissions.
+absent. A dictionary feature states its numbers as strings (`'250'`), and storage is counted in
+megabytes everywhere except `space.storage.limit`, which is in gigabytes - use
+`PServ.STORAGE_UNIT_BYTES` and `PServ.SPACE_STORAGE_LIMIT_UNIT_BYTES` rather than a literal. The
+package tells *whether* a feature exists; who may use it is still decided by role permissions.
+
+The answer to the command also carries what the server knows about the usage, so a client can
+tell that a file will not fit before it uploads it:
+
+```js
+const used = me.data.extras?.storageUsedBytes ?? 0;
+const limit = Number(me.data.entitlements[PServ.UserFeature.StorageLimit]) * PServ.STORAGE_UNIT_BYTES;
+```
 
 Whenever a package changes, the server pushes the same `Entitlements` event on its own - to every
-member of the space, or to every session of the user:
+member of the space, or to every session of the user (without `extras`, which is asked for with
+the command when it is needed):
 
 ```js
 client.on('Entitlements', entitlements => {
     console.log(entitlements.subject, 'now has', entitlements.planCode);
 });
 ```
+
+Owners of a space also hear when one of its limits is running out (80%) or is used up (100%):
+
+```js
+client.on('EntitlementUsage', usage => {
+    console.log(usage.feature, `${usage.usage}/${usage.limit}`);
+});
+```
+
+An operation the package does not allow is refused with a single `EntitlementException` error
+whose message is the key that stopped it, e.g. `space.members.limit`.
 
 ## Access tickets
 
