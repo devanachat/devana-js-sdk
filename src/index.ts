@@ -14,6 +14,7 @@ import {
     NO_LIMIT,
     RoleFlag,
     SearchRange,
+    UiPurpose,
     SpaceFeature,
     STORAGE_UNIT_BYTES,
     UserFeature,
@@ -37,6 +38,7 @@ export {
     UserFeature,
     HistoryRotation,
     SearchRange,
+    UiPurpose,
     NO_LIMIT,
     STORAGE_UNIT_BYTES,
 };
