@@ -143,5 +143,5 @@ git submodule update --init --recursive
 ```
 
 A submodule's checked-out commit doesn't move on its own when you `git pull`/`git checkout` the
-parent repo, so both `npm install` (`postinstall`) and `npm run build` (`prebuild`) run this for you.
+parent repo, so `npm run build` (`prebuild`) runs this for you.
 Only a bare `tsc`/`webpack` call skips it.
