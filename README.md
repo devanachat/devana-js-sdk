@@ -142,6 +142,6 @@ A plain `git clone` leaves it empty, which is what makes `tsc`/the build fail wi
 git submodule update --init --recursive
 ```
 
-`npm install` also runs this automatically (`postinstall`), so it is only something to remember if
-you skip `npm install` or work from a stale checkout after switching branches - a submodule's
-checked-out commit doesn't move on its own when you `git checkout`/`pull` the parent repo.
+A submodule's checked-out commit doesn't move on its own when you `git pull`/`git checkout` the
+parent repo, so both `npm install` (`postinstall`) and `npm run build` (`prebuild`) run this for you.
+Only a bare `tsc`/`webpack` call skips it.
