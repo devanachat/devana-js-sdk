@@ -54,6 +54,7 @@ __webpack_require__.d(__webpack_exports__, {
   STORAGE_UNIT_BYTES: () => (/* reexport */ STORAGE_UNIT_BYTES),
   SearchRange: () => (/* reexport */ SearchRange),
   SpaceFeature: () => (/* reexport */ SpaceFeature),
+  UiPurpose: () => (/* reexport */ UiPurpose),
   UserFeature: () => (/* reexport */ UserFeature),
   UserStatus: () => (/* reexport */ UserStatus),
   WebApiChatClient: () => (/* reexport */ WebApiChatClient),
@@ -6347,7 +6348,7 @@ var SpaceFeature = /*#__PURE__*/function (SpaceFeature) {
   SpaceFeature["AvMemberLimit"] = "space.av.member_limit";
   SpaceFeature["AvBroadcasterLimit"] = "space.av.broadcaster_limit";
   SpaceFeature["AvQuality"] = "space.av.quality";
-  SpaceFeature["UiErgonomic"] = "app.ui.ergonomic";
+  SpaceFeature["UiPurpose"] = "app.ui.purpose";
   SpaceFeature["ApiAccess"] = "app.api.access";
   SpaceFeature["DataSovereignty"] = "app.data.sovereignty";
   SpaceFeature["Support"] = "app.support";
@@ -6371,6 +6372,15 @@ var HistoryRotation = /*#__PURE__*/function (HistoryRotation) {
   HistoryRotation["Low"] = "low";
   HistoryRotation["High"] = "high";
   return HistoryRotation;
+}({});
+
+/**
+ * What the space is for; a space for work gets the simplified interface.
+ */
+var UiPurpose = /*#__PURE__*/function (UiPurpose) {
+  UiPurpose["Work"] = "work";
+  UiPurpose["Fun"] = "fun";
+  return UiPurpose;
 }({});
 
 /**

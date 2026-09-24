@@ -52,7 +52,7 @@ export declare enum SpaceFeature {
     AvMemberLimit = "space.av.member_limit",
     AvBroadcasterLimit = "space.av.broadcaster_limit",
     AvQuality = "space.av.quality",
-    UiErgonomic = "app.ui.ergonomic",
+    UiPurpose = "app.ui.purpose",
     ApiAccess = "app.api.access",
     DataSovereignty = "app.data.sovereignty",
     Support = "app.support"
@@ -71,6 +71,13 @@ export declare enum UserFeature {
 export declare enum HistoryRotation {
     Low = "low",
     High = "high"
+}
+/**
+ * What the space is for; a space for work gets the simplified interface.
+ */
+export declare enum UiPurpose {
+    Work = "work",
+    Fun = "fun"
 }
 /**
  * How much of the space search reaches.
