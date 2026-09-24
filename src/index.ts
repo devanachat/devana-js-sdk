@@ -9,7 +9,16 @@ import {
 import {FilesClient, File} from "./FilesClient";
 import { Permissions, PermissionDefinition, Layer } from "./Permissions";
 import * as ChatTypes from './types/src';
-import {RoleFlag, UserStatus} from './types/src';
+import {
+    HistoryRotation,
+    NO_LIMIT,
+    RoleFlag,
+    SearchRange,
+    SpaceFeature,
+    STORAGE_UNIT_BYTES,
+    UserFeature,
+    UserStatus,
+} from './types/src';
 import {extractUserFromMember} from "./state-tracker/functions";
 import {AbstractRestClient} from "./AbstractRestClient";
 import {UnreadSummary} from "./state-tracker/FollowedTopicsManager";
@@ -24,6 +33,12 @@ export {
     extractUserFromMember,
     UserStatus,
     RoleFlag,
+    SpaceFeature,
+    UserFeature,
+    HistoryRotation,
+    SearchRange,
+    NO_LIMIT,
+    STORAGE_UNIT_BYTES,
 };
 
 export type {

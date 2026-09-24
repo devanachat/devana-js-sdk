@@ -41,14 +41,20 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.d(__webpack_exports__, {
   AbstractRestClient: () => (/* reexport */ AbstractRestClient),
   FilesClient: () => (/* reexport */ FilesClient),
+  HistoryRotation: () => (/* reexport */ HistoryRotation),
   IndexedCollection: () => (/* reexport */ IndexedCollection),
   IndexedObjectCollection: () => (/* reexport */ IndexedObjectCollection),
   Layer: () => (/* reexport */ Layer),
+  NO_LIMIT: () => (/* reexport */ NO_LIMIT),
   ObservableIndexedCollection: () => (/* reexport */ ObservableIndexedCollection),
   ObservableIndexedObjectCollection: () => (/* reexport */ ObservableIndexedObjectCollection),
   PermissionDefinition: () => (/* reexport */ PermissionDefinition),
   Permissions: () => (/* reexport */ Permissions),
   RoleFlag: () => (/* reexport */ RoleFlag),
+  STORAGE_UNIT_BYTES: () => (/* reexport */ STORAGE_UNIT_BYTES),
+  SearchRange: () => (/* reexport */ SearchRange),
+  SpaceFeature: () => (/* reexport */ SpaceFeature),
+  UserFeature: () => (/* reexport */ UserFeature),
   UserStatus: () => (/* reexport */ UserStatus),
   WebApiChatClient: () => (/* reexport */ WebApiChatClient),
   WebSocketChatClient: () => (/* reexport */ WebSocketChatClient),
@@ -6290,7 +6296,103 @@ var UserStatus = /*#__PURE__*/function (UserStatus) {
   UserStatus[UserStatus["OnlineAsync"] = 2] = "OnlineAsync";
   return UserStatus;
 }({});
+;// ./src/types/src/schemes/Entitlements.ts
+/**
+ * What a package is attached to. A space package and a user package never describe the same
+ * feature, so entitlements of the two targets are never merged, summed or prioritised.
+ */
+
+/**
+ * Subject the entitlements belong to, as the billing service knows it.
+ */
+
+/**
+ * Value of a single entitlement: a flag, a numeric limit ({@link NO_LIMIT} means unlimited)
+ * or a dictionary value. A dictionary states its numbers as strings.
+ */
+
+/**
+ * Entitlement keys granted by the package, keyed by {@link SpaceFeature} or {@link UserFeature}.
+ * A feature the package does not grant is simply absent.
+ */
+
+/**
+ * What the modules of the chat server add to the answer of `GetEntitlements`. The package says
+ * how much a subject may take, these say how much of it is already gone.
+ */
+
+/**
+ * Value of a numeric limit that is not limited at all.
+ */
+var NO_LIMIT = -1;
+
+/**
+ * Entitlement keys of space packages.
+ */
+var SpaceFeature = /*#__PURE__*/function (SpaceFeature) {
+  SpaceFeature["MembersLimit"] = "space.members.limit";
+  SpaceFeature["MembersGuests"] = "space.members.guests";
+  SpaceFeature["RoomsLimit"] = "space.rooms.limit";
+  SpaceFeature["RoomsPrivateLimit"] = "space.rooms.private_limit";
+  SpaceFeature["RoomsArchive"] = "space.rooms.archive";
+  SpaceFeature["RoomsHistoryRotation"] = "space.rooms.history_rotation";
+  SpaceFeature["EmoticonsLimit"] = "space.emoticons.limit";
+  SpaceFeature["MessageLength"] = "space.message.length";
+  SpaceFeature["StorageLimit"] = "space.storage.limit";
+  SpaceFeature["StorageSingleFileLimit"] = "space.storage.single_file_limit";
+  SpaceFeature["AccessWhitelist"] = "space.access.whitelist";
+  SpaceFeature["SearchRange"] = "space.search.range";
+  SpaceFeature["ContentExport"] = "space.content.export";
+  SpaceFeature["ContentAuditLog"] = "space.content.auditlog";
+  SpaceFeature["AvMemberLimit"] = "space.av.member_limit";
+  SpaceFeature["AvBroadcasterLimit"] = "space.av.broadcaster_limit";
+  SpaceFeature["AvQuality"] = "space.av.quality";
+  SpaceFeature["UiErgonomic"] = "app.ui.ergonomic";
+  SpaceFeature["ApiAccess"] = "app.api.access";
+  SpaceFeature["DataSovereignty"] = "app.data.sovereignty";
+  SpaceFeature["Support"] = "app.support";
+  return SpaceFeature;
+}({});
+
+/**
+ * Entitlement keys of user packages.
+ */
+var UserFeature = /*#__PURE__*/function (UserFeature) {
+  UserFeature["MessageLength"] = "user.message.length";
+  UserFeature["StorageLimit"] = "user.storage.limit";
+  UserFeature["StorageSingleFileLimit"] = "user.storage.single_file_limit";
+  return UserFeature;
+}({});
+
+/**
+ * How far back a room of the space may be told to keep its history.
+ */
+var HistoryRotation = /*#__PURE__*/function (HistoryRotation) {
+  HistoryRotation["Low"] = "low";
+  HistoryRotation["High"] = "high";
+  return HistoryRotation;
+}({});
+
+/**
+ * How much of the space search reaches.
+ */
+var SearchRange = /*#__PURE__*/function (SearchRange) {
+  SearchRange["JoinedRooms"] = "joined_rooms";
+  SearchRange["AvailableRooms"] = "available_rooms";
+  return SearchRange;
+}({});
+
+/**
+ * Every storage entitlement is stated in megabytes.
+ */
+var STORAGE_UNIT_BYTES = 1024 * 1024;
 ;// ./src/types/src/index.ts
+
+
+
+
+
+
 
 
 

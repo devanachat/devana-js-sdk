@@ -63,3 +63,85 @@ objects, which allows you to subscribe to changes.
 
 **Important note:** you can cache these objects for the connection lifetime, but you should refetch them after reconnecting,
 because some structures are rebuild from scratch on `Session` event.
+## Package entitlements
+
+`GetEntitlements` answers what a space or the current account has. A space package and a user
+package describe disjoint features, so their keys live in separate enums and are never mixed:
+
+```js
+const space = await client.send('GetEntitlements', {spaceId: 'space-id'});
+const members = space.data.entitlements[PServ.SpaceFeature.MembersLimit];
+
+if (members !== PServ.NO_LIMIT && memberCount >= members) {
+    // the space package is full
+}
+
+const me = await client.send('GetEntitlements', {});
+const whitelist = space.data.entitlements[PServ.SpaceFeature.AccessWhitelist] === true;
+```
+
+A limit of `PServ.NO_LIMIT` (`-1`) means no limit, and a feature the package does not grant is
+absent. A dictionary feature states its numbers as strings (`'250'`), and storage is counted in
+megabytes - use `PServ.STORAGE_UNIT_BYTES` rather than a literal. The package tells *whether* a
+feature exists; who may use it is still decided by role permissions.
+
+The answer to the command also carries what the server knows about the usage, so a client can
+tell that a file will not fit before it uploads it:
+
+```js
+const used = me.data.extras?.storageUsedBytes ?? 0;
+const limit = Number(me.data.entitlements[PServ.UserFeature.StorageLimit]) * PServ.STORAGE_UNIT_BYTES;
+```
+
+Whenever a package changes, the server pushes the same `Entitlements` event on its own - to every
+member of the space, or to every session of the user (without `extras`, which is asked for with
+the command when it is needed):
+
+```js
+client.on('Entitlements', entitlements => {
+    console.log(entitlements.subject, 'now has', entitlements.planCode);
+});
+```
+
+Owners of a space also hear when one of its limits is running out (80%) or is used up (100%):
+
+```js
+client.on('EntitlementUsage', usage => {
+    console.log(usage.feature, `${usage.usage}/${usage.limit}`);
+});
+```
+
+An operation the package does not allow is refused with a single `EntitlementException` error
+whose message is the key that stopped it, e.g. `space.members.limit`.
+
+## Access tickets
+
+Services outside the chat server (billing for now) are called by the client directly, with a
+short-lived signed ticket instead of any shared secret. Ask for it right before the request:
+
+```js
+// The space ticket requires the ManageSpace permission; without spaceId the ticket covers the account
+const ticket = await client.send('CreateAccessTicket', {audience: 'billing', spaceId: 'space-id'});
+
+const subscription = await fetch(`https://billing-address/spaces/space-id/subscription`, {
+    headers: {Authorization: `Bearer ${ticket.data.token}`},
+}).then(response => response.json());
+```
+
+The ticket carries the audience, the scope it covers (`space:<id>` or `user:<id>`) and its
+`expiresAt`; the service rejects it outside that scope, for another audience or after it expires.
+
+## Development
+
+The protocol types under `src/types` are a git submodule ([pserv-ts-types](https://github.com/szado/pserv-ts-types)).
+A plain `git clone` leaves it empty, which is what makes `tsc`/the build fail with
+`Module '"./types/src"' has no exported member '...'` for every command and event - clone with
+`git clone --recurse-submodules`, or after a plain clone run:
+
+```sh
+git submodule update --init --recursive
+```
+
+A submodule's checked-out commit doesn't move on its own when you `git pull`/`git checkout` the
+parent repo, so both `npm install` (`postinstall`) and `npm run build` (`prebuild`) run this for you.
+Only a bare `tsc`/`webpack` call skips it.
