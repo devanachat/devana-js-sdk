@@ -16,6 +16,7 @@
     }
   },
   "scripts": {
+    "postinstall": "git submodule update --init --recursive 2>/dev/null || true",
     "build": "npm run build:node && npm run build:browser && tsc",
     "build:node": "webpack --config webpack.config.node.js",
     "build:browser": "webpack --config webpack.config.browser.js",

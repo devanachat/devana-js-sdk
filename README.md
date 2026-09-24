@@ -130,3 +130,18 @@ const subscription = await fetch(`https://billing-address/spaces/space-id/subscr
 
 The ticket carries the audience, the scope it covers (`space:<id>` or `user:<id>`) and its
 `expiresAt`; the service rejects it outside that scope, for another audience or after it expires.
+
+## Development
+
+The protocol types under `src/types` are a git submodule ([pserv-ts-types](https://github.com/szado/pserv-ts-types)).
+A plain `git clone` leaves it empty, which is what makes `tsc`/the build fail with
+`Module '"./types/src"' has no exported member '...'` for every command and event - clone with
+`git clone --recurse-submodules`, or after a plain clone run:
+
+```sh
+git submodule update --init --recursive
+```
+
+`npm install` also runs this automatically (`postinstall`), so it is only something to remember if
+you skip `npm install` or work from a stale checkout after switching branches - a submodule's
+checked-out commit doesn't move on its own when you `git checkout`/`pull` the parent repo.
