@@ -6,4 +6,5 @@ export interface UserData {
      * device while disconnected. When false the user simply reads as offline.
      */
     showAsyncPresence: boolean;
+    language: string | null;
 }
