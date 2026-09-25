@@ -16,6 +16,7 @@ import {
     SearchRange,
     UiPurpose,
     SpaceFeature,
+    SpaceIntent,
     STORAGE_UNIT_BYTES,
     UserFeature,
     UserStatus,
@@ -39,6 +40,7 @@ export {
     HistoryRotation,
     SearchRange,
     UiPurpose,
+    SpaceIntent,
     NO_LIMIT,
     STORAGE_UNIT_BYTES,
 };

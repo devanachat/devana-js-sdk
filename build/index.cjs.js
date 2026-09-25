@@ -54,6 +54,7 @@ __webpack_require__.d(__webpack_exports__, {
   STORAGE_UNIT_BYTES: () => (/* reexport */ STORAGE_UNIT_BYTES),
   SearchRange: () => (/* reexport */ SearchRange),
   SpaceFeature: () => (/* reexport */ SpaceFeature),
+  SpaceIntent: () => (/* reexport */ SpaceIntent),
   UiPurpose: () => (/* reexport */ UiPurpose),
   UserFeature: () => (/* reexport */ UserFeature),
   UserStatus: () => (/* reexport */ UserStatus),
@@ -6281,6 +6282,13 @@ var RoleFlag = /*#__PURE__*/function (RoleFlag) {
   RoleFlag[RoleFlag["SeparateOnMembersList"] = 1] = "SeparateOnMembersList";
   RoleFlag[RoleFlag["MentionableByEveryone"] = 2] = "MentionableByEveryone";
   return RoleFlag;
+}({});
+;// ./src/types/src/schemes/Space.ts
+var SpaceIntent = /*#__PURE__*/function (SpaceIntent) {
+  SpaceIntent["Community"] = "community";
+  SpaceIntent["Friends"] = "friends";
+  SpaceIntent["Team"] = "team";
+  return SpaceIntent;
 }({});
 ;// ./src/types/src/schemes/User.ts
 /**
