@@ -6285,9 +6285,9 @@ var RoleFlag = /*#__PURE__*/function (RoleFlag) {
 }({});
 ;// ./src/types/src/schemes/Space.ts
 var SpaceIntent = /*#__PURE__*/function (SpaceIntent) {
-  SpaceIntent["Community"] = "community";
-  SpaceIntent["Friends"] = "friends";
-  SpaceIntent["Team"] = "team";
+  SpaceIntent["Community"] = "Community";
+  SpaceIntent["Friends"] = "Friends";
+  SpaceIntent["Team"] = "Team";
   return SpaceIntent;
 }({});
 ;// ./src/types/src/schemes/User.ts

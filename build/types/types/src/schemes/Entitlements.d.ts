@@ -2,7 +2,7 @@
  * What a package is attached to. A space package and a user package never describe the same
  * feature, so entitlements of the two targets are never merged, summed or prioritised.
  */
-export type EntitlementTarget = 'space' | 'user';
+export type EntitlementTarget = 'Space' | 'User';
 /**
  * Subject the entitlements belong to, as the billing service knows it.
  */
