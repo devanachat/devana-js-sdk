@@ -5,7 +5,7 @@ import {Role, RoleFlag} from "./schemes/Role";
 import {Room, RoomType} from "./schemes/Room";
 import {RoomMember} from "./schemes/RoomMember";
 import {RoomSummary, RoomSummaryExtras} from "./schemes/RoomSummary";
-import {Space, SpaceDiscoverable} from "./schemes/Space";
+import {Space, SpaceDiscoverable, SpaceIntent} from "./schemes/Space";
 import {SpaceMember} from "./schemes/SpaceMember";
 import {Topic} from "./schemes/Topic";
 import {User, UserStatus} from "./schemes/User";
@@ -153,6 +153,25 @@ import {GetReactionDetails} from "./schemes/commands/GetReactionDetails";
 import {ReactionUpdated} from "./schemes/events/ReactionUpdated";
 import {Reacted} from "./schemes/events/Reacted";
 import {ReactionDetails} from "./schemes/events/ReactionDetails";
+import {
+    EntitlementsExtras,
+    EntitlementsMap,
+    EntitlementsSubject,
+    EntitlementTarget,
+    EntitlementValue,
+    HistoryRotation,
+    NO_LIMIT,
+    SearchRange,
+    SpaceFeature,
+    STORAGE_UNIT_BYTES,
+    UiPurpose,
+    UserFeature,
+} from "./schemes/Entitlements";
+import {GetEntitlements} from "./schemes/commands/GetEntitlements";
+import {Entitlements} from "./schemes/events/Entitlements";
+import {EntitlementUsage} from "./schemes/events/EntitlementUsage";
+import {CreateAccessTicket, TicketAudience} from "./schemes/commands/CreateAccessTicket";
+import {AccessTicket} from "./schemes/events/AccessTicket";
 
 export {
     // objects
@@ -203,6 +222,20 @@ export {
     ToggledReaction,
     MessagePoll,
     MessagePollOption,
+    EntitlementTarget,
+    EntitlementsSubject,
+    EntitlementValue,
+    EntitlementsMap,
+    EntitlementsExtras,
+    NO_LIMIT,
+    STORAGE_UNIT_BYTES,
+    SpaceFeature,
+    UserFeature,
+    HistoryRotation,
+    SearchRange,
+    UiPurpose,
+    SpaceIntent,
+    TicketAudience,
     // events
     Bye,
     Error,
@@ -263,6 +296,9 @@ export {
     ReactionUpdated,
     Reacted,
     ReactionDetails,
+    Entitlements,
+    EntitlementUsage,
+    AccessTicket,
     // commands
     AssignRole,
     GetMessages,
@@ -333,4 +369,6 @@ export {
     React,
     Unreact,
     GetReactionDetails,
+    GetEntitlements,
+    CreateAccessTicket,
 };
