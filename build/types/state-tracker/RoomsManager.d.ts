@@ -32,6 +32,11 @@ export declare class RoomsManager {
      */
     getTopics(roomId: string, tryToFetchTopicIds?: string[]): Promise<ObservableIndexedObjectCollection<Topic> | undefined>;
     /**
+     * For internal use.
+     * @internal
+     */
+    _getRoom(roomId: string): Room | undefined;
+    /**
      * For internal use. If you want to delete topic, execute a proper command on client object.
      * @internal
      */
@@ -58,4 +63,10 @@ export declare class RoomsManager {
     private handleUserUpdated;
     private handleNewMessage;
     private handleMessagesRedacted;
+    /**
+     * The topics collection is where the message counters of a topic are kept up to date; a room in the list
+     * is not replaced on every message, as everything bound to the room would be rendered anew with it.
+     * Private conversations are the exception - they are listed by their last message.
+     */
+    private updatePmDefaultTopic;
 }

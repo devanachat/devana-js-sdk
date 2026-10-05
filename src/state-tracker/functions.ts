@@ -1,5 +1,8 @@
 import {Role, RoomMember, SpaceMember, User} from "../types/src";
 
+/**
+ * @return New objects of the other roles whose priority has to move; the given roles are left intact.
+ */
 export function reorderRolesOnPriorityUpdate(allRoles: Role[], oldRole: Role, updatedRole: Role): Role[] {
     // If the priority has changed, adjust the rest of roles
     const increased = (updatedRole.priority - oldRole.priority) > 0;
@@ -12,12 +15,10 @@ export function reorderRolesOnPriorityUpdate(allRoles: Role[], oldRole: Role, up
             return;
         }
         if (increased && oldRole.priority <= role.priority) {
-            role.priority--;
-            changedRoles.push(role);
+            changedRoles.push({...role, priority: role.priority - 1});
         }
         if (decreased && updatedRole.priority <= role.priority) {
-            role.priority++;
-            changedRoles.push(role);
+            changedRoles.push({...role, priority: role.priority + 1});
         }
     });
 

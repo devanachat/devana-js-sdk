@@ -148,9 +148,20 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
         return this.resolveOverwritesHierarchy(await Promise.all(promises));
     }
 
+    /**
+     * Arriving overwrites change the permissions only when they replace different ones. The first ones fetched for a
+     * key have not been part of any result yet - every calculation needing them awaits their fetch - and a fetch
+     * response arrives twice, as the command result and as an event.
+     */
     private handlePermissionOverwrites(ev: PermissionOverwritesUpdated | PermissionOverwrites): void {
-        this.overwrites.set([getOvIdByObject(ev), ev]);
-        this.emit('change');
+        const id = getOvIdByObject(ev);
+        const previous = this.overwrites.get(id);
+
+        this.overwrites.set([id, ev]);
+
+        if (previous && (previous.overwrites.allow !== ev.overwrites.allow || previous.overwrites.deny !== ev.overwrites.deny)) {
+            this.emit('change');
+        }
     }
 
     private handleSpaceDeleted(ev: SpaceDeleted | SpaceLeft): void {

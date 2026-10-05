@@ -1,8 +1,22 @@
 import {ChatStateTracker} from "./ChatStateTracker";
-import {NewTopic, Room, RoomUpdated, Topic, TopicDeleted} from "../types/src";
+import {
+    MessagesRedacted,
+    NewMessage,
+    NewTopic,
+    Reacted,
+    ReactionUpdated,
+    Room,
+    RoomUpdated,
+    Topic,
+    TopicDeleted,
+} from "../types/src";
 import {IndexedCollection,} from "../IndexedObjectCollection";
 import {TopicHistoryWindow, WindowState} from "./TopicHistoryWindow";
 
+/**
+ * Does not subscribe to the client itself - the messages manager routes the events of its room to it, so a history
+ * dropped together with its room stops receiving them.
+ */
 export class RoomMessagesHistory {
     private historyWindows = new IndexedCollection<string, TopicHistoryWindow>();
     private traverseLock: boolean = false;
@@ -11,10 +25,6 @@ export class RoomMessagesHistory {
         private room: Room,
         private tracker: ChatStateTracker,
     ) {
-        this.tracker.client.on('RoomUpdated', ev => this.handleRoomUpdated(ev));
-        this.tracker.client.on('NewTopic', ev => this.handleNewTopic(ev));
-        this.tracker.client.on('TopicDeleted', ev => this.handleTopicDeleted(ev));
-
         this.updateTraverseLock(this.room);
 
         if (this.room.defaultTopic) {
@@ -79,31 +89,73 @@ export class RoomMessagesHistory {
         }
     }
 
-    private async handleRoomUpdated(ev: RoomUpdated): Promise<void> {
-        if (this.room.id === ev.room.id) {
-            this.room = ev.room;
+    /**
+     * For internal use.
+     * @internal
+     */
+    public async _handleRoomUpdated(ev: RoomUpdated): Promise<void> {
+        this.room = ev.room;
 
-            this.updateTraverseLock(ev.room);
+        this.updateTraverseLock(ev.room);
 
-            if (ev.room.defaultTopic) {
-                this.createHistoryWindowForTopic(ev.room.defaultTopic);
-            }
+        if (ev.room.defaultTopic) {
+            this.createHistoryWindowForTopic(ev.room.defaultTopic);
+        }
 
-            for (const [, window] of Array.from(this.historyWindows.items)) {
-                await window.setTraverseLock(this.traverseLock);
-            }
+        for (const [, window] of Array.from(this.historyWindows.items)) {
+            await window.setTraverseLock(this.traverseLock);
         }
     }
 
-    private handleNewTopic(ev: NewTopic): void {
-        if (this.room.id === ev.roomId) {
-            this.createHistoryWindowForTopic(ev.topic);
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _handleNewTopic(ev: NewTopic): void {
+        this.createHistoryWindowForTopic(ev.topic);
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _handleTopicDeleted(ev: TopicDeleted): void {
+        this.historyWindows.delete(ev.location.topicId);
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _handleNewMessage(ev: NewMessage): void {
+        this.historyWindows.get(ev.message.location.topicId)?._handleNewMessage(ev);
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _handleMessagesRedacted(ev: MessagesRedacted): void {
+        void this.historyWindows.get(ev.location.topicId)?._handleMessagesRedacted(ev);
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _handleReactionUpdated(ev: ReactionUpdated): void {
+        for (const window of this.historyWindows.items.values()) {
+            window._handleReactionUpdated(ev);
         }
     }
 
-    private handleTopicDeleted(ev: TopicDeleted): void {
-        if (this.room.id === ev.location.roomId) {
-            this.historyWindows.delete(ev.location.topicId);
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _handleReacted(ev: Reacted): void {
+        for (const window of this.historyWindows.items.values()) {
+            window._handleReacted(ev);
         }
     }
 

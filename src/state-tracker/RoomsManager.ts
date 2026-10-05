@@ -125,6 +125,14 @@ export class RoomsManager {
     }
 
     /**
+     * For internal use.
+     * @internal
+     */
+    public _getRoom(roomId: string): Room | undefined {
+        return this.list.get(roomId);
+    }
+
+    /**
      * For internal use. If you want to delete topic, execute a proper command on client object.
      * @internal
      */
@@ -164,9 +172,7 @@ export class RoomsManager {
 
             // Update space member in roomMember, but first fill the user object (it's null in event)
             const roomMember = roomMembers.get(ev.userId);
-            const spaceMember = ev.member;
-            spaceMember.user = roomMember.spaceMember.user;
-            roomMembers.set({ ...roomMember, spaceMember });
+            roomMembers.set({ ...roomMember, spaceMember: { ...ev.member, user: roomMember.spaceMember.user } });
         }
     }
 
@@ -184,17 +190,12 @@ export class RoomsManager {
 
         const members = this.members.get(ev.roomId);
         const member = members.get(ev.userId);
-        const newMember = ev.member;
         const user = member.spaceMember?.user ?? member.user;
 
         // Preserving user object, because it's not included in event
-        if (newMember.spaceMember) {
-            newMember.spaceMember.user = user;
-        } else {
-            newMember.user = user;
-        }
-
-        members.set(newMember);
+        members.set(ev.member.spaceMember
+            ? { ...ev.member, spaceMember: { ...ev.member.spaceMember, user } }
+            : { ...ev.member, user });
     }
 
     private handleSpaceDeleted(ev: SpaceDeleted | SpaceLeft): void {
@@ -346,23 +347,19 @@ export class RoomsManager {
                 return;
             }
 
-            const newMember: RoomMember = {...member};
-
-            if (member.user) {
-                newMember.user = ev.user;
-            } else {
-                newMember.spaceMember.user = ev.user;
-            }
-
-            members.set(newMember);
+            members.set(member.user
+                ? {...member, user: ev.user}
+                : {...member, spaceMember: {...member.spaceMember, user: ev.user}});
         });
 
         // Update recipients users
         const newRooms: Room[] = [];
         this.list.items.forEach(room => {
             if (room.recipients?.some(user => user.id === ev.user.id)) {
-                room.recipients = room.recipients.map(user => user.id === ev.user.id ? ev.user : user);
-                newRooms.push({...room});
+                newRooms.push({
+                    ...room,
+                    recipients: room.recipients.map(user => user.id === ev.user.id ? ev.user : user),
+                });
             }
         });
         this.list.set(...newRooms);
@@ -383,11 +380,7 @@ export class RoomsManager {
         };
 
         topics.set(newTopic);
-        const room = this.list.get(ev.message.location.roomId);
-
-        if (room.defaultTopic?.id === ev.message.location.topicId) {
-            this.list.set({ ...room, defaultTopic: newTopic });
-        }
+        this.updatePmDefaultTopic(ev.message.location.roomId, newTopic);
     }
 
     private async handleMessagesRedacted(ev: MessagesRedacted): Promise<void> {
@@ -397,7 +390,22 @@ export class RoomsManager {
         if (topic) {
             const messageCount = Math.max(topic.messageCount - ev.ids.length, 0);
             const lastMessage: Message = messageCount > 0 ? await this.messages._resolveLastMessage(ev.location) : null;
-            topics.set({ ...topic, messageCount, lastMessage } as Topic);
+            const newTopic = { ...topic, messageCount, lastMessage } as Topic;
+            topics.set(newTopic);
+            this.updatePmDefaultTopic(ev.location.roomId, newTopic);
+        }
+    }
+
+    /**
+     * The topics collection is where the message counters of a topic are kept up to date; a room in the list
+     * is not replaced on every message, as everything bound to the room would be rendered anew with it.
+     * Private conversations are the exception - they are listed by their last message.
+     */
+    private updatePmDefaultTopic(roomId: string, topic: Topic): void {
+        const room = this.list.get(roomId);
+
+        if (room?.type === 'Pm' && room.defaultTopic?.id === topic.id) {
+            this.list.set({ ...room, defaultTopic: topic });
         }
     }
 }

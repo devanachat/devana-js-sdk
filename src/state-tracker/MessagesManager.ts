@@ -20,6 +20,16 @@ export class MessagesManager {
         this.tracker.client.on('RoomJoined', ev => this.handleRoomJoin(ev));
         this.tracker.client.on('RoomDeleted', ev => this.handleRoomDeleted(ev));
         this.tracker.client.on('RoomLeft', ev => this.handleRoomLeft(ev));
+
+        // One subscription for all the histories, routed by location: a message costs the same however many rooms
+        // and topics are tracked, and nothing stays subscribed after its room or topic is gone.
+        this.tracker.client.on('RoomUpdated', ev => void this.roomHistories.get(ev.room.id)?._handleRoomUpdated(ev));
+        this.tracker.client.on('NewTopic', ev => this.roomHistories.get(ev.roomId)?._handleNewTopic(ev));
+        this.tracker.client.on('TopicDeleted', ev => this.roomHistories.get(ev.location.roomId)?._handleTopicDeleted(ev));
+        this.tracker.client.on('NewMessage', ev => this.roomHistories.get(ev.message.location.roomId)?._handleNewMessage(ev));
+        this.tracker.client.on('MessagesRedacted', ev => this.roomHistories.get(ev.location.roomId)?._handleMessagesRedacted(ev));
+        this.tracker.client.on('ReactionUpdated', ev => this.forEachRoomHistory(history => history._handleReactionUpdated(ev)));
+        this.tracker.client.on('Reacted', ev => this.forEachRoomHistory(history => history._handleReacted(ev)));
     }
 
     /**
@@ -52,6 +62,12 @@ export class MessagesManager {
         }
 
         return message || null;
+    }
+
+    private forEachRoomHistory(callback: (history: RoomMessagesHistory) => void): void {
+        for (const history of this.roomHistories.items.values()) {
+            callback(history);
+        }
     }
 
     private createHistoryForNewRoom(room: Room): void {

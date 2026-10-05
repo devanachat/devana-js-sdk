@@ -136,9 +136,8 @@ export class SpacesManager {
     }
 
     private handleNewRole(ev: NewRole): void {
-        const collection = this.roles.get(ev.spaceId);
-        collection.set(ev.role);
-        this.list.get(ev.spaceId).roles = collection.items;
+        this.roles.get(ev.spaceId).set(ev.role);
+        this.syncSpaceRoles(ev.spaceId);
     }
 
     private handleNewRoom(ev: NewRoom): void {
@@ -166,29 +165,32 @@ export class SpacesManager {
         }
 
         const space = this.list.get(spaceId);
-        let spaceChanged = false;
 
         this.rooms.get(spaceId)?.delete(ev.id);
 
-        if (space.systemRoom === ev.id) {
-            space.systemRoom = null;
-            spaceChanged = true;
-        }
-
-        if (space.defaultRooms.includes(ev.id)) {
-            space.defaultRooms = space.defaultRooms.filter(roomId => roomId !== ev.id);
-            spaceChanged = true;
-        }
-
-        if (spaceChanged) {
-            this.list.set(space);
+        if (space && (space.systemRoom === ev.id || space.defaultRooms.includes(ev.id))) {
+            this.list.set({
+                ...space,
+                systemRoom: space.systemRoom === ev.id ? null : space.systemRoom,
+                defaultRooms: space.defaultRooms.filter(roomId => roomId !== ev.id),
+            });
         }
     }
 
     private handleRoleDeleted(ev: RoleDeleted): void {
-        const collection = this.roles.get(ev.spaceId);
-        collection.delete(ev.id);
-        this.list.get(ev.spaceId).roles = collection.items;
+        this.roles.get(ev.spaceId).delete(ev.id);
+        this.syncSpaceRoles(ev.spaceId);
+    }
+
+    /**
+     * Keep the roles listed on the space object in line with the roles collection.
+     */
+    private syncSpaceRoles(spaceId: string): void {
+        const space = this.list.get(spaceId);
+
+        if (space) {
+            this.list.set({...space, roles: this.roles.get(spaceId).items});
+        }
     }
 
     private handleSpaceUpdated(ev: SpaceUpdated): void {
@@ -299,6 +301,7 @@ export class SpacesManager {
         }
 
         this.roles.get(ev.spaceId).set(...rolesToUpdate);
+        this.syncSpaceRoles(ev.spaceId);
     }
 
     private handleSession(ev: Session): void {

@@ -300,9 +300,15 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
                 }
             }
 
-            for (const key of this.summariesCache.keys()) {
-                if (key.startsWith('space:') || key === 'spaceless') {
-                    this.summariesCache.delete(key);
+            const room = this.tracker.rooms?._getRoom(roomId);
+
+            if (room) {
+                this.summariesCache.delete(room.spaceId ? `space:${room.spaceId}` : 'spaceless');
+            } else {
+                for (const key of this.summariesCache.keys()) {
+                    if (key.startsWith('space:') || key === 'spaceless') {
+                        this.summariesCache.delete(key);
+                    }
                 }
             }
         } else {

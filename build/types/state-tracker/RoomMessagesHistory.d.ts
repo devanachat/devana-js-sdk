@@ -1,6 +1,10 @@
 import { ChatStateTracker } from "./ChatStateTracker";
-import { Room } from "../types/src";
+import { MessagesRedacted, NewMessage, NewTopic, Reacted, ReactionUpdated, Room, RoomUpdated, TopicDeleted } from "../types/src";
 import { TopicHistoryWindow } from "./TopicHistoryWindow";
+/**
+ * Does not subscribe to the client itself - the messages manager routes the events of its room to it, so a history
+ * dropped together with its room stops receiving them.
+ */
 export declare class RoomMessagesHistory {
     private room;
     private tracker;
@@ -25,9 +29,41 @@ export declare class RoomMessagesHistory {
      * untouched so their in-memory context survives the reconnect.
      */
     resync(room: Room): Promise<void>;
-    private handleRoomUpdated;
-    private handleNewTopic;
-    private handleTopicDeleted;
+    /**
+     * For internal use.
+     * @internal
+     */
+    _handleRoomUpdated(ev: RoomUpdated): Promise<void>;
+    /**
+     * For internal use.
+     * @internal
+     */
+    _handleNewTopic(ev: NewTopic): void;
+    /**
+     * For internal use.
+     * @internal
+     */
+    _handleTopicDeleted(ev: TopicDeleted): void;
+    /**
+     * For internal use.
+     * @internal
+     */
+    _handleNewMessage(ev: NewMessage): void;
+    /**
+     * For internal use.
+     * @internal
+     */
+    _handleMessagesRedacted(ev: MessagesRedacted): void;
+    /**
+     * For internal use.
+     * @internal
+     */
+    _handleReactionUpdated(ev: ReactionUpdated): void;
+    /**
+     * For internal use.
+     * @internal
+     */
+    _handleReacted(ev: Reacted): void;
     private createHistoryWindowForTopic;
     private updateTraverseLock;
 }

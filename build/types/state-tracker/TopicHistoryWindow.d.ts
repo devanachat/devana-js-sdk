@@ -1,4 +1,4 @@
-import { Message, Topic, UserReaction } from "../types/src";
+import { Message, ReactionUpdated, MessagesRedacted, NewMessage, Reacted, Topic, UserReaction } from "../types/src";
 import { ChatStateTracker } from "./ChatStateTracker";
 import { CollectionEventMap, ObservableIndexedObjectCollection } from "../IndexedObjectCollection";
 export declare enum WindowState {
@@ -50,7 +50,7 @@ export declare abstract class TraversableRemoteCollection<ItemT, EventMapT exten
     get limit(): number | null;
     /**
      * Maximum number of items stored in window (High Watermark).
-     * Null for unlimited.
+     * Null for unlimited. Lowering it below the current length drops the oldest items right away.
      */
     set limit(value: number | null);
     /**
@@ -74,12 +74,24 @@ export declare abstract class TraversableRemoteCollection<ItemT, EventMapT exten
     protected abstract fetchItemsAround(id: string): Promise<ItemT[] | null>;
     protected abstract isLatestItemLoaded(): Promise<boolean>;
     protected refreshFetchedState(): Promise<void>;
-    protected addItems(newItems: ItemT[], to: 'head' | 'tail'): void;
+    /**
+     * Add items without emitting an event, trimming the window from the opposite end using the
+     * High/Low Watermark strategy. An item already in the window keeps its position.
+     * @return Ids of the items trimmed out.
+     */
+    protected addItems(newItems: ItemT[], to: 'head' | 'tail', highWatermark?: number | null): string[];
     protected emitChangeWithDiff(itemChanged: boolean, originalState: WindowState): void;
     /**
-     * Return array with messages trimmed using High/Low Watermark strategy.
+     * Drop the oldest items, so that at most `keep` remain. The newest items stay, so whether the window holds the
+     * latest ones does not change - but the oldest it held are gone.
+     * @return Ids of the dropped items.
      */
-    private trimItemsArrayToLimit;
+    protected trimHead(keep: number | null): string[];
+    private trimTail;
+    /**
+     * Number of items left after trimming a window that went over the given High Watermark.
+     */
+    private getLowWatermark;
 }
 export type TopicHistoryWindowEventMap = CollectionEventMap & {
     reftopicsdeleted: string[];
@@ -96,8 +108,12 @@ export declare class TopicHistoryWindow extends TraversableRemoteCollection<Mess
         traverseLock: boolean;
         includeMyReactions: boolean;
         myReactions: Record<string, UserReaction[]>;
+        liveLimit: number | null;
     };
-    constructor(roomId: string, topicId: string, tracker: ChatStateTracker, bindEvents?: boolean);
+    /**
+     * The window does not subscribe to the client itself - the messages manager routes the events of its topic to it.
+     */
+    constructor(roomId: string, topicId: string, tracker: ChatStateTracker);
     createMirror(): TopicHistoryWindow;
     get isTraverseLocked(): boolean;
     /**
@@ -111,6 +127,13 @@ export declare class TopicHistoryWindow extends TraversableRemoteCollection<Mess
      */
     get includeMyReactions(): boolean;
     set includeMyReactions(value: boolean);
+    /**
+     * Maximum number of items a window that has not been fetched yet (LIVE state) collects from the incoming
+     * messages. Null for the same as {@link limit}. It keeps the windows of topics nobody looks at small;
+     * the windows of ephemeral topics are exempt, as the live messages are all the history they have.
+     */
+    get liveLimit(): number | null;
+    set liveLimit(value: number | null);
     setTraverseLock(lock: boolean): Promise<void>;
     resetToLatest(force?: boolean): Promise<void>;
     fetchNext(): Promise<void>;
@@ -134,12 +157,26 @@ export declare class TopicHistoryWindow extends TraversableRemoteCollection<Mess
     private getTopic;
     private getLatestMessageId;
     protected isLatestItemLoaded(): Promise<boolean>;
-    private handleNewMessage;
+    /**
+     * For internal use.
+     * @internal
+     */
+    _handleNewMessage(ev: NewMessage): void;
     /**
      * The counter arrives as the global source of truth - only it is overwritten, and
      * a reaction nobody holds any more (count 0) leaves the message.
+     * For internal use.
+     * @internal
      */
-    private handleReactionUpdated;
-    private handleReacted;
-    private handleMessagesRedacted;
+    _handleReactionUpdated(ev: ReactionUpdated): void;
+    /**
+     * For internal use.
+     * @internal
+     */
+    _handleReacted(ev: Reacted): void;
+    /**
+     * For internal use.
+     * @internal
+     */
+    _handleMessagesRedacted(ev: MessagesRedacted): Promise<void>;
 }

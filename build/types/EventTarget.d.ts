@@ -26,6 +26,7 @@ export declare class EventTarget<EventMapT extends Record<string, any> = Record<
     emit<K extends keyof EventMapT & string>(eventName: K, event: EventMapT[K]): this;
     emit(eventName: string, event?: unknown): this;
     private addHandler;
+    private removeHandler;
     private callHandlers;
 }
 export {};

@@ -43,6 +43,10 @@ export declare class SpacesManager {
     private handleRoomUpdated;
     private handleRoomDeleted;
     private handleRoleDeleted;
+    /**
+     * Keep the roles listed on the space object in line with the roles collection.
+     */
+    private syncSpaceRoles;
     private handleSpaceUpdated;
     private handleSpaceDeleted;
     private handleSpaceJoined;

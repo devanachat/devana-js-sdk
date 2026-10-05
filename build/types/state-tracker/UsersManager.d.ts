@@ -15,5 +15,9 @@ export declare class UsersManager {
     getAvailable(): Promise<ObservableIndexedObjectCollection<User>>;
     private handleMembers;
     private handleSession;
+    /**
+     * Every message carries its author, so most of what arrives here is already known - only the users that actually
+     * changed are stored, and the collection does not report a change for each message.
+     */
     private handleUsers;
 }

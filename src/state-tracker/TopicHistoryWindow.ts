@@ -89,10 +89,16 @@ export abstract class TraversableRemoteCollection<
 
     /**
      * Maximum number of items stored in window (High Watermark).
-     * Null for unlimited.
+     * Null for unlimited. Lowering it below the current length drops the oldest items right away.
      */
     public set limit(value: number | null) {
         this.internalState.limit = value;
+
+        const deletedItems = this.trimHead(value);
+
+        if (deletedItems.length) {
+            this.eventTarget.emit('change', {deletedItems});
+        }
     }
 
     /**
@@ -251,20 +257,25 @@ export abstract class TraversableRemoteCollection<
         this.internalState.current = (await this.isLatestItemLoaded()) ? WindowState.LATEST : WindowState.PAST;
     }
 
-    protected addItems(newItems: ItemT[], to: 'head' | 'tail'): void {
-        let result;
-
-        if (to === 'head') {
-            result = this.trimItemsArrayToLimit([...newItems, ...this.items], 'tail');
-        }
+    /**
+     * Add items without emitting an event, trimming the window from the opposite end using the
+     * High/Low Watermark strategy. An item already in the window keeps its position.
+     * @return Ids of the items trimmed out.
+     */
+    protected addItems(newItems: ItemT[], to: 'head' | 'tail', highWatermark: number | null = this.limit): string[] {
+        const entries = newItems.map(item => [this.getId(item), item] as [string, ItemT]);
 
         if (to === 'tail') {
-            result = this.trimItemsArrayToLimit([...this.items, ...newItems], 'head');
+            this._items.set(...entries);
+            return this.trimHead(this.getLowWatermark(highWatermark));
         }
 
-        // Directly calls to prevent event emit.
+        // Prepending has to rebuild the map; a duplicate keeps the already loaded version of the item.
+        const loaded = Array.from(this._items.items);
         this._items.deleteAll();
-        this._items.set(...(result.map(item => [this.getId(item), item] as [string, ItemT])));
+        this._items.set(...entries, ...loaded);
+
+        return this.trimTail(this.getLowWatermark(highWatermark));
     }
 
     protected emitChangeWithDiff(itemChanged: boolean, originalState: WindowState): void {
@@ -274,26 +285,54 @@ export abstract class TraversableRemoteCollection<
     }
 
     /**
-     * Return array with messages trimmed using High/Low Watermark strategy.
+     * Drop the oldest items, so that at most `keep` remain. The newest items stay, so whether the window holds the
+     * latest ones does not change - but the oldest it held are gone.
+     * @return Ids of the dropped items.
      */
-    private trimItemsArrayToLimit(items: ItemT[], from: 'head' | 'tail'): ItemT[] {
-        const highWatermark = this.limit;
-
-        if (highWatermark === null || items.length <= highWatermark) {
-            return items;
+    protected trimHead(keep: number | null): string[] {
+        if (keep === null || this._items.length <= keep) {
+            return [];
         }
 
-        const lowWatermark = Math.floor(highWatermark * this.internalState.retainRatio);
+        const deletedItems: string[] = [];
+        const deleteCount = this._items.length - keep;
 
-        if (from === 'head') {
-            return items.slice(-lowWatermark);
+        for (const id of this._items.items.keys()) {
+            if (deletedItems.length === deleteCount) {
+                break;
+            }
+            deletedItems.push(id);
         }
 
-        if (from === 'tail') {
-            return items.slice(0, lowWatermark);
+        this._items.delete(...deletedItems);
+
+        if (this.internalState.current === WindowState.OLDEST) {
+            this.internalState.current = WindowState.PAST;
         }
 
-        return items;
+        return deletedItems;
+    }
+
+    private trimTail(keep: number | null): string[] {
+        if (keep === null || this._items.length <= keep) {
+            return [];
+        }
+
+        const deletedItems = Array.from(this._items.items.keys()).slice(keep);
+        this._items.delete(...deletedItems);
+
+        return deletedItems;
+    }
+
+    /**
+     * Number of items left after trimming a window that went over the given High Watermark.
+     */
+    private getLowWatermark(highWatermark: number | null): number | null {
+        if (highWatermark === null || this._items.length <= highWatermark) {
+            return null;
+        }
+
+        return Math.floor(highWatermark * this.internalState.retainRatio);
     }
 }
 
@@ -314,30 +353,27 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         traverseLock: boolean,
         includeMyReactions: boolean,
         myReactions: Record<string, UserReaction[]>,
+        liveLimit: number | null,
     };
 
+    /**
+     * The window does not subscribe to the client itself - the messages manager routes the events of its topic to it.
+     */
     public constructor(
         private roomId: string,
         private topicId: string,
         private tracker: ChatStateTracker,
-        bindEvents: boolean = true,
     ) {
         super('id');
 
         this.internalState.traverseLock = false;
         this.internalState.includeMyReactions = true;
         this.internalState.myReactions = {};
-
-        if (bindEvents) {
-            this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
-            this.tracker.client.on('MessagesRedacted', ev => this.handleMessagesRedacted(ev));
-            this.tracker.client.on('ReactionUpdated', ev => this.handleReactionUpdated(ev));
-            this.tracker.client.on('Reacted', ev => this.handleReacted(ev));
-        }
+        this.internalState.liveLimit = 50;
     }
 
     public createMirror(): TopicHistoryWindow {
-        const copy = new TopicHistoryWindow(this.roomId, this.topicId, this.tracker, false);
+        const copy = new TopicHistoryWindow(this.roomId, this.topicId, this.tracker);
         copy.eventTarget = this.eventTarget;
         copy._items = this._items;
         copy.internalState = this.internalState;
@@ -366,6 +402,19 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
 
     public set includeMyReactions(value: boolean) {
         this.internalState.includeMyReactions = value;
+    }
+
+    /**
+     * Maximum number of items a window that has not been fetched yet (LIVE state) collects from the incoming
+     * messages. Null for the same as {@link limit}. It keeps the windows of topics nobody looks at small;
+     * the windows of ephemeral topics are exempt, as the live messages are all the history they have.
+     */
+    public get liveLimit(): number | null {
+        return this.internalState.liveLimit;
+    }
+
+    public set liveLimit(value: number | null) {
+        this.internalState.liveLimit = value;
     }
 
     public async setTraverseLock(lock: boolean): Promise<void> {
@@ -465,15 +514,19 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
             return;
         }
 
+        const next = {...this.internalState.myReactions};
+
         for (const message of messages) {
             const own = myReactions?.[message.id];
 
             if (own?.length) {
-                this.internalState.myReactions[message.id] = own;
+                next[message.id] = own;
             } else {
-                delete this.internalState.myReactions[message.id];
+                delete next[message.id];
             }
         }
+
+        this.internalState.myReactions = next;
     }
 
     private async getTopic(): Promise<Topic | undefined> {
@@ -489,23 +542,32 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         return lastMessageId ? this.has(lastMessageId) : true;
     }
 
-    private async handleNewMessage(ev: NewMessage): Promise<void> {
-        if (
-            [WindowState.LATEST, WindowState.LIVE].includes(this.state)
-            && ev.message.location.roomId === this.roomId
-            && ev.message.location.topicId === this.topicId
-        ) {
-            const originalState = this.state;
-            this.addItems([ev.message], 'tail');
-            this.emitChangeWithDiff(true, originalState);
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _handleNewMessage(ev: NewMessage): void {
+        if (! this.hasLatest) {
+            return;
         }
+
+        const limit = this.state === WindowState.LIVE && ! this.internalState.traverseLock
+            ? this.internalState.liveLimit ?? this.limit
+            : this.limit;
+        const deletedItems = this.addItems([ev.message], 'tail', limit);
+
+        this.eventTarget.emit('change', deletedItems.length
+            ? {setItems: [ev.message.id], deletedItems}
+            : {setItems: [ev.message.id]});
     }
 
     /**
      * The counter arrives as the global source of truth - only it is overwritten, and
      * a reaction nobody holds any more (count 0) leaves the message.
+     * For internal use.
+     * @internal
      */
-    private handleReactionUpdated(ev: ReactionUpdated): void {
+    public _handleReactionUpdated(ev: ReactionUpdated): void {
         const message = this.get(ev.messageId);
 
         if (! message) {
@@ -532,7 +594,11 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         this.set({...message, reactions});
     }
 
-    private handleReacted(ev: Reacted): void {
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _handleReacted(ev: Reacted): void {
         if (! this.has(ev.messageId)) {
             return;
         }
@@ -545,20 +611,21 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
             own.push({type, value});
         }
 
+        const {[ev.messageId]: _previous, ...myReactions} = this.internalState.myReactions;
+
         if (own.length) {
-            this.internalState.myReactions[ev.messageId] = own;
-        } else {
-            delete this.internalState.myReactions[ev.messageId];
+            myReactions[ev.messageId] = own;
         }
 
+        this.internalState.myReactions = myReactions;
         this.eventTarget.emit('change', {setItems: [ev.messageId]});
     }
 
-    private async handleMessagesRedacted(ev: MessagesRedacted): Promise<void> {
-        if (ev.location.topicId !== this.topicId || ev.location.roomId !== this.roomId) {
-            return;
-        }
-
+    /**
+     * For internal use.
+     * @internal
+     */
+    public async _handleMessagesRedacted(ev: MessagesRedacted): Promise<void> {
         const refTopicIds = this.items
             .filter(msg => msg.topicRef && ev.ids.includes(msg.id))
             .map(msg => msg.topicRef as string);

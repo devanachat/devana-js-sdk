@@ -15,6 +15,7 @@ export declare class MessagesManager {
      * @internal
      */
     _resolveLastMessage(location: ChatLocation): Promise<Message | null>;
+    private forEachRoomHistory;
     private createHistoryForNewRoom;
     private handleRoomDeleted;
     private handleRoomJoin;

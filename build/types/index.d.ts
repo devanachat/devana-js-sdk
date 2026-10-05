@@ -8,5 +8,7 @@ import { HistoryRotation, NO_LIMIT, RoleFlag, SearchRange, UiPurpose, SpaceFeatu
 import { extractUserFromMember } from "./state-tracker/functions";
 import { AbstractRestClient } from "./AbstractRestClient";
 import { UnreadSummary } from "./state-tracker/FollowedTopicsManager";
+import { TopicHistoryWindow } from "./state-tracker/TopicHistoryWindow";
+import { PermissionsManager } from "./state-tracker/PermissionsManager";
 export { IndexedCollection, ObservableIndexedCollection, IndexedObjectCollection, ObservableIndexedObjectCollection, Permissions, PermissionDefinition, Layer, WebSocketChatClient, WebApiChatClient, FilesClient, AbstractRestClient, extractUserFromMember, UserStatus, RoleFlag, SpaceFeature, UserFeature, HistoryRotation, SearchRange, UiPurpose, SpaceIntent, NO_LIMIT, STORAGE_UNIT_BYTES, };
-export type { ChatTypes, File, UnreadSummary, };
+export type { ChatTypes, File, UnreadSummary, TopicHistoryWindow, PermissionsManager, };

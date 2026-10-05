@@ -87,7 +87,19 @@ export class IndexedObjectCollection<T> {
     }
 
     public getAt(index: number): T | undefined {
-        return this.items[index];
+        if (index < 0 || index >= this.length) {
+            return undefined;
+        }
+
+        let current = 0;
+
+        for (const item of this._items.items.values()) {
+            if (current++ === index) {
+                return item;
+            }
+        }
+
+        return undefined;
     }
 
     public has(id: any): boolean {

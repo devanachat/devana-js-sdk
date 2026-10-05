@@ -42,11 +42,8 @@ export class EventTarget<EventMapT extends Record<string, any> = Record<string, 
     public off<K extends keyof EventMapT & string>(eventName: K, handler: EventHandler<EventMapT[K]>): this;
     public off(eventName: string, handler: EventHandler<unknown>): this;
     public off(eventName: string, handler: EventHandler<any>): this {
-        const index = this.events.get(eventName)?.indexOf(handler);
-        if (index === undefined || index < 0) {
-            return this;
-        }
-        this.events.get(eventName)?.splice(index, 1);
+        this.removeHandler(this.events, eventName, handler);
+        this.removeHandler(this.onceEvents, eventName, handler);
         return this;
     }
 
@@ -63,6 +60,15 @@ export class EventTarget<EventMapT extends Record<string, any> = Record<string, 
         const handlers = map.get(eventName) ?? [];
         handlers.push(handler);
         map.set(eventName, handlers);
+    }
+
+    private removeHandler(map: HandlersMap, eventName: string, handler: EventHandler<any>): void {
+        const handlers = map.get(eventName);
+        const index = handlers?.indexOf(handler) ?? -1;
+
+        if (index >= 0) {
+            handlers.splice(index, 1);
+        }
     }
 
     private callHandlers(map: HandlersMap, eventName: string, event: unknown): void {

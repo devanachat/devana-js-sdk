@@ -24,6 +24,8 @@ import {
 import {extractUserFromMember} from "./state-tracker/functions";
 import {AbstractRestClient} from "./AbstractRestClient";
 import {UnreadSummary} from "./state-tracker/FollowedTopicsManager";
+import {TopicHistoryWindow} from "./state-tracker/TopicHistoryWindow";
+import {PermissionsManager} from "./state-tracker/PermissionsManager";
 
 export {
     IndexedCollection, ObservableIndexedCollection,
@@ -49,4 +51,6 @@ export type {
     ChatTypes,
     File,
     UnreadSummary,
+    TopicHistoryWindow,
+    PermissionsManager,
 };

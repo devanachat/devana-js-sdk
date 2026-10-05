@@ -20,6 +20,11 @@ export declare class PermissionsManager extends EventTarget<PermissionsManagerEv
     getOverwrites(location: ChatLocation, target: PermissionOverwritesTarget): Promise<PermissionOverwrites | undefined>;
     check(permissionNames: (keyof typeof Permissions.list)[], location: ChatLocation): Promise<CheckPermissionsResult>;
     calculatePermissions(location: ChatLocation): Promise<number>;
+    /**
+     * Arriving overwrites change the permissions only when they replace different ones. The first ones fetched for a
+     * key have not been part of any result yet - every calculation needing them awaits their fetch - and a fetch
+     * response arrives twice, as the command result and as an event.
+     */
     private handlePermissionOverwrites;
     private handleSpaceDeleted;
     private handleRoomDeleted;
