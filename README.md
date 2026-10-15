@@ -15,6 +15,9 @@ It is the same library the Devana apps are built on.
 
 Works in browsers and in Node.js 22+ (it uses the global `fetch` and `WebSocket`).
 
+The commands and events themselves are described in the protocol documentation at
+**[developers.devana.pl](https://developers.devana.pl)** - this README covers the SDK on top of them.
+
 ## Installation
 
 ```sh
@@ -57,7 +60,7 @@ console.log('Connected as', session?.user.nick, 'to server', session?.serverVers
 Every command resolves to `{data, error}`: exactly one of them is set. A server error (missing permission, invalid
 input) does not throw - check `error`, after which TypeScript knows `data` is there. The promise rejects only when the
 command could not be delivered (e.g. the connection dropped). Command and event names, with their payloads, are typed:
-your editor will complete them.
+your editor will complete them. See [developers.devana.pl](https://developers.devana.pl) for what each of them does.
 
 ### Web API client
 
@@ -186,26 +189,6 @@ client.on('EntitlementUsage', usage => {
 
 An operation the package does not allow is refused with a single `EntitlementException` error
 whose message is the key that stopped it, e.g. `space.members.limit`.
-
-## Access tickets
-
-Services outside the chat server (billing for now) are called by the client directly, with a
-short-lived signed ticket instead of any shared secret. Ask for it right before the request:
-
-```ts
-// The space ticket requires the ManageSpace permission; without spaceId the ticket covers the account
-const ticket = await client.send('CreateAccessTicket', {audience: 'billing', spaceId: 'space-id'});
-if (ticket.error) {
-    throw new Error(ticket.error.message);
-}
-
-const subscription = await fetch('https://billing.devana.pl/spaces/space-id/subscription', {
-    headers: {Authorization: `Bearer ${ticket.data.token}`},
-}).then(response => response.json());
-```
-
-The ticket carries the audience, the scope it covers (`space:<id>` or `user:<id>`) and its
-`expiresAt`; the service rejects it outside that scope, for another audience or after it expires.
 
 ## Files
 
