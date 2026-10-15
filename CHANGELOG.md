@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [semver](https://semver.org) (`0.x` minor releases may break the API).
 
+## [0.7.0] - Unreleased
+
+### Added
+
+- `SearchMessages` command (answered with `FoundMessages` or an `Error`), typed end to end:
+  `client.send('SearchMessages', {query, spaceId, privateMessages, from, in, before, after, during, hasFile, timezone, cursor})`.
+  Results come newest first in pages of 25; pass the returned `cursor` to get the next page (`null` means the end).
+  Each result carries the `message`, its `spaceId` and `ranges` of the matches (`{start, end}` in UTF-16 units,
+  `end` exclusive, so `content.slice(start, end)` works). Error codes: `InvalidSearchQueryException`,
+  `RoomNotFoundException`, `MessageSearchUnavailableException`.
+- Type exports `SearchMessages`, `SearchDate`, `FoundMessages`, `FoundMessage` and `TextRange`.
+
 ## [0.6.0] - Unreleased
 
 The first release under the new name. Earlier versions were published as `polfan-server-js-client`.

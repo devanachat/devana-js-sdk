@@ -84,6 +84,8 @@ import {GetFollowedTopics} from "./schemes/commands/GetFollowedTopics";
 import {FollowedTopicUpdated} from "./schemes/events/FollowedTopicUpdated";
 import {GetMessages} from "./schemes/commands/GetMessages";
 import {Messages} from "./schemes/events/Messages";
+import {SearchMessages, SearchDate} from "./schemes/commands/SearchMessages";
+import {FoundMessages, FoundMessage, TextRange} from "./schemes/events/FoundMessages";
 import {Topics} from "./schemes/events/Topics";
 import {GetTopics} from "./schemes/commands/GetTopics";
 import {UpdateTopic} from "./schemes/commands/UpdateTopic";
@@ -230,6 +232,9 @@ export type {
     Bye,
     Error,
     Messages,
+    FoundMessages,
+    FoundMessage,
+    TextRange,
     NewMessage,
     NewRole,
     NewRoom,
@@ -292,6 +297,8 @@ export type {
     // commands
     AssignRole,
     GetMessages,
+    SearchMessages,
+    SearchDate,
     CreateMessage,
     Ack,
     CreateRole,
