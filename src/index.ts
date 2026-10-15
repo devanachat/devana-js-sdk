@@ -173,7 +173,7 @@ import {EntitlementUsage} from "./schemes/events/EntitlementUsage";
 import {CreateAccessTicket, TicketAudience} from "./schemes/commands/CreateAccessTicket";
 import {AccessTicket} from "./schemes/events/AccessTicket";
 
-export {
+export type {
     // objects
     Envelope,
     Message,
@@ -181,7 +181,6 @@ export {
     MessageAuthor,
     MessageMentions,
     Role,
-    RoleFlag,
     Room,
     RoomType,
     RoomStream,
@@ -197,7 +196,6 @@ export {
     FollowedTopic,
     NotificationLevel,
     User,
-    UserStatus,
     UserState,
     PermissionOverwritesValue,
     ChatLocation,
@@ -227,14 +225,6 @@ export {
     EntitlementValue,
     EntitlementsMap,
     EntitlementsExtras,
-    NO_LIMIT,
-    STORAGE_UNIT_BYTES,
-    SpaceFeature,
-    UserFeature,
-    HistoryRotation,
-    SearchRange,
-    UiPurpose,
-    SpaceIntent,
     TicketAudience,
     // events
     Bye,
@@ -371,4 +361,17 @@ export {
     GetReactionDetails,
     GetEntitlements,
     CreateAccessTicket,
+};
+
+export {
+    NO_LIMIT,
+    STORAGE_UNIT_BYTES,
+    HistoryRotation,
+    RoleFlag,
+    SearchRange,
+    SpaceFeature,
+    SpaceIntent,
+    UiPurpose,
+    UserFeature,
+    UserStatus,
 };
