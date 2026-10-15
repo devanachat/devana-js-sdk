@@ -1,5 +1,5 @@
 import {WebSocketChatClient} from "../WebSocketChatClient";
-import {Session, User} from "../types/src";
+import {Session, User} from "../protocol";
 import {RoomsManager} from "./RoomsManager";
 import {SpacesManager} from "./SpacesManager";
 import {PermissionsManager} from "./PermissionsManager";

@@ -9,7 +9,7 @@ import {
     RoomUpdated,
     Topic,
     TopicDeleted,
-} from "../types/src";
+} from "../protocol";
 import {IndexedCollection,} from "../IndexedObjectCollection";
 import {TopicHistoryWindow, WindowState} from "./TopicHistoryWindow";
 

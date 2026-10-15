@@ -8,7 +8,7 @@ import {
 } from "./IndexedObjectCollection";
 import {FilesClient, File} from "./FilesClient";
 import { Permissions, PermissionDefinition, Layer } from "./Permissions";
-import * as ChatTypes from './types/src';
+import * as ChatTypes from './protocol';
 import {
     HistoryRotation,
     NO_LIMIT,
@@ -20,7 +20,7 @@ import {
     STORAGE_UNIT_BYTES,
     UserFeature,
     UserStatus,
-} from './types/src';
+} from './protocol';
 import {extractUserFromMember} from "./state-tracker/functions";
 import {AbstractRestClient} from "./AbstractRestClient";
 import {UnreadSummary} from "./state-tracker/FollowedTopicsManager";

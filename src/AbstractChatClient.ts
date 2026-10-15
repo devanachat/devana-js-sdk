@@ -134,7 +134,7 @@ import {
     EntitlementUsage,
     CreateAccessTicket,
     AccessTicket,
-} from "./types/src";
+} from "./protocol";
 import {EventTarget} from "./EventTarget";
 
 type ArrayOfPromiseResolvers = [(value: any) => void, (reason?: any) => void];

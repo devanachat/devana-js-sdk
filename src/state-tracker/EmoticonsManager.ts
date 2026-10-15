@@ -3,7 +3,7 @@ import {
     IndexedCollection,
     ObservableIndexedObjectCollection
 } from "../IndexedObjectCollection";
-import {Emoticon, EmoticonDeleted, Emoticons, NewEmoticon, SpaceDeleted} from "../types/src";
+import {Emoticon, EmoticonDeleted, Emoticons, NewEmoticon, SpaceDeleted} from "../protocol";
 import {PromiseRegistry} from "./AsyncUtils";
 
 const GLOBAL_KEY = 'global';

@@ -48,7 +48,6 @@
     "access": "public"
   },
   "scripts": {
-    "prebuild": "git submodule update --init --recursive",
     "build": "node -e \"require('fs').rmSync('build', {recursive: true, force: true})\" && webpack && tsc",
     "test": "jest",
     "coverage": "npm run test -- --coverage",
