@@ -35,7 +35,8 @@ The package ships ES module, CommonJS and UMD builds with TypeScript declaration
 
 ## Quick start: a bot
 
-Create a bot in the Devana app (Settings → Bots) and copy its token. Then:
+Create a bot in the Devana app (Settings → For developers) and copy its token. A bot receives the events of the
+spaces and rooms it is a member of, so add it to them like any other user. Then:
 
 ```ts
 import {WebSocketChatClient} from '@devanachat/sdk';
@@ -75,6 +76,86 @@ const api = new WebApiChatClient({
 });
 
 const {data} = await api.send('GetSession', {});
+```
+
+## Common use cases
+
+The examples below assume a connected `client` with state tracking enabled (see [State tracking](#state-tracking)).
+
+### Answer when the bot is mentioned
+
+The bot also receives its own messages - skip them, or it may end up talking to itself.
+
+```ts
+client.on('NewMessage', async ({message}) => {
+    const me = await client.state!.getMe();
+
+    if (message.author.user.id === me.id || !message.mentions?.userIds.includes(me.id)) {
+        return;
+    }
+
+    await client.send('CreateMessage', {
+        location: message.location,
+        content: `Hi ${message.author.user.nick}, how can I help?`,
+    });
+});
+```
+
+### Welcome new members
+
+```ts
+const WELCOME_ROOM_ID = 'room-id'; // Copy it from the room link in the app
+
+client.on('SpaceMemberJoined', async ({spaceId, member}) => {
+    await client.send('CreateMessage', {
+        location: {spaceId, roomId: WELCOME_ROOM_ID},
+        content: `Welcome, ${member.customNick ?? member.user?.nick}! Start with the pinned topic.`,
+    });
+});
+```
+
+### Post notifications from your backend
+
+A deployment pipeline, a monitoring alert or a form on your website can post to a room without keeping a connection
+open - send one command with the Web API client:
+
+```ts
+const api = new WebApiChatClient({url: 'https://s1.devana.pl:1600/api', token: process.env.DEVANA_TOKEN!});
+
+const {error} = await api.send('CreateMessage', {
+    location: {spaceId: 'space-id', roomId: 'room-id'},
+    content: '✅ Version 2.4.0 has been deployed to production',
+});
+```
+
+### Moderate messages
+
+Check the bot's permissions before acting, so it fails quietly where it is not a moderator:
+
+```ts
+const BANNED_WORDS = ['spam-link.example'];
+
+client.on('NewMessage', async ({message}) => {
+    if (!BANNED_WORDS.some(word => message.content?.includes(word))) {
+        return;
+    }
+
+    const {hasAll} = await client.state!.permissions.check(['RedactMessages'], message.location);
+
+    if (hasAll) {
+        await client.send('RedactMessages', {messageId: message.id});
+    }
+});
+```
+
+### React to messages
+
+```ts
+client.on('NewMessage', async ({message}) => {
+    if (message.content?.toLowerCase().includes('thanks')) {
+        await client.send('React', {messageId: message.id, type: 'Emoji', value: '❤️'});
+    }
+});
 ```
 
 ## Connection maintenance
@@ -123,10 +204,104 @@ spaces.on('change', ({setItems, deletedItems}) => {
 });
 ```
 
-State is exposed as `ObservableIndexedObjectCollection` objects, which emit `change` events.
+State is exposed as `ObservableIndexedObjectCollection` objects: look items up by id with `get(id)`, list them with
+`items`, and subscribe to `change` events, which name the ids that were set or deleted. Data is fetched lazily on the
+first call and kept up to date from server events after that, so calling a getter again is cheap.
 
 **Important:** you can keep these objects for the lifetime of a connection, but fetch them again after reconnecting,
 because some structures are rebuilt from scratch on the `Session` event.
+
+### What the state tracker covers
+
+| Manager | What it gives you |
+|---|---|
+| `state.spaces` | Your spaces; per space: `getRooms()`, `getMembers()`, `getRoles()`, `getMe()` |
+| `state.rooms` | Rooms you are in; per room: `getMembers()`, `getTopics()`, `getMe()` |
+| `state.rooms.messages` | Message history windows per topic |
+| `state.rooms.followedTopics` | Unread counters and mentions, marking rooms as read |
+| `state.permissions` | Your effective permissions in any location |
+| `state.users` | Known users and their online status |
+| `state.relationships` | Users you ignore |
+| `state.emoticons` | Global and space emoticons |
+| `state.me` / `state.getMe()` | The connected user |
+
+### Message history
+
+A history window holds a slice of a topic's messages and moves through the history on demand, so you can render a chat
+view with infinite scroll without managing requests and live updates yourself. New messages arrive in the window
+automatically.
+
+```ts
+const room = (await client.state!.rooms.get()).get('room-id')!;
+const history = await client.state!.rooms.messages.getRoomHistory(room.id);
+const topicWindow = await history!.getMessagesWindow(room.defaultTopic!.id);
+
+await topicWindow!.resetToLatest(); // Load the newest messages
+render(topicWindow!.items);
+
+topicWindow!.on('change', () => render(topicWindow!.items));
+
+// When the user scrolls up
+await topicWindow!.fetchPrevious(); // Does nothing once `topicWindow.hasOldest` is true
+
+// Open a linked message with its surroundings
+await topicWindow!.jumpTo('message-id');
+```
+
+`topicWindow.state` tells which part of the history is loaded (`LIVE`, `LATEST`, `PAST`, `OLDEST`). Set `topicWindow.limit` to cap
+how many messages a window keeps in memory - the oldest are dropped when it grows over it.
+
+### Unread messages and mentions
+
+```ts
+const followed = client.state!.rooms.followedTopics;
+
+const update = async () => {
+    const {isUnread, mentionCount, unreadRoomCount} = await followed.summarize({spaceId: 'space-id'});
+    setBadge(mentionCount > 0 ? `@${mentionCount}` : isUnread ? `${unreadRoomCount}` : '');
+};
+
+followed.on('change', update); // The summary is cached - recalculate it only when something changed
+await update();
+
+await followed.ackRoom('room-id'); // Mark everything in a room as read
+```
+
+### Permissions
+
+Permissions in Devana are layered (global, space, room, topic) with role-based overwrites. The tracker computes the
+effective result for a location and recalculates it when roles or overwrites change:
+
+```ts
+const {hasAll, missing} = await client.state!.permissions.check(
+    ['CreateMessages', 'CreatePolls'],
+    {spaceId: 'space-id', roomId: 'room-id'},
+);
+
+if (!hasAll) {
+    console.log('Missing permissions:', missing);
+}
+
+client.state!.permissions.on('change', () => {
+    // Re-check, e.g. to show or hide moderation buttons
+});
+```
+
+The full list of permissions is in `Permissions.list`.
+
+### Users and relationships
+
+```ts
+import {UserStatus} from '@devanachat/sdk';
+
+client.state!.users.onlineStatus.on('change', user => {
+    console.log(user.nick, user.status === UserStatus.Online ? 'is online' : 'went away');
+});
+
+if (await client.state!.relationships.exists('user-id', 'Ignore')) {
+    // Hide this user's messages
+}
+```
 
 ## Package entitlements
 
