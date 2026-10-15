@@ -1,44 +1,70 @@
 {
-  "name": "polfan-server-js-client",
-  "version": "0.5.0",
-  "description": "JavaScript client library for handling communication with Polfan chat server.",
+  "name": "@devanachat/sdk",
+  "version": "0.6.0",
+  "description": "TypeScript/JavaScript SDK for the Devana chat platform: WebSocket and Web API clients, state tracking, permissions and files.",
+  "keywords": [
+    "devana",
+    "chat",
+    "sdk",
+    "client",
+    "websocket",
+    "bot",
+    "typescript"
+  ],
   "author": "Jarosław Żak",
   "license": "MIT",
-  "main": "build/index.cjs.js",
-  "browser": "build/index.umd.js",
-  "types": "build/types/index.d.ts",
+  "homepage": "https://github.com/devanachat/devana-js-sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devanachat/devana-js-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/devanachat/devana-js-sdk/issues"
+  },
+  "main": "./build/index.cjs.js",
+  "module": "./build/index.mjs",
+  "types": "./build/types/index.d.ts",
+  "unpkg": "./build/index.umd.js",
+  "jsdelivr": "./build/index.umd.js",
   "exports": {
     ".": {
       "types": "./build/types/index.d.ts",
+      "import": "./build/index.mjs",
       "require": "./build/index.cjs.js",
-      "browser": "./build/index.umd.js",
-      "default": "./build/index.cjs.js"
-    }
+      "default": "./build/index.mjs"
+    },
+    "./umd": "./build/index.umd.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "build",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "prebuild": "git submodule update --init --recursive",
-    "build":"npm run build:node && npm run build:browser && tsc",
-    "build:node": "webpack --config webpack.config.node.js",
-    "build:browser": "webpack --config webpack.config.browser.js",
+    "build": "node -e \"require('fs').rmSync('build', {recursive: true, force: true})\" && webpack && tsc",
     "test": "jest",
     "coverage": "npm run test -- --coverage",
-    "trypublish": "npm publish || true"
+    "prepublishOnly": "npm test && npm run build"
   },
   "devDependencies": {
-    "@babel/cli": "^7.28.3",
     "@babel/core": "^7.28.5",
     "@babel/preset-env": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
     "@types/jest": "^29.5.14",
     "babel-loader": "^9.2.1",
-    "file-loader": "^6.2.0",
     "jest": "^29.7.0",
+    "terser-webpack-plugin": "^5.3.14",
     "ts-node": "^10.9.2",
     "typescript": "^4.9.5",
     "webpack": "^5.103.0",
     "webpack-cli": "^5.1.4"
-  },
-  "dependencies": {
-    "terser-webpack-plugin": "^5.3.14"
   }
 }
