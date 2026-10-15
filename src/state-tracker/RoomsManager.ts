@@ -12,7 +12,7 @@ import {
     Topic,
     TopicDeleted, TopicUpdated,
     UserUpdated,
-} from "../types/src";
+} from "../protocol";
 import {ChatStateTracker} from "./ChatStateTracker";
 import {DeferredTask, PromiseRegistry} from "./AsyncUtils";
 import {MessagesManager} from "./MessagesManager";

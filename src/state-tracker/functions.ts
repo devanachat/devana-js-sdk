@@ -1,4 +1,4 @@
-import {Role, RoomMember, SpaceMember, User} from "../types/src";
+import {Role, RoomMember, SpaceMember, User} from "../protocol";
 
 /**
  * @return New objects of the other roles whose priority has to move; the given roles are left intact.

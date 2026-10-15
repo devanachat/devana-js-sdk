@@ -1,6 +1,6 @@
 import {AbstractChatClient, CommandRequest, CommandResult, CommandResponse, CommandsMap, EventsMap} from "./AbstractChatClient";
 import {ObservableInterface} from "./EventTarget";
-import {Envelope} from "./types/src";
+import {Envelope} from "./protocol";
 
 export interface WebApiChatClientOptions {
     url: string;

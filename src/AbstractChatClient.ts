@@ -134,7 +134,7 @@ import {
     EntitlementUsage,
     CreateAccessTicket,
     AccessTicket,
-} from "./types/src";
+} from "./protocol";
 import {EventTarget} from "./EventTarget";
 
 type ArrayOfPromiseResolvers = [(value: any) => void, (reason?: any) => void];
@@ -204,7 +204,13 @@ export abstract class AbstractChatClient<AdditionalEvents extends ExtraEventMap 
     }
 }
 
-export type CommandResult<ResultT> = {data?: ResultT, error?: ErrorType};
+/**
+ * The answer to a command: either `data` or the server `error`, never both.
+ * Check `error` first and TypeScript knows `data` is there.
+ */
+export type CommandResult<ResultT> =
+    | {data: ResultT, error: null}
+    | {data: null, error: ErrorType};
 export type CommandRequest<CommandType extends keyof CommandsMap> = CommandsMap[CommandType]['request'];
 export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap[CommandType]['response'];
 

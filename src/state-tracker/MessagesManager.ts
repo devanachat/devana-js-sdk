@@ -6,7 +6,7 @@ import {
     Session,
     Room,
     Message, ChatLocation,
-} from "../types/src";
+} from "../protocol";
 import {IndexedCollection} from "../IndexedObjectCollection";
 import {DeferredTask} from "./AsyncUtils";
 import {RoomMessagesHistory} from "./RoomMessagesHistory";
