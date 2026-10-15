@@ -8,7 +8,7 @@ import {
     Reacted,
     Topic,
     UserReaction,
-} from "../types/src";
+} from "../protocol";
 import {ChatStateTracker} from "./ChatStateTracker";
 import {CollectionEventMap, ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
 

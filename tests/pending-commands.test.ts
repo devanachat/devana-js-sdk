@@ -1,7 +1,7 @@
 import {PromiseRegistry} from "../src/state-tracker/AsyncUtils";
 import {AbstractChatClient} from "../src/AbstractChatClient";
 import {TraversableRemoteCollection, WindowState} from "../src/state-tracker/TopicHistoryWindow";
-import {Envelope} from "../src/types/src";
+import {Envelope} from "../src/protocol";
 
 /**
  * A command issued while the client is offline (or one that is still in flight

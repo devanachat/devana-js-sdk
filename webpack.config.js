@@ -22,6 +22,8 @@ const shared = {
     optimization: {
         minimize: false,
     },
+    // A library bundle, the size hints for web apps do not apply
+    performance: {hints: false},
 };
 
 module.exports = [

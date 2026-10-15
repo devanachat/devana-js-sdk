@@ -1,6 +1,6 @@
 import {ChatStateTracker} from "./ChatStateTracker";
 import {ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
-import {RoomMember, Session, SpaceMember, User} from "../types/src";
+import {RoomMember, Session, SpaceMember, User} from "../protocol";
 import {extractUserFromMember} from "./functions";
 import {EventTarget} from "../EventTarget";
 

@@ -1,7 +1,7 @@
 import {ObservableInterface} from "./EventTarget";
 import {AbstractChatClient, CommandRequest, CommandResult, CommandResponse, CommandsMap, EventsMap} from "./AbstractChatClient";
 import {ChatStateTracker} from "./state-tracker/ChatStateTracker";
-import {Bye, Envelope} from "./types/src";
+import {Bye, Envelope} from "./protocol";
 
 export interface WebSocketClientOptions {
     url: string;

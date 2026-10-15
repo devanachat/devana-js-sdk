@@ -11,7 +11,7 @@ import {
     SpaceLeft, SpaceMember,
     SpaceMemberUpdated,
     TopicDeleted,
-} from "../types/src";
+} from "../protocol";
 import {ChangeEventMap, EventTarget} from "../EventTarget";
 import {IndexedCollection} from "../IndexedObjectCollection";
 import {Permissions} from "../Permissions";
