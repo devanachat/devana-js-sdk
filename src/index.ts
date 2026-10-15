@@ -48,6 +48,18 @@ export {
 };
 
 export type {
+    CommandResult,
+    CommandRequest,
+    CommandResponse,
+    CommandsMap,
+    EventsMap,
+} from "./AbstractChatClient";
+export type {WebSocketClientOptions} from "./WebSocketChatClient";
+export type {WebApiChatClientOptions} from "./WebApiChatClient";
+export type {RestClientOptions, RestClientResponse} from "./AbstractRestClient";
+export type {EventHandler, ObservableInterface} from "./EventTarget";
+
+export type {
     ChatTypes,
     File,
     UnreadSummary,
