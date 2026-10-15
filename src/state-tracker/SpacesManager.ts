@@ -23,7 +23,7 @@ import {
     SpaceRooms,
     SpaceUpdated,
     UserUpdated
-} from "../types/src";
+} from "../protocol";
 import {DeferredTask, PromiseRegistry} from "./AsyncUtils";
 import {reorderRolesOnPriorityUpdate} from "./functions";
 

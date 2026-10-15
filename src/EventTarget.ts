@@ -1,4 +1,4 @@
-export type EventHandler<EventT> = (ev?: EventT) => void;
+export type EventHandler<EventT> = (ev: EventT) => void;
 type HandlersMap = Map<string, EventHandler<any>[]>;
 type EventMapLike = Record<string, any>;
 type KnownEventNames<EventT> = EventT extends EventMapLike ? keyof EventT & string : string;

@@ -11,7 +11,7 @@ import {
     RoomJoined, RoomLeft,
     Session, TopicDeleted,
     TopicFollowed, TopicUnfollowed
-} from "../types/src";
+} from "../protocol";
 
 interface EventMap {
     change: {};

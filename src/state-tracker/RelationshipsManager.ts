@@ -5,7 +5,7 @@ import {
     Relationships,
     UserRelationship,
     UserRelationshipType
-} from "../types/src";
+} from "../protocol";
 import {PromiseRegistry} from "./AsyncUtils";
 import {ChatStateTracker} from "./ChatStateTracker";
 
