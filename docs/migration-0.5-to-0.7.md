@@ -64,7 +64,7 @@ or a one-line replacement.
 | `useComputedPermissionMask` + `(mask & getPermissionDefinition(name).value)` | `await client.state.permissions.getComputed(location)` and `Permissions.has(mask, name)`; or `checkComputed([...names], location)` / `canPreviewRoom(roomId, spaceId)` (all go to `GetComputedPermissions`, so they work without the membership) |
 | `PreviewableRoomSummary` (`RoomSummary & {defaultTopicId?}`) in `previewRoom.ts` | `ChatTypes.RoomSummary` has `defaultTopicId?: string \| null` |
 | `PreviewHistoryWindow`, `PreviewMessagesSource`, `PreviewWindowState`, `usePreviewHistoryWindow.ts`'s `createSource` | `client.state.previewRoom(roomId, {topicId, around})`, see section 5 |
-| `FoundMessage.isMember` (server field, being removed) | `await client.state.rooms.isJoined(roomId)`, or `(await client.state.rooms.get()).has(roomId)` |
+| `FoundMessage.isMember` (server field, being removed) | the joined rooms of the state, as the application already does: `(await client.state.rooms.get()).has(roomId)` |
 | The `GetRoomSummary` + `GetTopics` plumbing of `useRoomPreview` | done inside `previewRoom()`; `canPreviewRoom()` answers the permission part |
 
 ### The search itself
@@ -91,7 +91,7 @@ Results have no `isMember`: for a result in a room the user is not in, open a pr
 ## 5. Replacing the preview window
 
 ```ts
-const joined = await client.state!.rooms.isJoined(roomId);
+const joined = (await client.state!.rooms.get()).has(roomId); // The existing way
 
 if (!joined && await client.state!.permissions.canPreviewRoom(roomId, spaceId)) {
     const preview = await client.state!.previewRoom(roomId, {topicId /* optional */, around: messageId /* optional */});
@@ -129,9 +129,7 @@ Differences to keep in mind:
    Against an older server `previewRoom()` rejects (`defaultTopicId` is missing -> `NoTopic`; reads -> `UserNotFoundException`).
    `SearchMessages` fails there too; hide the search on any error but a result, as with `MessageSearchUnavailable`.
 2. **`FoundMessage.isMember`** is removed from the server (and was never in the SDK types). Code reading it must switch to
-   `rooms.isJoined()` in the same step as the server deploy; the SDK does not give the field.
-3. **`isJoined()` waits for the session**; before it, a preview decision cannot be made. Call it from code that already
-   awaits the connected client.
-4. **Strict `data`/`error` typing** can surface existing unchecked reads at compile time; expect a few edits, not a
+   the joined rooms of the state in the same step as the server deploy; the SDK does not give the field.
+3. **Strict `data`/`error` typing** can surface existing unchecked reads at compile time; expect a few edits, not a
    behaviour change.
-5. **Bundling** (Metro): the exports map and the ES build (section 2). Verify native and web builds.
+4. **Bundling** (Metro): the exports map and the ES build (section 2). Verify native and web builds.

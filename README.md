@@ -259,7 +259,7 @@ messages with `refresh()` - and without any trace in the room: nothing is marked
 joined ones.
 
 ```ts
-if (!(await client.state!.rooms.isJoined('room-id')) && await client.state!.permissions.canPreviewRoom('room-id')) {
+if (!(await client.state!.rooms.get()).has('room-id') && await client.state!.permissions.canPreviewRoom('room-id')) {
     // The default topic, or pass {topicId} for a thread; {around: messageId} opens the history at a message
     const preview = await client.state!.previewRoom('room-id', {around: 'message-id'});
 

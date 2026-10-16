@@ -247,16 +247,6 @@ describe('PreviewRooms and SearchMessages permissions', () => {
     });
 });
 
-describe('rooms.isJoined', () => {
-    test('is true only for a room of the session', async () => {
-        const {client, tracker} = setup(0);
-        client.emit('Session', {user: {id: 'me'}, state: {rooms: [{id: 'joined', history: {mode: 'Full'}}], spaces: [], spaceMembers: []}} as any);
-
-        expect(await tracker.rooms.isJoined('joined')).toBe(true);
-        expect(await tracker.rooms.isJoined(ROOM)).toBe(false);
-    });
-});
-
 describe('ErrorCode', () => {
     test('carries the codes of the search and the access', () => {
         expect(ErrorCode.InvalidSearchQuery).toBe('InvalidSearchQueryException');

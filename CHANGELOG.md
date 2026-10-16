@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   Results come newest first in pages of 25; pass the returned `cursor` to get the next page (`null` means the end).
   Each result carries the `message`, its `spaceId` and `ranges` of the matches (`{start, end}` in UTF-16 units,
   `end` exclusive, so `content.slice(start, end)` works). Whether the user is in the room of a result is not part of
-  it - ask `client.state.rooms.isJoined(roomId)`.
+  it - check the joined rooms of the state (`(await client.state.rooms.get()).has(roomId)`).
 - Type exports `SearchMessages`, `SearchDate`, `FoundMessages`, `FoundMessage` and `TextRange`.
 - **Room preview** - the history of a room the user has not joined (access level 2, the `PreviewRooms` permission).
   `client.state.previewRoom(roomId, {topicId?, around?, spaceId?})` resolves to a `PreviewHistoryWindow`: the same
@@ -24,7 +24,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `change` events), but without live events - new messages come with `refresh()` - and with `dispose()` to release it.
   It sends only reads: no `Ack`, no unread counters change, the room is not added to the joined ones. Errors are
   `RoomPreviewError` (`code` is the server error code, or `NoTopic`).
-- `client.state.rooms.isJoined(roomId)` - whether the user has joined the room.
 - `PreviewRooms` (`1 << 24`) and `SearchMessages` (`1 << 25`) permissions in `Permissions.list`, definable on a
   space or a room. `Permissions.has(mask, name)` reads a permission mask; `client.state.permissions.getComputed()`,
   `checkComputed()` and `canPreviewRoom()` use the permissions computed by the server, which work for rooms and
