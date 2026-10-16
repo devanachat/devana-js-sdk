@@ -63,7 +63,7 @@ replacement.
 | `LOCAL_PERMISSIONS` and the catalog functions in `permissions/utils/permissionCatalog.ts` | `Permissions.list.PreviewRooms` / `SearchMessages`; `Permissions.getNames()`, `getByName()`, `canBeDefinedOnLayer()` include them |
 | `useComputedPermissionMask` / `useComputedPermission` (`GetComputedPermissions` by hand) | `client.state.permissions.check([...], location)`: for a room or a space you have not joined it asks the server itself (no `change` event for such locations, so the query keys of the app may stay) |
 | `PreviewableRoomSummary` in `previewRoom.ts` | `ChatTypes.RoomSummary.defaultTopicId` |
-| `PreviewHistoryWindow`, `PreviewMessagesSource`, `PreviewWindowState`, `usePreviewHistoryWindow` | `rooms.messages.getRoomHistory(roomId, true)` -> `getMessagesWindow(topicId)`, see section 5 |
+| `PreviewHistoryWindow`, `PreviewMessagesSource`, `PreviewWindowState`, `usePreviewHistoryWindow` | `rooms.messages.getRoomHistory(roomId)` -> `getMessagesWindow(topicId)`, see section 5 |
 | `FoundMessage.isMember` (removed from the server) | your rooms in the state, as the application already does: `(await client.state.rooms.get()).has(roomId)` |
 
 ### The search itself
@@ -93,11 +93,11 @@ The preview is the regular history of the library in a preview mode, so the mess
 joined and previewed rooms:
 
 ```ts
-const history = await client.state!.rooms.messages.getRoomHistory(roomId, isPreview);
+const history = await client.state!.rooms.messages.getRoomHistory(roomId); // Joined room or preview - the state decides
 const topicWindow = await history?.getMessagesWindow(topicId); // summary.defaultTopicId, or a thread
 ```
 
-- `getRoomHistory(roomId, true)` returns the regular history for a joined room and a preview history otherwise
+- `getRoomHistory(roomId)` returns the regular history for a joined room and a preview history otherwise
   (`history.isPreview`, `topicWindow.isPreview`). The preview history is cached per room, like the regular one.
 - The window is a `TopicHistoryWindow`: `state` (`WindowState` enum, the same numbers as `PreviewWindowState`),
   `resetToLatest`, `fetchPrevious`, `fetchNext`, `jumpTo`, `hasLatest`, `hasOldest`, `items`, `limit`, `retainRatio`,

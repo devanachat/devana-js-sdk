@@ -35,16 +35,16 @@ export class MessagesManager {
 
     /**
      * Get history manager for given room ID.
-     * @param roomId
-     * @param preview If true, also for a room you have not joined: its history is read without joining it, which
-     * requires the `PreviewRooms` permission (the server refuses the reads otherwise). Such a history receives no
-     * events, sends no `Ack` and changes no unread counters; it is kept until {@link forgetRoomPreview} or until you
-     * join the room - the regular history replaces it then. For a joined room the regular history is returned.
+     *
+     * For a room you have not joined it is a preview (`isPreview`): the history is read without joining, which requires
+     * the `PreviewRooms` permission - without it the server refuses the reads and `getMessagesWindow()` finds no topic.
+     * A preview receives no events, sends no `Ack` and changes no unread counters; it is kept until
+     * {@link forgetRoomPreview} or until you join the room - the regular history replaces it then.
      */
-    public async getRoomHistory(roomId: string, preview: boolean = false): Promise<RoomMessagesHistory | undefined> {
+    public async getRoomHistory(roomId: string): Promise<RoomMessagesHistory> {
         await this.deferredSession.promise;
 
-        if (! preview || this.roomHistories.has(roomId)) {
+        if (this.roomHistories.has(roomId)) {
             return this.roomHistories.get(roomId);
         }
 
@@ -56,7 +56,7 @@ export class MessagesManager {
     }
 
     /**
-     * Drop the history of a room you have not joined, got with `getRoomHistory(roomId, true)`, with the messages
+     * Drop the history of a room you have not joined, got with {@link getRoomHistory}, with the messages
      * of its windows. Call it when the preview is closed.
      */
     public forgetRoomPreview(roomId: string): void {
@@ -68,13 +68,11 @@ export class MessagesManager {
      * @internal
      */
     public async _resolveLastMessage(location: ChatLocation): Promise<Message|null> {
-        // Try to get last message from history window (if cached)
-        let message: Message = await this.getRoomHistory(location.roomId)
-            .then(roomHistory => roomHistory?.getMessagesWindow(location.topicId, true))
-            .then(
-                historyWindow =>
-                    historyWindow?.hasLatest && historyWindow.getAt(historyWindow.length - 1)
-            );
+        // Try to get last message from history window (if cached). Only of a joined room - getRoomHistory() would
+        // create a preview for any other.
+        await this.deferredSession.promise;
+        const historyWindow = await this.roomHistories.get(location.roomId)?.getMessagesWindow(location.topicId, true);
+        let message: Message = historyWindow?.hasLatest && historyWindow.getAt(historyWindow.length - 1);
 
         if (!message) {
             const result = await this.tracker.client.send('GetMessages', {
