@@ -107,8 +107,8 @@ const topicWindow = await history?.getMessagesWindow(topicId); // summary.defaul
 - `onChange(listener)` -> `on('change', handler)` / `off('change', handler)`, as for joined rooms.
 - No release before -> `client.state.rooms.messages.forgetRoomPreview(roomId)` when the preview is closed. Joining the
   room drops the preview history by itself; `getRoomHistory()` then returns the regular one.
-- `getMessagesWindow(topicId)` returns `undefined` when the server does not give the topic (no `PreviewRooms`, a room
-  that is not available). Fetch errors of the window are thrown as `Error`, as for joined rooms.
+- In a preview `getMessagesWindow(topicId)` always gives a window; without access (no `PreviewRooms`, a room that is
+  not available) its fetch methods throw an `Error`, as for joined rooms.
 - `includeMyReactions` is off in a preview window (a preview cannot react).
 - A preview window does not follow a reconnect; call `fetchNext()` or `resetToLatest(true)` after one.
 

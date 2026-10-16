@@ -107,9 +107,7 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
     }
 
     /**
-     * Your permissions in the location, as a bit mask (see `Permissions.list`). They are computed from the tracked
-     * overwrites; for a room or a space you have not joined (e.g. whether you may preview a room - `PreviewRooms`)
-     * they are asked from the server every time instead, and the `change` event does not cover them.
+     * For a room or a space you have not joined the permissions are fetched from the server, on every call.
      */
     public async calculatePermissions(location: ChatLocation): Promise<number> {
         const room = location.roomId ? (await this.tracker.rooms.get()).get(location.roomId) : null;

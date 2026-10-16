@@ -173,12 +173,16 @@ describe('room history preview', () => {
         expect(client.sent.find(entry => entry.type === 'GetMessages')?.data.location.topicId).toBe('thread-1');
     });
 
-    test('has no window for a topic the server does not give', async () => {
+    test('fetches the topic only in the window, which fails without access', async () => {
         const {client, tracker} = setup(10);
         const history = await tracker.rooms.messages.getRoomHistory(ROOM);
-        client.error = {code: ErrorCode.UserNotFound, message: 'denied'};
+        const window = await history.getMessagesWindow(TOPIC);
 
-        expect(await history!.getMessagesWindow(TOPIC)).toBeUndefined();
+        expect(window).toBeDefined();
+        expect(client.sent.length).toBe(0);
+
+        client.error = {code: ErrorCode.UserNotFound, message: 'denied'};
+        await expect(window!.resetToLatest()).rejects.toThrow('denied');
     });
 
     test('mirrors keep the preview mode', async () => {

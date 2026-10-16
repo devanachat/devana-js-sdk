@@ -358,7 +358,6 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
 
     /**
      * The window does not subscribe to the client itself - the messages manager routes the events of its topic to it.
-     * @param preview A window of a room you have not joined - see {@link isPreview}.
      */
     public constructor(
         private roomId: string,
@@ -383,9 +382,7 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
     }
 
     /**
-     * Whether it is a window of a room you have not joined (see `MessagesManager.getRoomHistory()`). The server sends
-     * the events of a room to its members only, so such a window does not receive new messages - in the LATEST state
-     * {@link fetchNext} asks the server for them instead.
+     * Window of a room you have not joined. It gets no live messages - in LATEST state fetchNext() fetches them.
      */
     public get isPreview(): boolean {
         return this.preview;
@@ -543,9 +540,6 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         this.internalState.myReactions = next;
     }
 
-    /**
-     * Fetch the messages written after the last one in the window, for a window that does not receive them live.
-     */
     private async fetchNewer(): Promise<void> {
         if (this.internalState.ongoing) {
             return;
