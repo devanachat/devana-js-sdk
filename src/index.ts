@@ -27,7 +27,6 @@ import {AbstractRestClient} from "./AbstractRestClient";
 import {UnreadSummary} from "./state-tracker/FollowedTopicsManager";
 import {TopicHistoryWindow} from "./state-tracker/TopicHistoryWindow";
 import {PermissionsManager} from "./state-tracker/PermissionsManager";
-import {PreviewHistoryWindow, RoomPreviewError} from "./state-tracker/PreviewHistoryWindow";
 
 export {
     IndexedCollection, ObservableIndexedCollection,
@@ -37,7 +36,6 @@ export {
     FilesClient,
     AbstractRestClient,
     extractUserFromMember,
-    RoomPreviewError,
     ErrorCode,
     UserStatus,
     RoleFlag,
@@ -68,6 +66,5 @@ export type {
     File,
     UnreadSummary,
     TopicHistoryWindow,
-    PreviewHistoryWindow,
     PermissionsManager,
 };

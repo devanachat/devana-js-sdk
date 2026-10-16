@@ -18,16 +18,34 @@ import {TopicHistoryWindow, WindowState} from "./TopicHistoryWindow";
  * dropped together with its room stops receiving them.
  */
 export class RoomMessagesHistory {
+    /**
+     * Whether it is a history of a room you have not joined, read with the `PreviewRooms` permission.
+     * Its windows receive no events (see `TopicHistoryWindow.isPreview`); the id of the default topic of the room
+     * is `defaultTopicId` of the room summary (`GetRoomSummary`).
+     */
+    public readonly isPreview: boolean;
+
+    private readonly roomId: string;
     private historyWindows = new IndexedCollection<string, TopicHistoryWindow>();
     private traverseLock: boolean = false;
+    private room: Room | null;
 
+    /**
+     * @param room The joined room, or the id of a room to preview (see {@link isPreview}).
+     */
     public constructor(
-        private room: Room,
+        room: Room | string,
         private tracker: ChatStateTracker,
     ) {
-        this.updateTraverseLock(this.room);
+        this.roomId = typeof room === 'string' ? room : room.id;
+        this.room = typeof room === 'string' ? null : room;
+        this.isPreview = this.room === null;
 
-        if (this.room.defaultTopic) {
+        if (this.room) {
+            this.updateTraverseLock(this.room);
+        }
+
+        if (this.room?.defaultTopic) {
             this.createHistoryWindowForTopic(this.room.defaultTopic);
         }
     }
@@ -39,7 +57,9 @@ export class RoomMessagesHistory {
      */
     public async getMessagesWindow(topicId: string, peek: boolean = false): Promise<TopicHistoryWindow | undefined> {
         if (!this.historyWindows.has(topicId) && !peek) {
-            const topic = (await this.tracker.rooms.getTopics(this.room.id, [topicId])).get(topicId);
+            const topic = this.isPreview
+                ? await this.fetchTopic(topicId)
+                : (await this.tracker.rooms.getTopics(this.roomId, [topicId])).get(topicId);
 
             if (topic) {
                 this.createHistoryWindowForTopic(topic);
@@ -164,7 +184,7 @@ export class RoomMessagesHistory {
             return;
         }
 
-        const historyWindow = new TopicHistoryWindow(this.room.id, topic.id, this.tracker);
+        const historyWindow = new TopicHistoryWindow(this.roomId, topic.id, this.tracker, this.isPreview);
 
         void historyWindow.setTraverseLock(this.traverseLock);
 
@@ -176,7 +196,7 @@ export class RoomMessagesHistory {
             for (const topicId of deletedTopicIds) {
                 this.historyWindows.delete(topicId);
             }
-            this.tracker.rooms._deleteTopicsFromRoom(this.room.id, ...deletedTopicIds);
+            this.tracker.rooms._deleteTopicsFromRoom(this.roomId, ...deletedTopicIds);
         });
 
         // If new topic refers to some message from this room, update other structures
@@ -184,6 +204,14 @@ export class RoomMessagesHistory {
             const refHistoryWindow = this.historyWindows.get(topic.refMessage.location.topicId);
             refHistoryWindow?._updateMessageReference(topic);
         }
+    }
+
+    /**
+     * The tracker holds the topics of the joined rooms only. A topic you may not read is not found.
+     */
+    private async fetchTopic(topicId: string): Promise<Topic | undefined> {
+        const result = await this.tracker.client.send('GetTopics', {roomId: this.roomId, topicIds: [topicId]});
+        return result.data?.topics.find(topic => topic.id === topicId);
     }
 
     private updateTraverseLock(room: Room): void {

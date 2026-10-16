@@ -11,7 +11,7 @@ import {Topic} from "./schemes/Topic";
 import {User, UserStatus} from "./schemes/User";
 import {UserState} from "./schemes/UserState";
 import {Bye} from "./schemes/events/Bye";
-import {Error} from "./schemes/events/Error";
+import {Error, ErrorCode} from "./schemes/events/Error";
 import {Session} from "./schemes/events/Session";
 import {ComputedPermissions} from "./schemes/events/ComputedPermissions";
 import {SpaceJoined} from "./schemes/events/SpaceJoined";
@@ -169,7 +169,6 @@ import {
     UiPurpose,
     UserFeature,
 } from "./schemes/Entitlements";
-import {ErrorCode, ErrorCodeValue} from "./ErrorCode";
 import {GetEntitlements} from "./schemes/commands/GetEntitlements";
 import {Entitlements} from "./schemes/events/Entitlements";
 import {EntitlementUsage} from "./schemes/events/EntitlementUsage";
@@ -177,7 +176,6 @@ import {CreateAccessTicket, TicketAudience} from "./schemes/commands/CreateAcces
 import {AccessTicket} from "./schemes/events/AccessTicket";
 
 export type {
-    ErrorCodeValue,
     // objects
     Envelope,
     Message,

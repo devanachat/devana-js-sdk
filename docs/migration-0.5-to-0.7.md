@@ -53,19 +53,18 @@ Native Directory is excluded from the check by name), and bundler configs may na
 
 ## 4. What new in 0.7.0 replaces in the application
 
-Everything under "Local workarounds" in `pserv-client` was written for a library without these. Each row is a deletion
-or a one-line replacement.
+The local workarounds of `pserv-client` were written for a library without these. Each row is a deletion or a short
+replacement.
 
 | Application (`pserv-client`) | SDK 0.7.0 |
 |---|---|
-| `modules/search/types.ts`: `SearchMessagesRequest`, `FoundMessage`, `FoundMessages`, `SearchTextRange` | `ChatTypes.SearchMessages`, `ChatTypes.FoundMessage`, `ChatTypes.FoundMessages`, `ChatTypes.TextRange` (identical shape; `isMember` is not in `FoundMessage`, see below) |
-| `SearchErrorCode` in `modules/search/types.ts` | `ErrorCode` (`InvalidSearchQuery`, `RoomNotFound`, `MessageSearchUnavailable`, `CommandRateLimitExceeded`; the string values are the same) |
-| `LOCAL_PERMISSIONS`, `LocalPermissionName`, `getPermissionNames()`, `getPermissionDefinition()` in `permissions/utils/permissionCatalog.ts` | `Permissions.list.PreviewRooms` / `SearchMessages` (`1 << 24`, `1 << 25`, `maxLayer: Layer.Room`); `Permissions.getNames()`, `getByName()`, `canBeDefinedOnLayer()` already include them. The catalog can become a thin re-export |
-| `useComputedPermissionMask` + `(mask & getPermissionDefinition(name).value)` | `await client.state.permissions.getComputed(location)` and `Permissions.has(mask, name)`; or `checkComputed([...names], location)` / `canPreviewRoom(roomId, spaceId)` (all go to `GetComputedPermissions`, so they work without the membership) |
-| `PreviewableRoomSummary` (`RoomSummary & {defaultTopicId?}`) in `previewRoom.ts` | `ChatTypes.RoomSummary` has `defaultTopicId?: string \| null` |
-| `PreviewHistoryWindow`, `PreviewMessagesSource`, `PreviewWindowState`, `usePreviewHistoryWindow.ts`'s `createSource` | `client.state.previewRoom(roomId, {topicId, around})`, see section 5 |
-| `FoundMessage.isMember` (server field, being removed) | the joined rooms of the state, as the application already does: `(await client.state.rooms.get()).has(roomId)` |
-| The `GetRoomSummary` + `GetTopics` plumbing of `useRoomPreview` | done inside `previewRoom()`; `canPreviewRoom()` answers the permission part |
+| `modules/search/types.ts`: `SearchMessagesRequest`, `FoundMessage`, `FoundMessages`, `SearchTextRange` | `ChatTypes.SearchMessages`, `ChatTypes.FoundMessage`, `ChatTypes.FoundMessages`, `ChatTypes.TextRange` (same shape, no `isMember`) |
+| `SearchErrorCode` in `modules/search/types.ts` | `ErrorCode` enum (`InvalidSearchQuery`, `RoomNotFound`, `MessageSearchUnavailable`, `CommandRateLimitExceeded`; same string values) |
+| `LOCAL_PERMISSIONS` and the catalog functions in `permissions/utils/permissionCatalog.ts` | `Permissions.list.PreviewRooms` / `SearchMessages`; `Permissions.getNames()`, `getByName()`, `canBeDefinedOnLayer()` include them |
+| `useComputedPermissionMask` / `useComputedPermission` (`GetComputedPermissions` by hand) | `client.state.permissions.check([...], location)`: for a room or a space you have not joined it asks the server itself (no `change` event for such locations, so the query keys of the app may stay) |
+| `PreviewableRoomSummary` in `previewRoom.ts` | `ChatTypes.RoomSummary.defaultTopicId` |
+| `PreviewHistoryWindow`, `PreviewMessagesSource`, `PreviewWindowState`, `usePreviewHistoryWindow` | `rooms.messages.getRoomHistory(roomId, true)` -> `getMessagesWindow(topicId)`, see section 5 |
+| `FoundMessage.isMember` (removed from the server) | your rooms in the state, as the application already does: `(await client.state.rooms.get()).has(roomId)` |
 
 ### The search itself
 
@@ -90,43 +89,33 @@ Results have no `isMember`: for a result in a room the user is not in, open a pr
 
 ## 5. Replacing the preview window
 
-```ts
-const joined = (await client.state!.rooms.get()).has(roomId); // The existing way
+The preview is the regular history of the library in a preview mode, so the message list can use one code path for
+joined and previewed rooms:
 
-if (!joined && await client.state!.permissions.canPreviewRoom(roomId, spaceId)) {
-    const preview = await client.state!.previewRoom(roomId, {topicId /* optional */, around: messageId /* optional */});
-    // preview.summary is the room summary; preview.topicId the topic it reads
-}
+```ts
+const history = await client.state!.rooms.messages.getRoomHistory(roomId, isPreview);
+const topicWindow = await history?.getMessagesWindow(topicId); // summary.defaultTopicId, or a thread
 ```
 
-`PreviewHistoryWindow` (SDK) vs the application's:
-
-| Application | SDK |
-|---|---|
-| `new PreviewHistoryWindow(source)`, `window.resetToLatest()` | `await previewRoom(...)` already fills it (latest, or around `around`) |
-| `fetchPrevious()`, `fetchNext()`, `jumpTo(id)`, `hasLatest`, `hasOldest`, `has(id)`, `items`, `length`, `state`, `limit`, `retainRatio` | same names, same meaning (it is the `TopicHistoryWindow` machinery). `items` is the array property of the collection |
-| `window.items` (a plain getter) | `window.items` |
-| `refresh()` (5 s interval) | `refresh()`; the interval is `window.refreshInterval` (default 5000 ms) |
-| `onChange(listener)` returning an unsubscribe function | `window.on('change', handler)` / `window.off('change', handler)`; the event carries `{setItems?, deletedItems?}` |
-| `createMirror()` per change, as React state | `createMirror()` returns a new object over the same data, as before: `on('change', () => setMirror(window.createMirror()))` |
-| `gaps`, `isTraverseLocked`, `myReactions`, `WindowState` | `isTraverseLocked` (false), `myReactions` (empty), `WindowState` (enum `LIVE=0, LATEST=1, PAST=2, OLDEST=3`, same numbers); `gaps` does not exist (nothing used it) |
-| no release | `dispose()`: drops the messages and makes the window inert. Call it when the preview view closes, and when the user joins the room and the regular `rooms.messages.getRoomHistory()` takes over |
-
-Differences to keep in mind:
-
-- `PreviewWindowState` was a constants object; the SDK window uses the `WindowState` enum (exported through the window as
-  `window.WindowState`). The numeric values match.
-- The state after `fetchPrevious()`/`jumpTo()` is computed from `GetTopics` (`lastMessage`) of the previewed topic, as
-  the application did with `fetchLastMessageId`; nothing is cached in the tracker for rooms the user is not in.
-- Errors are thrown as `RoomPreviewError` (`code` = server error code, e.g. `UserNotFoundException` when `PreviewRooms`
-  is missing or the room is not available, `NoTopic` when the server gives no default topic); `previewRoom()` rejects, the
-  fetch methods of the window reject with the same class.
-- A window does not follow a reconnect: after one, call `refresh()` (or `resetToLatest(true)`).
+- `getRoomHistory(roomId, true)` returns the regular history for a joined room and a preview history otherwise
+  (`history.isPreview`, `topicWindow.isPreview`). The preview history is cached per room, like the regular one.
+- The window is a `TopicHistoryWindow`: `state` (`WindowState` enum, the same numbers as `PreviewWindowState`),
+  `resetToLatest`, `fetchPrevious`, `fetchNext`, `jumpTo`, `hasLatest`, `hasOldest`, `items`, `limit`, `retainRatio`,
+  `isTraverseLocked`, `myReactions` and `createMirror()` - what the message list already reads of a window.
+- `refresh()` -> `fetchNext()`: at the latest messages a preview window asks the server for the newer ones. The
+  library does not throttle it; keep the 5 s interval of the app where it calls it (end of the list reached).
+- `onChange(listener)` -> `on('change', handler)` / `off('change', handler)`, as for joined rooms.
+- No release before -> `client.state.rooms.messages.forgetRoomPreview(roomId)` when the preview is closed. Joining the
+  room drops the preview history by itself; `getRoomHistory()` then returns the regular one.
+- `getMessagesWindow(topicId)` returns `undefined` when the server does not give the topic (no `PreviewRooms`, a room
+  that is not available). Fetch errors of the window are thrown as `Error`, as for joined rooms.
+- `includeMyReactions` is off in a preview window (a preview cannot react).
+- A preview window does not follow a reconnect; call `fetchNext()` or `resetToLatest(true)` after one.
 
 ## 6. Risks
 
 1. **The server in production must be `feature/search`** for the new permissions, `defaultTopicId` and the preview reads.
-   Against an older server `previewRoom()` rejects (`defaultTopicId` is missing -> `NoTopic`; reads -> `UserNotFoundException`).
+   Against an older server the summary has no `defaultTopicId` and the reads of a room you have not joined fail.
    `SearchMessages` fails there too; hide the search on any error but a result, as with `MessageSearchUnavailable`.
 2. **`FoundMessage.isMember`** is removed from the server (and was never in the SDK types). Code reading it must switch to
    the joined rooms of the state in the same step as the server deploy; the SDK does not give the field.

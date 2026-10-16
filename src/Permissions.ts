@@ -36,9 +36,7 @@ export class Permissions {
         React: {value: 1 << 21, maxLayer: Layer.Topic},
         CreatePolls: {value: 1 << 22, maxLayer: Layer.Topic},
         MentionAllRoles: {value: 1 << 23, maxLayer: Layer.Topic},
-        /** Read a room one has not joined (history, topics, members, reactions). Defined on a space or a room. */
         PreviewRooms: {value: 1 << 24, maxLayer: Layer.Room},
-        /** Search the messages of a space; an overwrite on a room takes the room out of (or into) the search. */
         SearchMessages: {value: 1 << 25, maxLayer: Layer.Room},
     };
 
@@ -48,19 +46,6 @@ export class Permissions {
 
     public static getByName(name: keyof typeof this.list): PermissionDefinition | undefined {
         return this.list[name];
-    }
-
-    /**
-     * Whether a permission mask (e.g. `ComputedPermissions.permissions`) contains the permission.
-     */
-    public static has(mask: number, permissionName: keyof typeof this.list): boolean {
-        const def = this.getByName(permissionName);
-
-        if (! def) {
-            throw new Error(`Invalid permission name: ${permissionName}`);
-        }
-
-        return (mask & def.value) !== 0;
     }
 
     public static canBeDefinedOnLayer(permissionName: keyof typeof this.list, layer: Layer): boolean {

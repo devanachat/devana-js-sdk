@@ -358,26 +358,37 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
 
     /**
      * The window does not subscribe to the client itself - the messages manager routes the events of its topic to it.
+     * @param preview A window of a room you have not joined - see {@link isPreview}.
      */
     public constructor(
         private roomId: string,
         private topicId: string,
         private tracker: ChatStateTracker,
+        private preview: boolean = false,
     ) {
         super('id');
 
         this.internalState.traverseLock = false;
-        this.internalState.includeMyReactions = true;
+        this.internalState.includeMyReactions = ! preview;
         this.internalState.myReactions = {};
         this.internalState.liveLimit = 50;
     }
 
     public createMirror(): TopicHistoryWindow {
-        const copy = new TopicHistoryWindow(this.roomId, this.topicId, this.tracker);
+        const copy = new TopicHistoryWindow(this.roomId, this.topicId, this.tracker, this.preview);
         copy.eventTarget = this.eventTarget;
         copy._items = this._items;
         copy.internalState = this.internalState;
         return copy;
+    }
+
+    /**
+     * Whether it is a window of a room you have not joined (see `MessagesManager.getRoomHistory()`). The server sends
+     * the events of a room to its members only, so such a window does not receive new messages - in the LATEST state
+     * {@link fetchNext} asks the server for them instead.
+     */
+    public get isPreview(): boolean {
+        return this.preview;
     }
 
     public get isTraverseLocked(): boolean {
@@ -435,6 +446,9 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
     public async fetchNext(): Promise<void> {
         if (this.internalState.traverseLock) {
             return;
+        }
+        if (this.preview && this.state === WindowState.LATEST) {
+            return this.fetchNewer();
         }
         return super.fetchNext();
     }
@@ -529,7 +543,49 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         this.internalState.myReactions = next;
     }
 
+    /**
+     * Fetch the messages written after the last one in the window, for a window that does not receive them live.
+     */
+    private async fetchNewer(): Promise<void> {
+        if (this.internalState.ongoing) {
+            return;
+        }
+
+        if (! this.length) {
+            return super.resetToLatest(true);
+        }
+
+        let result: Message[];
+        const originalState = this.state;
+        this.internalState.ongoing = WindowState.LATEST;
+
+        try {
+            result = await this.fetchItemsAfter();
+            this.internalState.lastFetchCount = result.length;
+        } finally {
+            this.internalState.ongoing = undefined;
+        }
+
+        if (result.length) {
+            this.addItems(result, 'tail');
+            await this.refreshFetchedState();
+        }
+
+        this.emitChangeWithDiff(result.length > 0, originalState);
+    }
+
     private async getTopic(): Promise<Topic | undefined> {
+        if (this.preview) {
+            // The tracker holds the topics of the joined rooms only
+            const result = await this.tracker.client.send('GetTopics', {roomId: this.roomId, topicIds: [this.topicId]});
+
+            if (result.error) {
+                throw new Error(`Cannot fetch topic: ${result.error.message}`);
+            }
+
+            return result.data.topics.find(topic => topic.id === this.topicId);
+        }
+
         return (await this.tracker.rooms.getTopics(this.roomId, [this.topicId])).get(this.topicId);
     }
 
