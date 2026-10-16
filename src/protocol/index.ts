@@ -169,6 +169,7 @@ import {
     UiPurpose,
     UserFeature,
 } from "./schemes/Entitlements";
+import {ErrorCode, ErrorCodeValue} from "./ErrorCode";
 import {GetEntitlements} from "./schemes/commands/GetEntitlements";
 import {Entitlements} from "./schemes/events/Entitlements";
 import {EntitlementUsage} from "./schemes/events/EntitlementUsage";
@@ -176,6 +177,7 @@ import {CreateAccessTicket, TicketAudience} from "./schemes/commands/CreateAcces
 import {AccessTicket} from "./schemes/events/AccessTicket";
 
 export type {
+    ErrorCodeValue,
     // objects
     Envelope,
     Message,
@@ -371,6 +373,7 @@ export type {
 };
 
 export {
+    ErrorCode,
     NO_LIMIT,
     STORAGE_UNIT_BYTES,
     HistoryRotation,
