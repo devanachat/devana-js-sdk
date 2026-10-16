@@ -34,8 +34,8 @@ describe('SearchMessages', () => {
         const {message, ranges} = result.data.results[0];
         expect(message.content.slice(ranges[0].start, ranges[0].end)).toBe('Żółw');
 
-        const failing = client.sendRaw('SearchMessages', {query: 'in:x'});
-        client.respond('2', 'Error', {code: 'InvalidSearchQueryException', message: 'Invalid value of the in modifier'});
+        const failing = client.sendRaw('SearchMessages', {query: 'x', in: ['x']});
+        client.respond('2', 'Error', {code: 'InvalidSearchQueryException', message: 'Invalid value of the in field'});
         expect((await failing).error?.code).toBe('InvalidSearchQueryException');
     });
 

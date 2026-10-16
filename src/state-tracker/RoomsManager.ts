@@ -73,6 +73,14 @@ export class RoomsManager {
     }
 
     /**
+     * Whether the current user has joined the room. A room one only looks into (see `ChatStateTracker.previewRoom()`)
+     * is not joined. Waits for the session, so the answer is never "no" just because the state is not loaded yet.
+     */
+    public async isJoined(roomId: string): Promise<boolean> {
+        return (await this.get()).has(roomId);
+    }
+
+    /**
      * Get a room member representing the current user.
      */
     public async getMe(roomId: string): Promise<RoomMember | undefined> {

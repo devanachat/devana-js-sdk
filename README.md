@@ -251,6 +251,31 @@ await topicWindow!.jumpTo('message-id');
 `topicWindow.state` tells which part of the history is loaded (`LIVE`, `LATEST`, `PAST`, `OLDEST`). Set `topicWindow.limit` to cap
 how many messages a window keeps in memory - the oldest are dropped when it grows over it.
 
+### Preview a room you have not joined
+
+With the `PreviewRooms` permission a user can read a room without joining it. `previewRoom()` returns a history window
+for it: the same one as above (`fetchPrevious()`, `jumpTo()`, `limit`, ...), without live events - ask for new
+messages with `refresh()` - and without any trace in the room: nothing is marked as read, the room is not added to the
+joined ones.
+
+```ts
+if (!(await client.state!.rooms.isJoined('room-id')) && await client.state!.permissions.canPreviewRoom('room-id')) {
+    // The default topic, or pass {topicId} for a thread; {around: messageId} opens the history at a message
+    const preview = await client.state!.previewRoom('room-id', {around: 'message-id'});
+
+    render(preview.items);
+    preview.on('change', () => render(preview.items));
+
+    await preview.fetchPrevious();
+    await preview.refresh(); // New messages, at most once per `preview.refreshInterval`
+
+    preview.dispose(); // When the view is closed, or the user joined and the regular history takes over
+}
+```
+
+`previewRoom()` rejects with a `RoomPreviewError` (`code` is the server error code, see `ErrorCode`) when the room
+cannot be previewed.
+
 ### Unread messages and mentions
 
 ```ts
@@ -285,6 +310,15 @@ if (!hasAll) {
 client.state!.permissions.on('change', () => {
     // Re-check, e.g. to show or hide moderation buttons
 });
+```
+
+`check()` needs the membership of the location. To ask about a room or a space you have not joined (can I preview this
+room? is the search available in this space?), use the permissions computed by the server:
+
+```ts
+const canSearch = (await client.state!.permissions.checkComputed(['SearchMessages'], {spaceId: 'space-id'})).hasAll;
+const mask = await client.state!.permissions.getComputed({roomId: 'room-id'});
+Permissions.has(mask, 'PreviewRooms');
 ```
 
 The full list of permissions is in `Permissions.list`.
