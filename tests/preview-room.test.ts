@@ -154,6 +154,33 @@ describe('room history preview', () => {
         expect(client.sent.filter(entry => entry.type === 'GetMessages').pop()?.data.after).toBe('m060');
     });
 
+    test('fetchNext of a window not fetched yet loads the latest messages', async () => {
+        const {tracker} = setup(60);
+        const window = await previewWindow(tracker);
+
+        await window.fetchNext();
+
+        expect(window.state).toBe(WindowState.LATEST);
+        expect(window.getAt(window.length - 1)?.id).toBe('m060');
+    });
+
+    test('fetchNext past a gap of newer messages goes on until the latest', async () => {
+        const {client, tracker} = setup(10);
+        const window = await previewWindow(tracker);
+        window.fetchLimit = 20;
+        await window.resetToLatest();
+
+        client.fill(50);
+        await window.fetchNext();
+        expect(window.state).toBe(WindowState.PAST);
+        expect(window.getAt(window.length - 1)?.id).toBe('m030');
+
+        await window.fetchNext();
+        await window.fetchNext();
+        expect(window.state).toBe(WindowState.LATEST);
+        expect(window.getAt(window.length - 1)?.id).toBe('m050');
+    });
+
     test('ignores the live events of the room', async () => {
         const {client, tracker} = setup(10);
         const window = await previewWindow(tracker);
