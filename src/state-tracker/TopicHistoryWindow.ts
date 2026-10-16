@@ -190,7 +190,18 @@ export abstract class TraversableRemoteCollection<
     }
 
     public async fetchNext(): Promise<void> {
-        if (this.internalState.ongoing || this.hasLatest) {
+        if (this.hasLatest) {
+            return;
+        }
+
+        return this.fetchAfterLast();
+    }
+
+    /**
+     * Append the items that follow the last one in the window; an empty window gets the latest items.
+     */
+    protected async fetchAfterLast(): Promise<void> {
+        if (this.internalState.ongoing) {
             return;
         }
 
@@ -206,7 +217,7 @@ export abstract class TraversableRemoteCollection<
         }
 
         if (! result) {
-            await this.resetToLatest();
+            await this.resetToLatest(true);
             return;
         }
 
@@ -382,7 +393,7 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
     }
 
     /**
-     * Window of a room you have not joined. It gets no live messages - in LATEST state fetchNext() fetches them.
+     * Window of a room you have not joined. It gets no live messages - at the latest ones fetchNext() fetches the newer.
      */
     public get isPreview(): boolean {
         return this.preview;
@@ -444,8 +455,8 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         if (this.internalState.traverseLock) {
             return;
         }
-        if (this.preview && this.state === WindowState.LATEST) {
-            return this.fetchNewer();
+        if (this.preview && this.hasLatest) {
+            return this.fetchAfterLast(); // No events reach a preview
         }
         return super.fetchNext();
     }
@@ -538,34 +549,6 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         }
 
         this.internalState.myReactions = next;
-    }
-
-    private async fetchNewer(): Promise<void> {
-        if (this.internalState.ongoing) {
-            return;
-        }
-
-        if (! this.length) {
-            return super.resetToLatest(true);
-        }
-
-        let result: Message[];
-        const originalState = this.state;
-        this.internalState.ongoing = WindowState.LATEST;
-
-        try {
-            result = await this.fetchItemsAfter();
-            this.internalState.lastFetchCount = result.length;
-        } finally {
-            this.internalState.ongoing = undefined;
-        }
-
-        if (result.length) {
-            this.addItems(result, 'tail');
-            await this.refreshFetchedState();
-        }
-
-        this.emitChangeWithDiff(result.length > 0, originalState);
     }
 
     private async getTopic(): Promise<Topic | undefined> {
