@@ -20,10 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Type exports `SearchMessages`, `SearchDate`, `FoundMessages`, `FoundMessage` and `TextRange`.
 - **Room preview** - the history of a room you have not joined (the `PreviewRooms` permission):
   `client.state.rooms.messages.getRoomHistory(roomId)` of a room you have not joined returns a `RoomMessagesHistory` with
-  `isPreview` set (instead of `undefined`), whose
+  `isPreview` set, whose
   `getMessagesWindow(topicId)` gives the usual `TopicHistoryWindow` (`resetToLatest`, `fetchPrevious`, `fetchNext`,
   `jumpTo`, mirrors, `change`). No events reach such windows; at the latest messages `fetchNext()` fetches the newer
-  ones. It sends only reads - no `Ack`, no change of the unread counters, the room is not added to your rooms. Release it
+  ones (and loads the latest in a window not fetched yet). It sends only reads - no `Ack`, no change of the unread counters, the room is not added to your rooms. Release it
   with `forgetRoomPreview(roomId)`; joining the room replaces it with the regular history. The default topic is
   `RoomSummary.defaultTopicId`.
 - `PreviewRooms` (`1 << 24`) and `SearchMessages` (`1 << 25`) permissions in `Permissions.list`, definable on a space or
@@ -34,6 +34,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- `rooms.messages.getRoomHistory(roomId)` never resolves to `undefined`: for a room you have not joined (also one you
+  have left, or an unknown id) it gives the preview history, whose fetch methods throw an `Error`
+  without access. Tell a joined room by `history.isPreview` or by your rooms.
 - `permissions.check()` and `calculatePermissions()` work for a room or a space you have not joined: they ask the server
   (`GetComputedPermissions`) instead of throwing.
 - Server `feature/search` semantics: `GetRoomMembers`, `GetMessages` (also `around`),

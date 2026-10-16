@@ -1,8 +1,10 @@
 # Migrating from `polfan-server-js-client` 0.5.0 to `@devanachat/sdk` 0.7.0
 
-The runtime API did not change between 0.5.0 and 0.7.0: the state tracker, the history windows, the permissions and
-the clients behave as before (`git diff` of `src/` shows no behavioural change outside the typings). What changes is
-the package, the exports map, the types of a few signatures, and what is new. This note is written for the
+The runtime API is the same as in 0.5.0, with two changes of behaviour for a room or a space you have not joined:
+`rooms.messages.getRoomHistory(roomId)` returns a preview history instead of `undefined` (section 5), and
+`permissions.check()` / `calculatePermissions()` ask the server instead of throwing. Code that tested
+`getRoomHistory()` for `undefined` to tell a joined room apart must use `history.isPreview` or the joined rooms of the
+state. Otherwise what changes is the package, the exports map, the types of a few signatures, and what is new. This note is written for the
 `pserv-client` application, which moves from the old package in one step.
 
 ## 1. The package
@@ -102,7 +104,8 @@ const topicWindow = await history?.getMessagesWindow(topicId); // summary.defaul
 - The window is a `TopicHistoryWindow`: `state` (`WindowState` enum, the same numbers as `PreviewWindowState`),
   `resetToLatest`, `fetchPrevious`, `fetchNext`, `jumpTo`, `hasLatest`, `hasOldest`, `items`, `limit`, `retainRatio`,
   `isTraverseLocked`, `myReactions` and `createMirror()` - what the message list already reads of a window.
-- `refresh()` -> `fetchNext()`: at the latest messages a preview window asks the server for the newer ones. The
+- `refresh()` -> `fetchNext()`: at the latest messages a preview window asks the server for the newer ones (a window
+  not fetched yet loads the latest). The
   library does not throttle it; keep the 5 s interval of the app where it calls it (end of the list reached).
 - `onChange(listener)` -> `on('change', handler)` / `off('change', handler)`, as for joined rooms.
 - No release before -> `client.state.rooms.messages.forgetRoomPreview(roomId)` when the preview is closed. Joining the
