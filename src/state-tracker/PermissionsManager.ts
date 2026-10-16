@@ -106,6 +106,9 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
         };
     }
 
+    /**
+     * For a room or a space you have not joined the permissions are fetched from the server, on every call.
+     */
     public async calculatePermissions(location: ChatLocation): Promise<number> {
         const room = location.roomId ? (await this.tracker.rooms.get()).get(location.roomId) : null;
         location = {
@@ -115,6 +118,10 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
         };
 
         this.validateLocation(location);
+
+        if ((location.roomId && ! room) || (location.spaceId && ! (await this.tracker.spaces.get())?.has(location.spaceId))) {
+            return this.fetchComputedPermissions(location);
+        }
 
         const userId = (await this.tracker.getMe()).id;
         const [spaceMember, roomMember] = await this.fetchMembersOrFail(location);
@@ -293,6 +300,16 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
         }
 
         return result;
+    }
+
+    private async fetchComputedPermissions(location: ChatLocation): Promise<number> {
+        const result = await this.tracker.client.send('GetComputedPermissions', {location});
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        return result.data.permissions;
     }
 
     private async fetchMembersOrFail(location: ChatLocation): Promise<[SpaceMember | null, RoomMember | null]> {

@@ -251,6 +251,30 @@ await topicWindow!.jumpTo('message-id');
 `topicWindow.state` tells which part of the history is loaded (`LIVE`, `LATEST`, `PAST`, `OLDEST`). Set `topicWindow.limit` to cap
 how many messages a window keeps in memory - the oldest are dropped when it grows over it.
 
+### Preview a room you have not joined
+
+With the `PreviewRooms` permission you can read a room without joining it. `getRoomHistory()` of a room you have not
+joined gives its preview (`history.isPreview`); the windows are the same as above, except that no events reach them -
+at the latest messages `fetchNext()` asks the server for the newer ones. Nothing is marked as read and the room does
+not join your rooms.
+
+```ts
+const {hasAll} = await client.state!.permissions.check(['PreviewRooms'], {roomId: 'room-id'});
+const {data} = await client.send('GetRoomSummary', {location: {roomId: 'room-id'}});
+
+if (hasAll && data?.summary.defaultTopicId) {
+    const history = await client.state!.rooms.messages.getRoomHistory('room-id');
+    const topicWindow = await history.getMessagesWindow(data.summary.defaultTopicId); // Or the id of a thread
+
+    await topicWindow!.jumpTo('message-id'); // Or resetToLatest()
+    await topicWindow!.fetchNext(); // At the latest messages: fetch those written since
+
+    client.state!.rooms.messages.forgetRoomPreview('room-id'); // When the preview is closed
+}
+```
+
+Once you join the room, `getRoomHistory()` returns its regular history and the preview is dropped.
+
 ### Unread messages and mentions
 
 ```ts
@@ -286,6 +310,9 @@ client.state!.permissions.on('change', () => {
     // Re-check, e.g. to show or hide moderation buttons
 });
 ```
+
+For a room or a space you have not joined (e.g. `PreviewRooms` of a room to preview), `check()` asks the server, every
+time - the `change` event does not cover such locations.
 
 The full list of permissions is in `Permissions.list`.
 
