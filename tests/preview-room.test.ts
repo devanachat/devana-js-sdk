@@ -1,19 +1,29 @@
 import {EventTarget} from "../src/EventTarget";
 import {ChatStateTracker} from "../src/state-tracker/ChatStateTracker";
-import {PreviewHistoryWindow, RoomPreviewError} from "../src/state-tracker/PreviewHistoryWindow";
 import {WindowState} from "../src/state-tracker/TopicHistoryWindow";
 import {ErrorCode, Layer, Permissions} from "../src";
 
+const JOINED = 'joined';
 const ROOM = 'r1';
-const TOPIC = 't-default';
+const TOPIC = 't1';
 const id = (n: number) => `m${String(n).padStart(3, '0')}`;
 
-type Responder = (data: any) => {data?: any, error?: {code: string, message: string}};
+const createRoom = (roomId: string): any => ({
+    id: roomId,
+    spaceId: null,
+    name: roomId,
+    description: '',
+    type: 'Text',
+    defaultTopic: {id: `topic-${roomId}`, name: '', messageCount: 0},
+    recipients: null,
+    flags: 0,
+    stream: null,
+    history: {mode: 'Full'},
+});
 
 class FakeClient extends EventTarget {
     public readonly sent: {type: string, data: any}[] = [];
-    public all: {id: string}[] = [];
-    public summary: any = {id: ROOM, spaceId: 's1', name: 'general', defaultTopicId: TOPIC};
+    public all: {id: string, location: any}[] = [];
     public permissions = 0;
     public error: {code: string, message: string} | null = null;
 
@@ -27,12 +37,12 @@ class FakeClient extends EventTarget {
         const index = (messageId?: string) => this.all.findIndex(message => message.id === messageId);
 
         switch (type) {
-            case 'GetRoomSummary':
-                return {data: {summary: this.summary}, error: null};
             case 'GetComputedPermissions':
                 return {data: {permissions: this.permissions, location: data.location, userId: 'me'}, error: null};
             case 'GetTopics':
-                return {data: {location: {roomId: data.roomId}, topics: [{id: data.topicIds[0], lastMessage: this.all[this.all.length - 1]}]}, error: null};
+                return {data: {location: {roomId: data.roomId}, topics: data.topicIds.map((topicId: string) => ({
+                    id: topicId, name: '', messageCount: this.all.length, lastMessage: this.all[this.all.length - 1],
+                }))}, error: null};
             case 'GetMessages': {
                 let messages;
                 if (data.before) {
@@ -50,11 +60,11 @@ class FakeClient extends EventTarget {
             }
         }
 
-        throw new Error(`Unexpected command ${type}`);
+        return {data: null, error: {code: 'UnknownCommand', message: type}};
     }
 
     public fill(total: number): void {
-        this.all = Array.from({length: total}, (_, index) => ({id: id(index + 1)}));
+        this.all = Array.from({length: total}, (_, index) => ({id: id(index + 1), location: {roomId: ROOM, topicId: TOPIC}}));
     }
 
     public count(type: string): number {
@@ -66,32 +76,61 @@ function setup(total: number) {
     const client = new FakeClient();
     client.fill(total);
     const tracker = new ChatStateTracker(client as any);
+    client.emit('Session', {user: {id: 'me'}, state: {rooms: [createRoom(JOINED)], spaces: [], spaceMembers: []}} as any);
     return {client, tracker};
 }
 
-describe('previewRoom', () => {
-    test('loads the latest messages of the default topic and sends only reads', async () => {
+async function previewWindow(tracker: ChatStateTracker, topicId: string = TOPIC) {
+    const history = await tracker.rooms.messages.getRoomHistory(ROOM, true);
+    return (await history!.getMessagesWindow(topicId))!;
+}
+
+describe('room history preview', () => {
+    test('is given only when asked for, and the joined rooms keep their regular history', async () => {
+        const {tracker} = setup(0);
+        const messages = tracker.rooms.messages;
+
+        expect(await messages.getRoomHistory(ROOM)).toBeUndefined();
+
+        const preview = await messages.getRoomHistory(ROOM, true);
+        expect(preview?.isPreview).toBe(true);
+        expect(await messages.getRoomHistory(ROOM, true)).toBe(preview);
+
+        const joined = await messages.getRoomHistory(JOINED, true);
+        expect(joined?.isPreview).toBe(false);
+        expect(joined).toBe(await messages.getRoomHistory(JOINED));
+        expect((await tracker.rooms.get()).has(ROOM)).toBe(false);
+    });
+
+    test('gives a regular window over the history, reading only', async () => {
         const {client, tracker} = setup(120);
+        const window = await previewWindow(tracker);
 
-        const window = await tracker.previewRoom(ROOM);
+        expect(window.isPreview).toBe(true);
+        expect(window.includeMyReactions).toBe(false);
+        expect(window.state).toBe(WindowState.LIVE);
 
-        expect(window.topicId).toBe(TOPIC);
-        expect(window.summary?.name).toBe('general');
+        await window.resetToLatest();
         expect(window.state).toBe(WindowState.LATEST);
-        expect(window.length).toBe(50);
         expect(window.getAt(window.length - 1)?.id).toBe('m120');
-        expect(client.sent[1].data.location).toEqual({roomId: ROOM, topicId: TOPIC});
-        expect(client.sent.map(entry => entry.type).every(type => ['GetRoomSummary', 'GetMessages', 'GetTopics'].includes(type))).toBe(true);
+
+        await window.fetchPrevious();
+        await window.fetchPrevious();
+        await window.fetchPrevious();
+        expect(window.length).toBe(120);
+        expect(window.hasOldest).toBe(true);
+
+        expect(client.sent.every(entry => ['GetTopics', 'GetMessages'].includes(entry.type))).toBe(true);
+        expect(client.sent.find(entry => entry.type === 'GetMessages')?.data.location).toEqual({roomId: ROOM, topicId: TOPIC});
     });
 
     test('opens around a message and walks forward to the latest', async () => {
         const {tracker} = setup(300);
+        const window = await previewWindow(tracker);
 
-        const window = await tracker.previewRoom(ROOM, {around: 'm100'});
-
+        await window.jumpTo('m100');
         expect(window.has('m100')).toBe(true);
         expect(window.state).toBe(WindowState.PAST);
-        expect(window.hasLatest).toBe(false);
 
         while (! window.hasLatest) {
             await window.fetchNext();
@@ -100,111 +139,76 @@ describe('previewRoom', () => {
         expect(window.getAt(window.length - 1)?.id).toBe('m300');
     });
 
-    test('goes back until the oldest message', async () => {
-        const {tracker} = setup(120);
-        const window = await tracker.previewRoom(ROOM);
-
-        await window.fetchPrevious();
-        await window.fetchPrevious();
-        expect(window.length).toBe(120);
-        expect(window.has('m001')).toBe(true);
-
-        await window.fetchPrevious(); // The empty page tells it is the oldest
-        expect(window.hasOldest).toBe(true);
-    });
-
-    test('reads the given topic instead of the default one', async () => {
-        const {client, tracker} = setup(10);
-
-        const window = await tracker.previewRoom(ROOM, {topicId: 'thread-1', spaceId: 's1'});
-
-        expect(window.topicId).toBe('thread-1');
-        expect(client.sent[0].data.location).toEqual({roomId: ROOM, spaceId: 's1'});
-        expect(client.sent[1].data.location.topicId).toBe('thread-1');
-    });
-
-    test('refresh takes only the newer messages, and not more often than the interval', async () => {
+    test('fetchNext at the latest messages takes the newer ones, as no events come', async () => {
         const {client, tracker} = setup(60);
-        const window = await tracker.previewRoom(ROOM);
+        const window = await previewWindow(tracker);
+        await window.resetToLatest();
         const changes: unknown[] = [];
         window.on('change', ev => changes.push(ev));
 
-        client.fill(65);
-        await window.refresh();
-        expect(window.getAt(window.length - 1)?.id).toBe('m060'); // Too soon
+        await window.fetchNext();
+        expect(changes.length).toBe(0); // Nothing new
 
-        window.refreshInterval = 0;
-        await window.refresh();
+        client.fill(65);
+        await window.fetchNext();
+
         expect(window.getAt(window.length - 1)?.id).toBe('m065');
         expect(window.state).toBe(WindowState.LATEST);
         expect(changes.length).toBe(1);
         expect(client.sent.filter(entry => entry.type === 'GetMessages').pop()?.data.after).toBe('m060');
     });
 
-    test('does not refresh a window that is not at the latest message', async () => {
-        const {client, tracker} = setup(300);
-        const window = await tracker.previewRoom(ROOM, {around: 'm100'});
-        window.refreshInterval = 0;
-        const before = client.count('GetMessages');
-
-        await window.refresh();
-
-        expect(client.count('GetMessages')).toBe(before);
-    });
-
-    test('mirrors share the data and the change events', async () => {
-        const {tracker} = setup(10);
-        const window = await tracker.previewRoom(ROOM);
-        const mirror = window.createMirror();
-
-        expect(mirror).not.toBe(window);
-        expect(mirror).toBeInstanceOf(PreviewHistoryWindow);
-        expect(mirror.length).toBe(10);
-        expect(mirror.topicId).toBe(TOPIC);
-    });
-
-    test('a disposed window is empty and does nothing', async () => {
-        const {client, tracker} = setup(60);
-        const window = await tracker.previewRoom(ROOM);
-        const before = client.sent.length;
-
-        window.dispose();
-        await window.resetToLatest(true);
-        await window.fetchPrevious();
-        await window.jumpTo('m010');
-        await window.refresh();
-
-        expect(window.isDisposed).toBe(true);
-        expect(window.length).toBe(0);
-        expect(client.sent.length).toBe(before);
-    });
-
-    test('does not fill a window disposed while the request was on', async () => {
-        const {tracker} = setup(60);
-        const window = new PreviewHistoryWindow(ROOM, TOPIC, tracker);
-
-        const loading = window.load();
-        window.dispose();
-        await loading;
-
-        expect(window.length).toBe(0);
-    });
-
-    test('fails with the code of the server error', async () => {
+    test('ignores the live events of the room', async () => {
         const {client, tracker} = setup(10);
+        const window = await previewWindow(tracker);
+        await window.resetToLatest();
+
+        client.emit('NewMessage', {message: {id: 'live', author: {user: {id: 'u'}}, location: {roomId: ROOM, topicId: TOPIC}, reactions: []}} as any);
+
+        expect(window.has('live')).toBe(false);
+    });
+
+    test('reads any topic of the room, a thread included', async () => {
+        const {client, tracker} = setup(10);
+        const window = await previewWindow(tracker, 'thread-1');
+
+        await window.resetToLatest();
+
+        expect(client.sent.find(entry => entry.type === 'GetMessages')?.data.location.topicId).toBe('thread-1');
+    });
+
+    test('has no window for a topic the server does not give', async () => {
+        const {client, tracker} = setup(10);
+        const history = await tracker.rooms.messages.getRoomHistory(ROOM, true);
         client.error = {code: ErrorCode.UserNotFound, message: 'denied'};
 
-        await expect(tracker.previewRoom(ROOM)).rejects.toMatchObject({name: 'RoomPreviewError', code: 'UserNotFoundException'});
+        expect(await history!.getMessagesWindow(TOPIC)).toBeUndefined();
     });
 
-    test('fails when the server gives no topic to address the history with', async () => {
-        const {client, tracker} = setup(10);
-        client.summary = {...client.summary, defaultTopicId: null};
+    test('mirrors keep the preview mode', async () => {
+        const {tracker} = setup(10);
+        const window = await previewWindow(tracker);
+        await window.resetToLatest();
 
-        const error = await tracker.previewRoom(ROOM).catch(e => e);
-        expect(error).toBeInstanceOf(RoomPreviewError);
-        expect(error.code).toBe('NoTopic');
-        expect(client.count('GetMessages')).toBe(0);
+        const mirror = window.createMirror();
+
+        expect(mirror.isPreview).toBe(true);
+        expect(mirror.length).toBe(10);
+    });
+
+    test('is dropped when forgotten, and when the room is joined', async () => {
+        const {client, tracker} = setup(10);
+        const messages = tracker.rooms.messages;
+
+        const first = await messages.getRoomHistory(ROOM, true);
+        messages.forgetRoomPreview(ROOM);
+        expect(await messages.getRoomHistory(ROOM, true)).not.toBe(first);
+
+        client.emit('RoomJoined', {room: createRoom(ROOM)} as any);
+        const regular = await messages.getRoomHistory(ROOM, true);
+
+        expect(regular?.isPreview).toBe(false);
+        expect(regular).toBe(await messages.getRoomHistory(ROOM));
     });
 });
 
@@ -214,45 +218,26 @@ describe('PreviewRooms and SearchMessages permissions', () => {
         expect(Permissions.getByName('SearchMessages')?.value).toBe(1 << 25);
 
         for (const name of ['PreviewRooms', 'SearchMessages'] as const) {
-            expect(Permissions.canBeDefinedOnLayer(name, Layer.Global)).toBe(true);
             expect(Permissions.canBeDefinedOnLayer(name, Layer.Space)).toBe(true);
             expect(Permissions.canBeDefinedOnLayer(name, Layer.Room)).toBe(true);
             expect(Permissions.canBeDefinedOnLayer(name, Layer.Topic)).toBe(false);
         }
     });
 
-    test('Permissions.has reads a mask', () => {
-        const mask = (1 << 24) | (1 << 9);
-        expect(Permissions.has(mask, 'PreviewRooms')).toBe(true);
-        expect(Permissions.has(mask, 'CreateMessages')).toBe(true);
-        expect(Permissions.has(mask, 'SearchMessages')).toBe(false);
-        expect(() => Permissions.has(mask, 'Nope' as any)).toThrow();
-    });
-
-    test('are checked on the server mask, without the membership', async () => {
+    test('of a room you have not joined are asked from the server', async () => {
         const {client, tracker} = setup(0);
-        client.permissions = 1 << 24;
+        client.permissions = Permissions.list.PreviewRooms.value;
 
-        expect(await tracker.permissions.canPreviewRoom(ROOM, 's1')).toBe(true);
-        expect(await tracker.permissions.checkComputed(['PreviewRooms', 'SearchMessages'], {spaceId: 's1'}))
-            .toEqual({ok: false, hasAll: false, hasAny: true, missing: ['SearchMessages']});
-        expect(await tracker.permissions.getComputed({roomId: ROOM})).toBe(1 << 24);
+        const result = await tracker.permissions.check(['PreviewRooms', 'SearchMessages'], {roomId: ROOM});
+
+        expect(result).toEqual({ok: false, hasAll: false, hasAny: true, missing: ['SearchMessages']});
+        expect(client.sent.find(entry => entry.type === 'GetComputedPermissions')?.data).toEqual({location: {spaceId: undefined, roomId: ROOM, topicId: undefined}});
     });
 
-    test('a refusal of the server throws its error', async () => {
+    test('a refusal of the server is thrown', async () => {
         const {client, tracker} = setup(0);
         client.error = {code: ErrorCode.UserNotFound, message: 'denied'};
 
-        await expect(tracker.permissions.getComputed({roomId: ROOM})).rejects.toMatchObject({code: 'UserNotFoundException'});
-    });
-});
-
-describe('ErrorCode', () => {
-    test('carries the codes of the search and the access', () => {
-        expect(ErrorCode.InvalidSearchQuery).toBe('InvalidSearchQueryException');
-        expect(ErrorCode.MessageSearchUnavailable).toBe('MessageSearchUnavailableException');
-        expect(ErrorCode.RoomNotFound).toBe('RoomNotFoundException');
-        expect(ErrorCode.UserNotFound).toBe('UserNotFoundException');
-        expect(ErrorCode.CommandRateLimitExceeded).toBe('CommandRateLimitExceededException');
+        await expect(tracker.permissions.calculatePermissions({roomId: ROOM})).rejects.toMatchObject({code: 'UserNotFoundException'});
     });
 });

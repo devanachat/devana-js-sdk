@@ -16,27 +16,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   Results come newest first in pages of 25; pass the returned `cursor` to get the next page (`null` means the end).
   Each result carries the `message`, its `spaceId` and `ranges` of the matches (`{start, end}` in UTF-16 units,
   `end` exclusive, so `content.slice(start, end)` works). Whether the user is in the room of a result is not part of
-  it - check the joined rooms of the state (`(await client.state.rooms.get()).has(roomId)`).
+  it - check your rooms: `(await client.state.rooms.get()).has(roomId)`.
 - Type exports `SearchMessages`, `SearchDate`, `FoundMessages`, `FoundMessage` and `TextRange`.
-- **Room preview** - the history of a room the user has not joined (access level 2, the `PreviewRooms` permission).
-  `client.state.previewRoom(roomId, {topicId?, around?, spaceId?})` resolves to a `PreviewHistoryWindow`: the same
-  window as for joined rooms (`state`, `resetToLatest`, `fetchPrevious`, `fetchNext`, `jumpTo`, `limit`, mirrors,
-  `change` events), but without live events - new messages come with `refresh()` - and with `dispose()` to release it.
-  It sends only reads: no `Ack`, no unread counters change, the room is not added to the joined ones. Errors are
-  `RoomPreviewError` (`code` is the server error code, or `NoTopic`).
-- `PreviewRooms` (`1 << 24`) and `SearchMessages` (`1 << 25`) permissions in `Permissions.list`, definable on a
-  space or a room. `Permissions.has(mask, name)` reads a permission mask; `client.state.permissions.getComputed()`,
-  `checkComputed()` and `canPreviewRoom()` use the permissions computed by the server, which work for rooms and
-  spaces the user has not joined (`check()` and `calculatePermissions()` still need the membership).
-- `RoomSummary.defaultTopicId`: the default topic of the room, given to everyone who may read it (`null` otherwise) -
-  the only way to address the history of a room one has not joined.
-- `ErrorCode`: the codes of the errors the search and the access produce (`InvalidSearchQueryException`,
-  `MessageSearchUnavailableException`, `RoomNotFoundException`, `UserNotFoundException`, `MessageNotFoundException`,
-  `TopicNotFoundException`, `CommandRateLimitExceededException`, `AuthenticationException`).
+- **Room preview** - the history of a room you have not joined (the `PreviewRooms` permission):
+  `client.state.rooms.messages.getRoomHistory(roomId, true)` returns a `RoomMessagesHistory` with `isPreview` set, whose
+  `getMessagesWindow(topicId)` gives the usual `TopicHistoryWindow` (`resetToLatest`, `fetchPrevious`, `fetchNext`,
+  `jumpTo`, mirrors, `change`). No events reach such windows; at the latest messages `fetchNext()` fetches the newer
+  ones. It sends only reads - no `Ack`, no change of the unread counters, the room is not added to your rooms. Release it
+  with `forgetRoomPreview(roomId)`; joining the room replaces it with the regular history. The default topic is
+  `RoomSummary.defaultTopicId`.
+- `PreviewRooms` (`1 << 24`) and `SearchMessages` (`1 << 25`) permissions in `Permissions.list`, definable on a space or
+  a room.
+- `RoomSummary.defaultTopicId`: the default topic of the room, given to everyone who may read it (`null` otherwise).
+- `ErrorCode` enum with the codes worth telling apart (`InvalidSearchQueryException`,
+  `MessageSearchUnavailableException`, `RoomNotFoundException`, `UserNotFoundException`, ...).
 
 ### Changed
 
-- Server `feature/search` semantics, documented in the types: `GetRoomMembers`, `GetMessages` (also `around`),
+- `permissions.check()` and `calculatePermissions()` work for a room or a space you have not joined: they ask the server
+  (`GetComputedPermissions`) instead of throwing.
+- Server `feature/search` semantics: `GetRoomMembers`, `GetMessages` (also `around`),
   `GetTopics` and `GetReactionDetails` accept a non-member with `PreviewRooms`; `GetPermissionOverwriteTargets`
   always returns the former members of a room (their overwrites still apply); `GetComputedPermissions`,
   `GetPermissionOverwrites` and `GetOwners` can be read in a room by a user with `ManagePermissions` who is not a

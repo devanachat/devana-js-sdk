@@ -107,54 +107,10 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
     }
 
     /**
-     * Permissions the server computed for the user on a location - as a bit mask, see `Permissions.has()`.
-     * Unlike {@link calculatePermissions} it works for a room and a space the user has not joined, which is the
-     * way to know whether one may preview a room (`PreviewRooms`) or whether the search is available (`SearchMessages`).
-     * It asks the server every time.
-     * @param userId Another user; the server answers only when the asking user may read the location.
+     * Your permissions in the location, as a bit mask (see `Permissions.list`). They are computed from the tracked
+     * overwrites; for a room or a space you have not joined (e.g. whether you may preview a room - `PreviewRooms`)
+     * they are asked from the server every time instead, and the `change` event does not cover them.
      */
-    public async getComputed(location: ChatLocation, userId?: string): Promise<number> {
-        this.validateLocation(location);
-
-        const result = await this.tracker.client.send('GetComputedPermissions', {location, userId});
-
-        if (result.error) {
-            throw result.error;
-        }
-
-        return result.data.permissions;
-    }
-
-    /**
-     * Like {@link check}, but on the permissions computed by the server - see {@link getComputed}.
-     */
-    public async checkComputed(
-        permissionNames: (keyof typeof Permissions.list)[],
-        location: ChatLocation,
-    ): Promise<CheckPermissionsResult> {
-        if (! permissionNames.length) {
-            throw new Error('Permission names array cannot be empty');
-        }
-
-        const mask = await this.getComputed(location);
-        const missing = permissionNames.filter(name => ! Permissions.has(mask, name)) as string[];
-
-        return {
-            ok: missing.length === 0,
-            hasAll: missing.length === 0,
-            hasAny: missing.length < permissionNames.length,
-            missing,
-        };
-    }
-
-    /**
-     * Whether the user may read the room without joining it (the `PreviewRooms` permission on it). The server still
-     * decides on access - a room that is not available to the user (private, invitation only) is refused later.
-     */
-    public async canPreviewRoom(roomId: string, spaceId?: string): Promise<boolean> {
-        return (await this.checkComputed(['PreviewRooms'], {spaceId, roomId})).hasAll;
-    }
-
     public async calculatePermissions(location: ChatLocation): Promise<number> {
         const room = location.roomId ? (await this.tracker.rooms.get()).get(location.roomId) : null;
         location = {
@@ -164,6 +120,10 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
         };
 
         this.validateLocation(location);
+
+        if ((location.roomId && ! room) || (location.spaceId && ! (await this.tracker.spaces.get())?.has(location.spaceId))) {
+            return this.fetchComputedPermissions(location);
+        }
 
         const userId = (await this.tracker.getMe()).id;
         const [spaceMember, roomMember] = await this.fetchMembersOrFail(location);
@@ -342,6 +302,16 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
         }
 
         return result;
+    }
+
+    private async fetchComputedPermissions(location: ChatLocation): Promise<number> {
+        const result = await this.tracker.client.send('GetComputedPermissions', {location});
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        return result.data.permissions;
     }
 
     private async fetchMembersOrFail(location: ChatLocation): Promise<[SpaceMember | null, RoomMember | null]> {

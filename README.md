@@ -253,28 +253,26 @@ how many messages a window keeps in memory - the oldest are dropped when it grow
 
 ### Preview a room you have not joined
 
-With the `PreviewRooms` permission a user can read a room without joining it. `previewRoom()` returns a history window
-for it: the same one as above (`fetchPrevious()`, `jumpTo()`, `limit`, ...), without live events - ask for new
-messages with `refresh()` - and without any trace in the room: nothing is marked as read, the room is not added to the
-joined ones.
+With the `PreviewRooms` permission you can read a room without joining it. Ask for its history with `preview` set; the
+windows are the same as above, except that no events reach them - at the latest messages `fetchNext()` asks the server
+for the newer ones. Nothing is marked as read and the room does not join your rooms.
 
 ```ts
-if (!(await client.state!.rooms.get()).has('room-id') && await client.state!.permissions.canPreviewRoom('room-id')) {
-    // The default topic, or pass {topicId} for a thread; {around: messageId} opens the history at a message
-    const preview = await client.state!.previewRoom('room-id', {around: 'message-id'});
+const {hasAll} = await client.state!.permissions.check(['PreviewRooms'], {roomId: 'room-id'});
+const {data} = await client.send('GetRoomSummary', {location: {roomId: 'room-id'}});
 
-    render(preview.items);
-    preview.on('change', () => render(preview.items));
+if (hasAll && data?.summary.defaultTopicId) {
+    const history = await client.state!.rooms.messages.getRoomHistory('room-id', true);
+    const topicWindow = await history!.getMessagesWindow(data.summary.defaultTopicId); // Or the id of a thread
 
-    await preview.fetchPrevious();
-    await preview.refresh(); // New messages, at most once per `preview.refreshInterval`
+    await topicWindow!.jumpTo('message-id'); // Or resetToLatest()
+    await topicWindow!.fetchNext(); // At the latest messages: fetch those written since
 
-    preview.dispose(); // When the view is closed, or the user joined and the regular history takes over
+    client.state!.rooms.messages.forgetRoomPreview('room-id'); // When the preview is closed
 }
 ```
 
-`previewRoom()` rejects with a `RoomPreviewError` (`code` is the server error code, see `ErrorCode`) when the room
-cannot be previewed.
+Once you join the room, `getRoomHistory()` returns its regular history and the preview is dropped.
 
 ### Unread messages and mentions
 
@@ -312,14 +310,8 @@ client.state!.permissions.on('change', () => {
 });
 ```
 
-`check()` needs the membership of the location. To ask about a room or a space you have not joined (can I preview this
-room? is the search available in this space?), use the permissions computed by the server:
-
-```ts
-const canSearch = (await client.state!.permissions.checkComputed(['SearchMessages'], {spaceId: 'space-id'})).hasAll;
-const mask = await client.state!.permissions.getComputed({roomId: 'room-id'});
-Permissions.has(mask, 'PreviewRooms');
-```
+For a room or a space you have not joined (e.g. `PreviewRooms` of a room to preview), `check()` asks the server, every
+time - the `change` event does not cover such locations.
 
 The full list of permissions is in `Permissions.list`.
 

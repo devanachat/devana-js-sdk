@@ -13,6 +13,7 @@ import {RoomMessagesHistory} from "./RoomMessagesHistory";
 
 export class MessagesManager {
     private readonly roomHistories = new IndexedCollection<string, RoomMessagesHistory>();
+    private readonly previewHistories = new IndexedCollection<string, RoomMessagesHistory>();
     private readonly deferredSession = new DeferredTask();
 
     public constructor(private tracker: ChatStateTracker) {
@@ -34,10 +35,32 @@ export class MessagesManager {
 
     /**
      * Get history manager for given room ID.
+     * @param roomId
+     * @param preview If true, also for a room you have not joined: its history is read without joining it, which
+     * requires the `PreviewRooms` permission (the server refuses the reads otherwise). Such a history receives no
+     * events, sends no `Ack` and changes no unread counters; it is kept until {@link forgetRoomPreview} or until you
+     * join the room - the regular history replaces it then. For a joined room the regular history is returned.
      */
-    public async getRoomHistory(roomId: string): Promise<RoomMessagesHistory | undefined> {
+    public async getRoomHistory(roomId: string, preview: boolean = false): Promise<RoomMessagesHistory | undefined> {
         await this.deferredSession.promise;
-        return this.roomHistories.get(roomId);
+
+        if (! preview || this.roomHistories.has(roomId)) {
+            return this.roomHistories.get(roomId);
+        }
+
+        if (! this.previewHistories.has(roomId)) {
+            this.previewHistories.set([roomId, new RoomMessagesHistory(roomId, this.tracker)]);
+        }
+
+        return this.previewHistories.get(roomId);
+    }
+
+    /**
+     * Drop the history of a room you have not joined, got with `getRoomHistory(roomId, true)`, with the messages
+     * of its windows. Call it when the preview is closed.
+     */
+    public forgetRoomPreview(roomId: string): void {
+        this.previewHistories.delete(roomId);
     }
 
     /**
@@ -71,6 +94,7 @@ export class MessagesManager {
     }
 
     private createHistoryForNewRoom(room: Room): void {
+        this.previewHistories.delete(room.id);
         this.roomHistories.set([room.id, new RoomMessagesHistory(room, this.tracker)]);
     }
 
