@@ -19,7 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   it - check your rooms: `(await client.state.rooms.get()).has(roomId)`.
 - Type exports `SearchMessages`, `SearchDate`, `FoundMessages`, `FoundMessage` and `TextRange`.
 - **Room preview** - the history of a room you have not joined (the `PreviewRooms` permission):
-  `client.state.rooms.messages.getRoomHistory(roomId, true)` returns a `RoomMessagesHistory` with `isPreview` set, whose
+  `client.state.rooms.messages.getRoomHistory(roomId)` of a room you have not joined returns a `RoomMessagesHistory` with
+  `isPreview` set (instead of `undefined`), whose
   `getMessagesWindow(topicId)` gives the usual `TopicHistoryWindow` (`resetToLatest`, `fetchPrevious`, `fetchNext`,
   `jumpTo`, mirrors, `change`). No events reach such windows; at the latest messages `fetchNext()` fetches the newer
   ones. It sends only reads - no `Ack`, no change of the unread counters, the room is not added to your rooms. Release it

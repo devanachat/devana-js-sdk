@@ -81,24 +81,20 @@ function setup(total: number) {
 }
 
 async function previewWindow(tracker: ChatStateTracker, topicId: string = TOPIC) {
-    const history = await tracker.rooms.messages.getRoomHistory(ROOM, true);
+    const history = await tracker.rooms.messages.getRoomHistory(ROOM);
     return (await history!.getMessagesWindow(topicId))!;
 }
 
 describe('room history preview', () => {
-    test('is given only when asked for, and the joined rooms keep their regular history', async () => {
+    test('is given for a room you have not joined, and the joined rooms keep their regular history', async () => {
         const {tracker} = setup(0);
         const messages = tracker.rooms.messages;
 
-        expect(await messages.getRoomHistory(ROOM)).toBeUndefined();
-
-        const preview = await messages.getRoomHistory(ROOM, true);
+        const preview = await messages.getRoomHistory(ROOM);
         expect(preview?.isPreview).toBe(true);
-        expect(await messages.getRoomHistory(ROOM, true)).toBe(preview);
+        expect(await messages.getRoomHistory(ROOM)).toBe(preview);
 
-        const joined = await messages.getRoomHistory(JOINED, true);
-        expect(joined?.isPreview).toBe(false);
-        expect(joined).toBe(await messages.getRoomHistory(JOINED));
+        expect((await messages.getRoomHistory(JOINED)).isPreview).toBe(false);
         expect((await tracker.rooms.get()).has(ROOM)).toBe(false);
     });
 
@@ -179,7 +175,7 @@ describe('room history preview', () => {
 
     test('has no window for a topic the server does not give', async () => {
         const {client, tracker} = setup(10);
-        const history = await tracker.rooms.messages.getRoomHistory(ROOM, true);
+        const history = await tracker.rooms.messages.getRoomHistory(ROOM);
         client.error = {code: ErrorCode.UserNotFound, message: 'denied'};
 
         expect(await history!.getMessagesWindow(TOPIC)).toBeUndefined();
@@ -200,12 +196,12 @@ describe('room history preview', () => {
         const {client, tracker} = setup(10);
         const messages = tracker.rooms.messages;
 
-        const first = await messages.getRoomHistory(ROOM, true);
+        const first = await messages.getRoomHistory(ROOM);
         messages.forgetRoomPreview(ROOM);
-        expect(await messages.getRoomHistory(ROOM, true)).not.toBe(first);
+        expect(await messages.getRoomHistory(ROOM)).not.toBe(first);
 
         client.emit('RoomJoined', {room: createRoom(ROOM)} as any);
-        const regular = await messages.getRoomHistory(ROOM, true);
+        const regular = await messages.getRoomHistory(ROOM);
 
         expect(regular?.isPreview).toBe(false);
         expect(regular).toBe(await messages.getRoomHistory(ROOM));

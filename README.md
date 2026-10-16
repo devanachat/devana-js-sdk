@@ -253,17 +253,18 @@ how many messages a window keeps in memory - the oldest are dropped when it grow
 
 ### Preview a room you have not joined
 
-With the `PreviewRooms` permission you can read a room without joining it. Ask for its history with `preview` set; the
-windows are the same as above, except that no events reach them - at the latest messages `fetchNext()` asks the server
-for the newer ones. Nothing is marked as read and the room does not join your rooms.
+With the `PreviewRooms` permission you can read a room without joining it. `getRoomHistory()` of a room you have not
+joined gives its preview (`history.isPreview`); the windows are the same as above, except that no events reach them -
+at the latest messages `fetchNext()` asks the server for the newer ones. Nothing is marked as read and the room does
+not join your rooms.
 
 ```ts
 const {hasAll} = await client.state!.permissions.check(['PreviewRooms'], {roomId: 'room-id'});
 const {data} = await client.send('GetRoomSummary', {location: {roomId: 'room-id'}});
 
 if (hasAll && data?.summary.defaultTopicId) {
-    const history = await client.state!.rooms.messages.getRoomHistory('room-id', true);
-    const topicWindow = await history!.getMessagesWindow(data.summary.defaultTopicId); // Or the id of a thread
+    const history = await client.state!.rooms.messages.getRoomHistory('room-id');
+    const topicWindow = await history.getMessagesWindow(data.summary.defaultTopicId); // Or the id of a thread
 
     await topicWindow!.jumpTo('message-id'); // Or resetToLatest()
     await topicWindow!.fetchNext(); // At the latest messages: fetch those written since
