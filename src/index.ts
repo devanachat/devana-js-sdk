@@ -10,6 +10,7 @@ import {FilesClient, File} from "./FilesClient";
 import { Permissions, PermissionDefinition, Layer } from "./Permissions";
 import * as ChatTypes from './protocol';
 import {
+    ErrorCode,
     HistoryRotation,
     NO_LIMIT,
     RoleFlag,
@@ -35,6 +36,7 @@ export {
     FilesClient,
     AbstractRestClient,
     extractUserFromMember,
+    ErrorCode,
     UserStatus,
     RoleFlag,
     SpaceFeature,

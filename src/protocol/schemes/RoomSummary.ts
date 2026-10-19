@@ -13,4 +13,5 @@ export interface RoomSummary {
     memberCount: number;
     type: RoomType;
     extras?: RoomSummaryExtras;
+    defaultTopicId?: string | null;
 }

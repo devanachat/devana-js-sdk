@@ -190,7 +190,18 @@ export abstract class TraversableRemoteCollection<
     }
 
     public async fetchNext(): Promise<void> {
-        if (this.internalState.ongoing || this.hasLatest) {
+        if (this.hasLatest) {
+            return;
+        }
+
+        return this.fetchAfterLast();
+    }
+
+    /**
+     * Append the items that follow the last one in the window; an empty window gets the latest items.
+     */
+    protected async fetchAfterLast(): Promise<void> {
+        if (this.internalState.ongoing) {
             return;
         }
 
@@ -206,7 +217,7 @@ export abstract class TraversableRemoteCollection<
         }
 
         if (! result) {
-            await this.resetToLatest();
+            await this.resetToLatest(true);
             return;
         }
 
@@ -363,21 +374,29 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         private roomId: string,
         private topicId: string,
         private tracker: ChatStateTracker,
+        private preview: boolean = false,
     ) {
         super('id');
 
         this.internalState.traverseLock = false;
-        this.internalState.includeMyReactions = true;
+        this.internalState.includeMyReactions = ! preview;
         this.internalState.myReactions = {};
         this.internalState.liveLimit = 50;
     }
 
     public createMirror(): TopicHistoryWindow {
-        const copy = new TopicHistoryWindow(this.roomId, this.topicId, this.tracker);
+        const copy = new TopicHistoryWindow(this.roomId, this.topicId, this.tracker, this.preview);
         copy.eventTarget = this.eventTarget;
         copy._items = this._items;
         copy.internalState = this.internalState;
         return copy;
+    }
+
+    /**
+     * Window of a room you have not joined. It gets no live messages - at the latest ones fetchNext() fetches the newer.
+     */
+    public get isPreview(): boolean {
+        return this.preview;
     }
 
     public get isTraverseLocked(): boolean {
@@ -435,6 +454,9 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
     public async fetchNext(): Promise<void> {
         if (this.internalState.traverseLock) {
             return;
+        }
+        if (this.preview && this.hasLatest) {
+            return this.fetchAfterLast(); // No events reach a preview
         }
         return super.fetchNext();
     }
@@ -530,6 +552,17 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
     }
 
     private async getTopic(): Promise<Topic | undefined> {
+        if (this.preview) {
+            // The tracker holds the topics of the joined rooms only
+            const result = await this.tracker.client.send('GetTopics', {roomId: this.roomId, topicIds: [this.topicId]});
+
+            if (result.error) {
+                throw new Error(`Cannot fetch topic: ${result.error.message}`);
+            }
+
+            return result.data.topics.find(topic => topic.id === this.topicId);
+        }
+
         return (await this.tracker.rooms.getTopics(this.roomId, [this.topicId])).get(this.topicId);
     }
 
