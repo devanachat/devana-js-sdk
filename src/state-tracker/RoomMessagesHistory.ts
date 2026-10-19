@@ -18,16 +18,26 @@ import {TopicHistoryWindow, WindowState} from "./TopicHistoryWindow";
  * dropped together with its room stops receiving them.
  */
 export class RoomMessagesHistory {
+    public readonly isPreview: boolean;
+
+    private readonly roomId: string;
     private historyWindows = new IndexedCollection<string, TopicHistoryWindow>();
     private traverseLock: boolean = false;
+    private room: Room | null;
 
     public constructor(
-        private room: Room,
+        room: Room | string,
         private tracker: ChatStateTracker,
     ) {
-        this.updateTraverseLock(this.room);
+        this.roomId = typeof room === 'string' ? room : room.id;
+        this.room = typeof room === 'string' ? null : room;
+        this.isPreview = this.room === null;
 
-        if (this.room.defaultTopic) {
+        if (this.room) {
+            this.updateTraverseLock(this.room);
+        }
+
+        if (this.room?.defaultTopic) {
             this.createHistoryWindowForTopic(this.room.defaultTopic);
         }
     }
@@ -39,10 +49,14 @@ export class RoomMessagesHistory {
      */
     public async getMessagesWindow(topicId: string, peek: boolean = false): Promise<TopicHistoryWindow | undefined> {
         if (!this.historyWindows.has(topicId) && !peek) {
-            const topic = (await this.tracker.rooms.getTopics(this.room.id, [topicId])).get(topicId);
+            if (this.isPreview) {
+                this.createHistoryWindow(topicId);
+            } else {
+                const topic = (await this.tracker.rooms.getTopics(this.roomId, [topicId])).get(topicId);
 
-            if (topic) {
-                this.createHistoryWindowForTopic(topic);
+                if (topic) {
+                    this.createHistoryWindowForTopic(topic);
+                }
             }
         }
 
@@ -164,11 +178,21 @@ export class RoomMessagesHistory {
             return;
         }
 
-        const historyWindow = new TopicHistoryWindow(this.room.id, topic.id, this.tracker);
+        this.createHistoryWindow(topic.id);
+
+        // If new topic refers to some message from this room, update other structures
+        if (topic.refMessage) {
+            const refHistoryWindow = this.historyWindows.get(topic.refMessage.location.topicId);
+            refHistoryWindow?._updateMessageReference(topic);
+        }
+    }
+
+    private createHistoryWindow(topicId: string): void {
+        const historyWindow = new TopicHistoryWindow(this.roomId, topicId, this.tracker, this.isPreview);
 
         void historyWindow.setTraverseLock(this.traverseLock);
 
-        this.historyWindows.set([topic.id, historyWindow]);
+        this.historyWindows.set([topicId, historyWindow]);
 
         // Current behavior of deletion a message with referenced topic is to delete the whole side topic
         // So we need to listen for topic deletions here
@@ -176,14 +200,8 @@ export class RoomMessagesHistory {
             for (const topicId of deletedTopicIds) {
                 this.historyWindows.delete(topicId);
             }
-            this.tracker.rooms._deleteTopicsFromRoom(this.room.id, ...deletedTopicIds);
+            this.tracker.rooms._deleteTopicsFromRoom(this.roomId, ...deletedTopicIds);
         });
-
-        // If new topic refers to some message from this room, update other structures
-        if (topic.refMessage) {
-            const refHistoryWindow = this.historyWindows.get(topic.refMessage.location.topicId);
-            refHistoryWindow?._updateMessageReference(topic);
-        }
     }
 
     private updateTraverseLock(room: Room): void {

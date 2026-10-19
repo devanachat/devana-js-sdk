@@ -13,6 +13,7 @@ import {RoomMessagesHistory} from "./RoomMessagesHistory";
 
 export class MessagesManager {
     private readonly roomHistories = new IndexedCollection<string, RoomMessagesHistory>();
+    private readonly previewHistories = new IndexedCollection<string, RoomMessagesHistory>();
     private readonly deferredSession = new DeferredTask();
 
     public constructor(private tracker: ChatStateTracker) {
@@ -33,11 +34,25 @@ export class MessagesManager {
     }
 
     /**
-     * Get history manager for given room ID.
+     * Get history manager for given room ID. For a room you have not joined it is a preview (requires `PreviewRooms`),
+     * kept until {@link forgetRoomPreview} or until you join the room.
      */
-    public async getRoomHistory(roomId: string): Promise<RoomMessagesHistory | undefined> {
+    public async getRoomHistory(roomId: string): Promise<RoomMessagesHistory> {
         await this.deferredSession.promise;
-        return this.roomHistories.get(roomId);
+
+        if (this.roomHistories.has(roomId)) {
+            return this.roomHistories.get(roomId);
+        }
+
+        if (! this.previewHistories.has(roomId)) {
+            this.previewHistories.set([roomId, new RoomMessagesHistory(roomId, this.tracker)]);
+        }
+
+        return this.previewHistories.get(roomId);
+    }
+
+    public forgetRoomPreview(roomId: string): void {
+        this.previewHistories.delete(roomId);
     }
 
     /**
@@ -45,13 +60,10 @@ export class MessagesManager {
      * @internal
      */
     public async _resolveLastMessage(location: ChatLocation): Promise<Message|null> {
-        // Try to get last message from history window (if cached)
-        let message: Message = await this.getRoomHistory(location.roomId)
-            .then(roomHistory => roomHistory?.getMessagesWindow(location.topicId, true))
-            .then(
-                historyWindow =>
-                    historyWindow?.hasLatest && historyWindow.getAt(historyWindow.length - 1)
-            );
+        // Try to get last message from history window (if cached); not getRoomHistory(), it would create a preview
+        await this.deferredSession.promise;
+        const historyWindow = await this.roomHistories.get(location.roomId)?.getMessagesWindow(location.topicId, true);
+        let message: Message = historyWindow?.hasLatest && historyWindow.getAt(historyWindow.length - 1);
 
         if (!message) {
             const result = await this.tracker.client.send('GetMessages', {
@@ -71,6 +83,7 @@ export class MessagesManager {
     }
 
     private createHistoryForNewRoom(room: Room): void {
+        this.previewHistories.delete(room.id);
         this.roomHistories.set([room.id, new RoomMessagesHistory(room, this.tracker)]);
     }
 

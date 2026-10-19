@@ -11,7 +11,7 @@ import {Topic} from "./schemes/Topic";
 import {User, UserStatus} from "./schemes/User";
 import {UserState} from "./schemes/UserState";
 import {Bye} from "./schemes/events/Bye";
-import {Error} from "./schemes/events/Error";
+import {Error, ErrorCode} from "./schemes/events/Error";
 import {Session} from "./schemes/events/Session";
 import {ComputedPermissions} from "./schemes/events/ComputedPermissions";
 import {SpaceJoined} from "./schemes/events/SpaceJoined";
@@ -84,6 +84,8 @@ import {GetFollowedTopics} from "./schemes/commands/GetFollowedTopics";
 import {FollowedTopicUpdated} from "./schemes/events/FollowedTopicUpdated";
 import {GetMessages} from "./schemes/commands/GetMessages";
 import {Messages} from "./schemes/events/Messages";
+import {SearchMessages, SearchDate} from "./schemes/commands/SearchMessages";
+import {FoundMessages, FoundMessage, TextRange} from "./schemes/events/FoundMessages";
 import {Topics} from "./schemes/events/Topics";
 import {GetTopics} from "./schemes/commands/GetTopics";
 import {UpdateTopic} from "./schemes/commands/UpdateTopic";
@@ -230,6 +232,9 @@ export type {
     Bye,
     Error,
     Messages,
+    FoundMessages,
+    FoundMessage,
+    TextRange,
     NewMessage,
     NewRole,
     NewRoom,
@@ -292,6 +297,8 @@ export type {
     // commands
     AssignRole,
     GetMessages,
+    SearchMessages,
+    SearchDate,
     CreateMessage,
     Ack,
     CreateRole,
@@ -364,6 +371,7 @@ export type {
 };
 
 export {
+    ErrorCode,
     NO_LIMIT,
     STORAGE_UNIT_BYTES,
     HistoryRotation,
