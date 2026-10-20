@@ -4,6 +4,32 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [semver](https://semver.org) (`0.x` minor releases may break the API).
 
+## [0.8.0] - Unreleased
+
+### Added
+
+- **State snapshot** - restore the tracked state at the start of an application, before the connection is
+  established: `client.state.exportSnapshot()` gives a plain, JSON-serializable `StateSnapshot` (or `null` before the
+  first session), `client.state.importSnapshot(snapshot)` restores it into a new client. The snapshot holds the current
+  user, the joined spaces (with roles) and rooms (with the default topics, PM recipients), and the lists already
+  loaded: rooms of spaces, followed topics (unread counters), emoticons and relationships. Presence is left out (every
+  user is saved as `Offline`), as are members of spaces and rooms, message histories, permission overwrites and other
+  topics.
+  The import emits the usual change events of the collections and resolves the getters waiting for the session. The
+  first `Session` then replaces the restored state like on a reconnect (removed spaces and rooms dropped, together with
+  their followed topics and emoticons; the rest updated in place; the lazily loaded lists refetched on next access).
+  A snapshot of another `version` (`STATE_SNAPSHOT_VERSION`, now `1`) or malformed data is rejected with `false`,
+  without changing the state and without throwing; so is an import after the first `Session` or a second import.
+- Message histories in the snapshot: `exportSnapshot(intent)` takes a `StateSnapshotIntent` -
+  `histories: [{roomId, topicId?}]` (no `topicId` for the default topic of the room), `historyLimit` (messages per
+  topic, never fewer than the window's `fetchLimit`, 50 by default) and `roomMembersLimit` (members of the rooms of the
+  histories, saved when loaded and not more than that; 0 by default). Only a window holding the latest messages
+  (`LATEST`) of a room that is not ephemeral is saved, with the reactions of the user and the topics the messages refer
+  to. The import restores the window in the `LATEST` state, so it is shown without a request; the first `Session`
+  fetches it anew (as on a reconnect) and fetches the restored topics other than the default ones.
+- Type exports `StateSnapshot`, `StateSnapshotIntent`, `TopicHistorySnapshot`, `RoomMembersSnapshot`,
+  `SpaceRoomsSnapshot`, `RoomFollowedTopicsSnapshot`, `EmoticonsSnapshot` and the `STATE_SNAPSHOT_VERSION` constant.
+
 ## [0.7.0] - Unreleased
 
 ### Added

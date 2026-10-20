@@ -17,6 +17,14 @@ import {ChatStateTracker} from "./ChatStateTracker";
 import {DeferredTask, PromiseRegistry} from "./AsyncUtils";
 import {MessagesManager} from "./MessagesManager";
 import {FollowedTopicsManager} from "./FollowedTopicsManager";
+import {
+    memberWithoutPresence,
+    messageWithoutPresence,
+    RoomMembersSnapshot,
+    StateSnapshotIntent,
+    TopicHistorySnapshot,
+    withoutPresence,
+} from "./StateSnapshot";
 
 export class RoomsManager {
     public readonly messages: MessagesManager;
@@ -28,6 +36,7 @@ export class RoomsManager {
     private readonly deferredSession = new DeferredTask();
     private readonly membersPromises = new PromiseRegistry();
     private readonly topicsPromises = new PromiseRegistry();
+    private readonly importedTopicIds = new Map<string, Set<string>>();
 
     public constructor(private tracker: ChatStateTracker) {
         this.messages = new MessagesManager(tracker);
@@ -138,6 +147,154 @@ export class RoomsManager {
      */
     public _deleteTopicsFromRoom(roomId: string, ...topicIds: string[]): void {
         this.topics.get(roomId)?.delete(...topicIds);
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _exportRooms(): Room[] {
+        return this.list.items.map(room => room.recipients
+            ? {...room, recipients: room.recipients.map(withoutPresence)}
+            : room);
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _importRooms(rooms: Room[]): void {
+        this.messages._importRooms(rooms);
+        this.addJoinedRooms(...rooms);
+        this.deferredSession.resolve();
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _exportHistories(intent: StateSnapshotIntent): TopicHistorySnapshot[] {
+        const histories: TopicHistorySnapshot[] = [];
+        const exported = new Set<string>();
+
+        for (const {roomId, topicId: requestedTopicId} of intent.histories ?? []) {
+            const room = this.list.get(roomId);
+            const topicId = requestedTopicId ?? room?.defaultTopic?.id;
+
+            if (! room || ! topicId || exported.has(`${roomId}/${topicId}`)) {
+                continue;
+            }
+
+            const latest = this.messages._exportLatest(roomId, topicId, intent.historyLimit ?? 0);
+            const topics = this.topics.get(roomId);
+
+            // A topic other than the default one is restored from the snapshot, so it has to be known.
+            if (! latest || (topicId !== room.defaultTopic?.id && ! topics?.has(topicId))) {
+                continue;
+            }
+
+            const topicIds = new Set<string>([topicId, ...latest.messages.map(message => message.topicRef)]);
+            topicIds.delete(room.defaultTopic?.id);
+
+            exported.add(`${roomId}/${topicId}`);
+            histories.push({
+                roomId,
+                topicId,
+                messages: latest.messages.map(messageWithoutPresence),
+                myReactions: latest.myReactions,
+                topics: Array.from(topicIds).filter(id => topics?.has(id)).map(id => topics.get(id)),
+            });
+        }
+
+        return histories;
+    }
+
+    /**
+     * Members of private conversations are not exported - they are made of the recipients of the room.
+     * @internal
+     */
+    public _exportMembers(roomIds: string[], limit: number): RoomMembersSnapshot[] {
+        const snapshots: RoomMembersSnapshot[] = [];
+
+        if (! limit) {
+            return snapshots;
+        }
+
+        for (const roomId of new Set(roomIds)) {
+            const members = this.members.get(roomId);
+
+            if (members && members.length <= limit && this.list.get(roomId)?.type !== 'Pm') {
+                snapshots.push({roomId, members: members.items.map(memberWithoutPresence)});
+            }
+        }
+
+        return snapshots;
+    }
+
+    /**
+     * Expects the rooms to be imported already - histories and members of other rooms are skipped.
+     * @internal
+     */
+    public _importHistories(histories: TopicHistorySnapshot[], roomMembers: RoomMembersSnapshot[]): void {
+        for (const {roomId, members} of roomMembers) {
+            if (this.list.has(roomId) && this.list.get(roomId).type !== 'Pm') {
+                this.handleRoomMembers({id: roomId, members});
+                // Served from the snapshot until the session invalidates it.
+                this.membersPromises.register(Promise.resolve(), roomId);
+            }
+        }
+
+        for (const history of histories) {
+            const room = this.list.get(history.roomId);
+
+            if (! room) {
+                continue;
+            }
+
+            const topics = history.topics.filter(topic => topic.id !== room.defaultTopic?.id);
+
+            if (topics.length) {
+                this.addJoinedRoomTopics(room.id, ...topics);
+
+                const importedTopicIds = this.importedTopicIds.get(room.id) ?? new Set<string>();
+                topics.forEach(topic => importedTopicIds.add(topic.id));
+                this.importedTopicIds.set(room.id, importedTopicIds);
+            }
+
+            const topic = history.topicId === room.defaultTopic?.id
+                ? room.defaultTopic
+                : this.topics.get(room.id)?.get(history.topicId);
+
+            if (topic) {
+                this.messages._importHistory(room.id, topic, history);
+            }
+        }
+    }
+
+    /**
+     * The session carries only the default topics, so the other restored ones are fetched anew.
+     * @internal
+     */
+    public _refreshImportedTopics(): void {
+        const importedTopicIds = Array.from(this.importedTopicIds);
+        this.importedTopicIds.clear();
+
+        for (const [roomId, ids] of importedTopicIds) {
+            if (! this.list.has(roomId)) {
+                continue;
+            }
+
+            const topicIds = Array.from(ids);
+            const promise = this.tracker.client.send('GetTopics', {roomId, topicIds}).then(result => {
+                if (! result.error) {
+                    this.topics.get(roomId)?.set(...result.data.topics);
+                }
+            });
+
+            topicIds.forEach(topicId => this.topicsPromises.register(promise, roomId + topicId));
+            // Best effort: on a failure the restored topics stay, as after a reconnect.
+            promise.catch(() => undefined);
+        }
     }
 
     private deleteRoom(...roomIds: string[]): void {

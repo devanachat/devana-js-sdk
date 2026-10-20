@@ -28,6 +28,14 @@ export class UsersManager {
         return this.users;
     }
 
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _importUser(user: User): void {
+        this.handleUsers([user]);
+    }
+
     private handleMembers(members: (RoomMember | SpaceMember)[]): void {
         this.handleUsers(members.map(extractUserFromMember));
     }
