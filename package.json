@@ -1,6 +1,6 @@
 {
   "name": "@devanachat/sdk",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "TypeScript/JavaScript SDK for the Devana chat platform: WebSocket and Web API clients, state tracking, permissions and files.",
   "keywords": [
     "devana",

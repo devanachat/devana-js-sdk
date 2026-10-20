@@ -5,6 +5,7 @@ import {
 } from "../IndexedObjectCollection";
 import {Emoticon, EmoticonDeleted, Emoticons, NewEmoticon, SpaceDeleted} from "../protocol";
 import {PromiseRegistry} from "./AsyncUtils";
+import {EmoticonsSnapshot} from "./StateSnapshot";
 
 const GLOBAL_KEY = 'global';
 
@@ -35,6 +36,47 @@ export class EmoticonsManager {
 
         await this.emoticonsPromises.get(key);
         return this.list.get(key);
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _exportEmoticons(): EmoticonsSnapshot[] {
+        return Array.from(this.list.items).map(([key, emoticons]) => ({
+            spaceId: key === GLOBAL_KEY ? null : key,
+            emoticons: emoticons.items,
+        }));
+    }
+
+    /**
+     * Emoticons of spaces other than the given ones are skipped.
+     * @internal
+     */
+    public _importEmoticons(snapshots: EmoticonsSnapshot[], spaceIds: string[]): void {
+        const joinedSpaceIds = new Set(spaceIds);
+
+        for (const {spaceId, emoticons} of snapshots) {
+            if (spaceId !== null && ! joinedSpaceIds.has(spaceId)) {
+                continue;
+            }
+
+            this.handleEmoticons({location: {spaceId: spaceId ?? undefined}, emoticons});
+            // Served from the snapshot until the session invalidates it.
+            this.emoticonsPromises.register(Promise.resolve(), spaceId ?? GLOBAL_KEY);
+        }
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _forgetSpacesExcept(spaceIds: string[]): void {
+        const keptKeys = new Set([GLOBAL_KEY, ...spaceIds]);
+        const removedKeys = Array.from(this.list.items.keys()).filter(key => ! keptKeys.has(key));
+
+        this.list.delete(...removedKeys);
+        this.emoticonsPromises.forget(...removedKeys);
     }
 
     private handleEmoticons(event: Emoticons): void {
