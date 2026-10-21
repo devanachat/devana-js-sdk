@@ -27,6 +27,7 @@ import {AbstractRestClient} from "./AbstractRestClient";
 import {UnreadSummary} from "./state-tracker/FollowedTopicsManager";
 import {TopicHistoryWindow} from "./state-tracker/TopicHistoryWindow";
 import {PermissionsManager} from "./state-tracker/PermissionsManager";
+import {STATE_SNAPSHOT_VERSION} from "./state-tracker/StateSnapshot";
 
 export {
     IndexedCollection, ObservableIndexedCollection,
@@ -47,6 +48,7 @@ export {
     SpaceIntent,
     NO_LIMIT,
     STORAGE_UNIT_BYTES,
+    STATE_SNAPSHOT_VERSION,
 };
 
 export type {
@@ -60,6 +62,15 @@ export type {WebSocketClientOptions} from "./WebSocketChatClient";
 export type {WebApiChatClientOptions} from "./WebApiChatClient";
 export type {RestClientOptions, RestClientResponse} from "./AbstractRestClient";
 export type {EventHandler, ObservableInterface} from "./EventTarget";
+export type {
+    StateSnapshot,
+    SpaceRoomsSnapshot,
+    RoomFollowedTopicsSnapshot,
+    EmoticonsSnapshot,
+    StateSnapshotIntent,
+    TopicHistorySnapshot,
+    RoomMembersSnapshot,
+} from "./state-tracker/StateSnapshot";
 
 export type {
     ChatTypes,

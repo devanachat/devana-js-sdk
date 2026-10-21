@@ -1,5 +1,6 @@
 import {ChatStateTracker} from "./ChatStateTracker";
 import {
+    Message,
     MessagesRedacted,
     NewMessage,
     NewTopic,
@@ -9,6 +10,7 @@ import {
     RoomUpdated,
     Topic,
     TopicDeleted,
+    UserReaction,
 } from "../protocol";
 import {IndexedCollection,} from "../IndexedObjectCollection";
 import {TopicHistoryWindow, WindowState} from "./TopicHistoryWindow";
@@ -101,6 +103,31 @@ export class RoomMessagesHistory {
                 // application can refresh it on demand.
             }
         }
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public get _isEphemeral(): boolean {
+        return this.traverseLock;
+    }
+
+    /**
+     * The window of the topic, if created; unlike getMessagesWindow(), never creates nor fetches one.
+     * @internal
+     */
+    public _peekWindow(topicId: string): TopicHistoryWindow | undefined {
+        return this.historyWindows.get(topicId);
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _restoreWindow(topic: Topic, messages: Message[], myReactions: Record<string, UserReaction[]>): void {
+        this.createHistoryWindowForTopic(topic);
+        this.historyWindows.get(topic.id)._restoreLatest(messages, myReactions);
     }
 
     /**

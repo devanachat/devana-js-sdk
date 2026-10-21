@@ -26,6 +26,7 @@ import {
 } from "../protocol";
 import {DeferredTask, PromiseRegistry} from "./AsyncUtils";
 import {reorderRolesOnPriorityUpdate} from "./functions";
+import {SpaceRoomsSnapshot} from "./StateSnapshot";
 
 export class SpacesManager {
     private readonly list = new ObservableIndexedObjectCollection<Space>('id');
@@ -133,6 +134,42 @@ export class SpacesManager {
 
         const members = await this.getMembers(spaceId);
         return members?.items.find(member => member.user.id === userId);
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _exportSpaces(): Space[] {
+        return this.list.items;
+    }
+
+    /**
+     * Room listings of the joined spaces only - of other spaces they are fetched for a moment's look.
+     * @internal
+     */
+    public _exportSpaceRooms(): SpaceRoomsSnapshot[] {
+        return Array.from(this.rooms.items)
+            .filter(([spaceId]) => this.list.has(spaceId))
+            .map(([spaceId, summaries]) => ({spaceId, summaries: summaries.items}));
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _importSpaces(spaces: Space[], spaceRooms: SpaceRoomsSnapshot[]): void {
+        this.addJoinedSpaces(...spaces);
+
+        for (const {spaceId, summaries} of spaceRooms) {
+            if (this.list.has(spaceId)) {
+                this.handleSpaceRooms({id: spaceId, summaries});
+                // Served from the snapshot until the session invalidates it.
+                this.roomsPromises.register(Promise.resolve(), spaceId);
+            }
+        }
+
+        this.deferredSession.resolve();
     }
 
     private handleNewRole(ev: NewRole): void {

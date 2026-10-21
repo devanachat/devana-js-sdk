@@ -476,6 +476,42 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
     }
 
     /**
+     * The latest messages (oldest first) with the reactions of the user, or null if the window does not hold them.
+     * @internal
+     */
+    public _exportLatest(limit: number): {messages: Message[], myReactions: Record<string, UserReaction[]>} | null {
+        if (this.state !== WindowState.LATEST) {
+            return null;
+        }
+
+        const messages = this.items.slice(-Math.max(limit, this.fetchLimit));
+        const myReactions: Record<string, UserReaction[]> = {};
+
+        for (const message of messages) {
+            if (this.internalState.myReactions[message.id]) {
+                myReactions[message.id] = this.internalState.myReactions[message.id];
+            }
+        }
+
+        return {messages, myReactions};
+    }
+
+    /**
+     * Fill the window with saved latest messages, as if they were just fetched; the next reset to the latest replaces
+     * them.
+     * @internal
+     */
+    public _restoreLatest(messages: Message[], myReactions: Record<string, UserReaction[]>): void {
+        const originalState = this.state;
+
+        this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
+        this.addItems(messages, 'tail');
+        this.internalState.myReactions = {...myReactions};
+        this.internalState.current = WindowState.LATEST;
+        this.emitChangeWithDiff(true, originalState);
+    }
+
+    /**
      * For internal use.
      * @internal
      */

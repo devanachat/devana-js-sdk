@@ -2,6 +2,7 @@ import {EventTarget} from "../EventTarget";
 import {ChatStateTracker} from "./ChatStateTracker";
 import {DeferredTask, PromiseRegistry} from "./AsyncUtils";
 import {IndexedCollection, ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
+import {RoomFollowedTopicsSnapshot} from "./StateSnapshot";
 import {
     ChatLocation,
     FollowedTopic,
@@ -216,6 +217,45 @@ export class FollowedTopicsManager extends EventTarget<EventMap> {
     public _deleteByTopicIds(roomId: string, ...topicIds: string[]): void {
         this.followedTopics.get(roomId)?.delete(...topicIds);
         topicIds.forEach(topicId => this.invalidateUnreadSummaries(roomId, topicId));
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _exportFollowedTopics(): RoomFollowedTopicsSnapshot[] {
+        return Array.from(this.followedTopics.items)
+            .filter(([roomId]) => this.tracker.rooms._getRoom(roomId))
+            .map(([roomId, followedTopics]) => ({roomId, followedTopics: followedTopics.items}));
+    }
+
+    /**
+     * Expects the rooms to be imported already - followed topics of other rooms are skipped.
+     * @internal
+     */
+    public _importFollowedTopics(snapshots: RoomFollowedTopicsSnapshot[]): void {
+        for (const {roomId, followedTopics} of snapshots) {
+            if (this.tracker.rooms._getRoom(roomId)) {
+                this.applyRoomFollowedTopics(roomId, followedTopics);
+            }
+        }
+
+        this.invalidateUnreadSummaries();
+        this.deferredSession.resolve();
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _forgetRoomsExcept(roomIds: string[]): void {
+        const keptRoomIds = new Set(roomIds);
+
+        for (const roomId of Array.from(this.followedTopics.items.keys())) {
+            if (! keptRoomIds.has(roomId)) {
+                this.clearRoomFollowedTopicsStructures(roomId);
+            }
+        }
     }
 
     private handleSession(ev: Session): void {
