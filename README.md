@@ -330,6 +330,37 @@ if (await client.state!.relationships.exists('user-id', 'Ignore')) {
 }
 ```
 
+### Restore the state at startup
+
+An application can show the last known state right away, before the connection is established (or with no
+connection at all): save a snapshot of the state and import it into a new client before `connect()`.
+
+```ts
+// While running (e.g. throttled, and when the app goes to the background):
+const snapshot = client.state!.exportSnapshot({
+    // Optional: the latest messages of the topics last open, members of their rooms (up to 200)
+    histories: [{roomId: lastRoomId}, {roomId: lastRoomId, topicId: lastThreadId}],
+    roomMembersLimit: 200,
+}); // plain JSON object, or null before the first session
+if (snapshot) {
+    storage.setItem(`snapshot:${accountId}`, JSON.stringify(snapshot));
+}
+
+// At the next start:
+const client = new WebSocketChatClient({url, token});
+const restored = client.state!.importSnapshot(JSON.parse(storage.getItem(`snapshot:${accountId}`) ?? 'null'));
+// The spaces, rooms, unread counters, ... are available now; connect in the background.
+client.connect();
+```
+
+`importSnapshot()` returns `false` and changes nothing for a snapshot of another format version
+(`STATE_SNAPSHOT_VERSION`) or malformed data, and after the first `Session`. The first `Session` replaces the
+restored state as a reconnect does - a restored history window is fetched anew, like a window holding the latest
+messages on a reconnect. The snapshot leaves out presence (every user is saved as `Offline`), members of spaces and of
+rooms not asked for, other message histories, histories of ephemeral rooms, permission overwrites and other topics -
+these are fetched once connected. Requests sent before the connection is established are queued while connecting and fail
+when the client is waiting to retry.
+
 ## Package entitlements
 
 `GetEntitlements` answers what a space or the current account has. A space package and a user

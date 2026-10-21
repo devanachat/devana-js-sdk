@@ -6,10 +6,13 @@ import {
     Session,
     Room,
     Message, ChatLocation,
+    Topic,
 } from "../protocol";
 import {IndexedCollection} from "../IndexedObjectCollection";
 import {DeferredTask} from "./AsyncUtils";
 import {RoomMessagesHistory} from "./RoomMessagesHistory";
+import {TopicHistoryWindow} from "./TopicHistoryWindow";
+import {TopicHistorySnapshot} from "./StateSnapshot";
 
 export class MessagesManager {
     private readonly roomHistories = new IndexedCollection<string, RoomMessagesHistory>();
@@ -74,6 +77,48 @@ export class MessagesManager {
         }
 
         return message || null;
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _importRooms(rooms: Room[]): void {
+        for (const room of rooms) {
+            this.createHistoryForNewRoom(room);
+        }
+
+        this.deferredSession.resolve();
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _exportLatest(roomId: string, topicId: string, limit: number): ReturnType<TopicHistoryWindow['_exportLatest']> {
+        const history = this.roomHistories.get(roomId);
+
+        // Ephemeral history lives only in the memory of the session.
+        if (! history || history._isEphemeral) {
+            return null;
+        }
+
+        return history._peekWindow(topicId)?._exportLatest(limit) ?? null;
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _importHistory(roomId: string, topic: Topic, snapshot: TopicHistorySnapshot): void {
+        const history = this.roomHistories.get(roomId);
+
+        if (history && ! history._isEphemeral) {
+            const messages = snapshot.messages.filter(
+                message => message.location.roomId === roomId && message.location.topicId === topic.id,
+            );
+            history._restoreWindow(topic, messages, snapshot.myReactions);
+        }
     }
 
     private forEachRoomHistory(callback: (history: RoomMessagesHistory) => void): void {
