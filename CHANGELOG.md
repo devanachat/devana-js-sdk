@@ -29,6 +29,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   fetches it anew (as on a reconnect) and fetches the restored topics other than the default ones.
 - Type exports `StateSnapshot`, `StateSnapshotIntent`, `TopicHistorySnapshot`, `RoomMembersSnapshot`,
   `SpaceRoomsSnapshot`, `RoomFollowedTopicsSnapshot`, `EmoticonsSnapshot` and the `STATE_SNAPSHOT_VERSION` constant.
+- History gaps: `TopicHistoryWindow.gaps` lists the IDs of the messages with a gap in front of them - the message above
+  in the window is not the real predecessor, an unknown number of messages in between was never fetched. A marker
+  disappears with its message (deleted, trimmed, the window replaced by `resetToLatest()` or `jumpTo()`) and is closed
+  once the messages before it are fetched (`fetchPrevious()` from it, or a later page reaching over it).
+- `TopicHistoryWindow.resyncToLatest()` - the latest page merged on top of the loaded messages instead of replacing
+  them (a message in both is taken from the page); a full page that does not reach the loaded messages marks a gap.
+
+### Changed
+
+- On a reconnect the `LATEST` windows of rooms with a time-limited history (`MaxAge`) keep the loaded messages and get
+  the missed ones with `resyncToLatest()` - the server may no longer serve the older ones. Full history rooms are still
+  reset to the latest page, ephemeral ones are left untouched.
+- A snapshot of a window with a gap saves only the messages below the newest gap.
+
+### Fixed
+
+- `TopicHistoryWindow.jumpTo()` asked for while another fetch of the window runs (e.g. the reset of a reconnect, or an
+  earlier jump) waits for it to end and then jumps, instead of returning at once without loading anything - a caller
+  checking `has(id)` afterwards took the message for missing.
 
 ## [0.7.0] - Unreleased
 

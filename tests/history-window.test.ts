@@ -209,6 +209,162 @@ test('history window - reset to latest', async () => {
     [7,8,9].forEach(id => expect(window.items.map(item => item.id)).toContain(id));
 });
 
+test('history window - resync to latest merges the new page into loaded items', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 10;
+    window.fetchLimit = 3;
+
+    await window.resetToLatest(); // [7,8,9]
+    await window.fetchPrevious(); // [4,5,6,7,8,9]
+
+    await window.resyncToLatest(); // fetched [7,8,9] overlaps -> nothing is lost
+
+    expect(window.state).toEqual(WindowState.LATEST);
+    expect(window.items.map(item => item.id)).toEqual([4, 5, 6, 7, 8, 9]);
+});
+
+test('history window - resync to latest trims the merged items to the limit', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 4;
+    window.fetchLimit = 3;
+
+    await window.resetToLatest(); // [7,8,9]
+    await window.fetchPrevious(); // [4,5,6,7] (trimmed to the limit)
+
+    // [4,5,6,7] merged with the page [7,8,9] -> [4,5,6,7,8,9], trimmed again.
+    await window.resyncToLatest();
+
+    expect(window.state).toEqual(WindowState.LATEST);
+    expect(window.items.map(item => item.id)).toEqual([6, 7, 8, 9]);
+});
+
+test('history window - resync to latest marks the gap instead of dropping items', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 10;
+    window.fetchLimit = 3;
+
+    await window.jumpTo('1'); // [0,1,2]
+
+    expect(window.gaps).toEqual([]);
+
+    // A full page ([7,8,9]) that does not reach the newest loaded item (2):
+    // items 3..6 were never fetched, so the seam in front of 7 is marked.
+    await window.resyncToLatest();
+
+    expect(window.state).toEqual(WindowState.LATEST);
+    expect(window.items.map(item => item.id)).toEqual([0, 1, 2, 7, 8, 9]);
+    expect(window.gaps).toEqual([7]);
+});
+
+test('history window - gap marker disappears with the item it points at', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 10;
+    window.fetchLimit = 3;
+
+    await window.jumpTo('1'); // [0,1,2]
+    await window.resyncToLatest(); // [0,1,2] | [7,8,9]
+
+    expect(window.gaps).toEqual([7]);
+
+    window.delete(7);
+
+    expect(window.gaps).toEqual([]);
+});
+
+test('history window - gap marker is closed by fetching what is before it', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 10;
+    window.fetchLimit = 3;
+
+    await window.jumpTo('1'); // [0,1,2]
+    await window.resyncToLatest(); // [0,1,2] | [7,8,9]
+    window.delete(0, 1, 2); // the items above the gap are gone, 7 is the top one
+
+    expect(window.gaps).toEqual([7]);
+
+    // Whatever comes back was fetched as the direct predecessor of 7, so the
+    // history is continuous again.
+    await window.fetchPrevious(); // [4,5,6,7,8,9]
+
+    expect(window.items.map(item => item.id)).toEqual([4, 5, 6, 7, 8, 9]);
+    expect(window.gaps).toEqual([]);
+});
+
+test('history window - gap markers are cleared when the whole window is replaced', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 10;
+    window.fetchLimit = 3;
+
+    await window.jumpTo('1'); // [0,1,2]
+    await window.resyncToLatest(); // [0,1,2] | [7,8,9]
+
+    expect(window.gaps).toEqual([7]);
+
+    await window.resetToLatest(true); // [7,8,9] - a continuous window again
+
+    expect(window.items.map(item => item.id)).toEqual([7, 8, 9]);
+    expect(window.gaps).toEqual([]);
+});
+
+test('history window - gap marker is forgotten when trimmed out of the window', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 10;
+    window.fetchLimit = 3;
+
+    await window.jumpTo('1'); // [0,1,2]
+    await window.resyncToLatest(); // [0,1,2] | [7,8,9]
+
+    expect(window.gaps).toEqual([7]);
+
+    // The window shrinks and the trimming pushes item 7 (and everything above
+    // it) out, so the marker has nothing left to point at.
+    window.limit = 2;
+    await window.resyncToLatest();
+
+    expect(window.items.map(item => item.id)).toEqual([8, 9]);
+    expect(window.gaps).toEqual([]);
+});
+
+test('history window - resync to latest keeps loaded items when the page is not full', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 10;
+    window.fetchLimit = 5; // The fetch returns 3 items only - all there is.
+
+    await window.jumpTo('1'); // [0,1,2,3]
+
+    // Nothing is missing in between: the page is everything the remote side has,
+    // so the loaded items are kept even though the page does not reach them.
+    await window.resyncToLatest();
+
+    expect(window.state).toEqual(WindowState.LATEST);
+    expect(window.items.map(item => item.id)).toEqual([0, 1, 2, 3, 7, 8, 9]);
+});
+
+test('history window - jump asked for during another fetch lands after it', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 10;
+    window.fetchLimit = 3;
+
+    const reset = window.resetToLatest();
+    await window.jumpTo('1');
+    await reset;
+
+    expect(window.items.map(item => item.id)).toEqual([0, 1, 2]);
+});
+
+test('history window - jump repeated while the first one runs finds the item loaded', async () => {
+    const window = new TestableHistoryWindow();
+    window.limit = 10;
+    window.fetchLimit = 3;
+
+    const first = window.jumpTo('1');
+    await window.jumpTo('1');
+
+    expect(window.has(1)).toBe(true);
+    await first;
+    expect(window.items.map(item => item.id)).toEqual([0, 1, 2]);
+});
+
 test('history window - jump to message', async () => {
     const window = new TestableHistoryWindow();
     window.limit = 5;
