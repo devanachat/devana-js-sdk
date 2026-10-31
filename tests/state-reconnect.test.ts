@@ -210,6 +210,292 @@ describe('reconnect - MessagesManager', () => {
     });
 });
 
+describe('reconnect - time limited (MaxAge) room history', () => {
+    const HOUR = 60 * 60 * 1000;
+
+    const message = (id: string, ageInHours: number): any => ({
+        id,
+        type: 'Text',
+        content: '',
+        createdAt: new Date(Date.now() - ageInHours * HOUR).toISOString(),
+        location: { roomId: 'M', topicId: 'topic-M' },
+        author: { user: { id: 'other' } },
+        topicRef: null,
+        attachments: null,
+    });
+
+    /**
+     * Serves GetMessages from a mutable server-side message list, the way the
+     * real server does: the latest page is the newest slice of it.
+     */
+    const serveMessages = (client: FakeClient, store: any[]): void => {
+        client.respondTo('GetMessages', (data: any) => {
+            const limit = data.limit ?? 50;
+
+            if (data.before) {
+                const index = store.findIndex(m => m.id === data.before);
+                return { messages: store.slice(Math.max(0, index - limit), index) };
+            }
+
+            return { messages: store.slice(-limit) };
+        });
+    };
+
+    const maxAgeRoom = (store: any[], maxAge: number = 24 * 60 * 60): any => createRoom('M', {
+        history: { mode: 'MaxAge', maxAge },
+        defaultTopic: {
+            id: 'topic-M',
+            messageCount: store.length,
+            lastMessage: store[store.length - 1] ?? null,
+        },
+    });
+
+    /**
+     * Room M with a window pulled to LATEST and holding `m1..m5` (m1..m2 loaded
+     * by traversing back), i.e. more history than a single page.
+     */
+    const openWindowWithHistory = async (store: any[]) => {
+        const { client, tracker } = createTracker();
+        serveMessages(client, store);
+
+        emitSession(client, [maxAgeRoom(store)]);
+
+        const history = await tracker.rooms.messages.getRoomHistory('M');
+        const window = await history.getMessagesWindow('topic-M');
+        window.fetchLimit = 3;
+
+        await window.resetToLatest(); // [m3, m4, m5]
+        await window.fetchPrevious(); // [m1, m2, m3, m4, m5]
+
+        expect(window.state).toBe(WindowState.LATEST);
+        expect(window.items.map((m: any) => m.id)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5']);
+
+        client.sent.length = 0;
+
+        return { client, tracker, history, window };
+    };
+
+    test('loads the missed messages and keeps the history that fits in the window', async () => {
+        const store = [
+            message('m1', 5), message('m2', 4), message('m3', 3),
+            message('m4', 2), message('m5', 1),
+        ];
+        const { client, tracker, history, window } = await openWindowWithHistory(store);
+
+        // Two messages arrived while the connection was down.
+        store.push(message('m6', 0), message('m7', 0));
+
+        emitSession(client, [maxAgeRoom(store)]);
+        await flush();
+
+        expect(await tracker.rooms.messages.getRoomHistory('M')).toBe(history);
+        expect(await history.getMessagesWindow('topic-M')).toBe(window);
+        // One request only - the new messages come with the latest page.
+        expect(client.countSent('GetMessages')).toBe(1);
+        expect(window.state).toBe(WindowState.LATEST);
+        expect(window.items.map((m: any) => m.id))
+            .toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7']);
+    });
+
+    test('keeps the loaded messages older than maxAge - retention is server side only', async () => {
+        const store = [
+            message('m1', 30), message('m2', 26), message('m3', 3),
+            message('m4', 2), message('m5', 1),
+        ];
+        const { client, window } = await openWindowWithHistory(store);
+
+        // m1 and m2 are older than the room maxAge (24h), so the server stops
+        // serving them to keep them away from users who join later. The user who
+        // was there when they were written keeps them in their window.
+        store.splice(0, 2);
+        store.push(message('m6', 0));
+
+        emitSession(client, [maxAgeRoom(store)]);
+        await flush();
+
+        expect(window.items.map((m: any) => m.id))
+            .toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'm6']);
+    });
+
+    test('drops the oldest loaded messages only when the window size limit is hit', async () => {
+        const store = [
+            message('m1', 5), message('m2', 4), message('m3', 3),
+            message('m4', 2), message('m5', 1),
+        ];
+        const { client, window } = await openWindowWithHistory(store);
+
+        window.limit = 4;
+        store.push(message('m6', 0));
+
+        emitSession(client, [maxAgeRoom(store)]);
+        await flush();
+
+        expect(window.items.map((m: any) => m.id)).toEqual(['m3', 'm4', 'm5', 'm6']);
+    });
+
+    test('keeps the loaded history when a short latest page does not reach it', async () => {
+        const store = [
+            message('m1', 5), message('m2', 4), message('m3', 3),
+            message('m4', 2), message('m5', 1),
+        ];
+        const { client, window } = await openWindowWithHistory(store);
+
+        // The server dropped everything the client had loaded and holds a single
+        // message written during the downtime. The loaded messages are still
+        // inside the room time window, so they must not disappear from the
+        // window just because they are not in the (partial) page.
+        store.length = 0;
+        store.push(message('m6', 0));
+
+        emitSession(client, [maxAgeRoom(store)]);
+        await flush();
+
+        expect(window.state).toBe(WindowState.LATEST);
+        expect(window.items.map((m: any) => m.id))
+            .toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'm6']);
+    });
+
+    test('keeps the loaded history when nothing was written during the downtime', async () => {
+        const store = [
+            message('m1', 5), message('m2', 4), message('m3', 3),
+            message('m4', 2), message('m5', 1),
+        ];
+        const { client, window } = await openWindowWithHistory(store);
+
+        // Empty latest page - the room is quiet and the server no longer keeps
+        // the messages the client has. Emptying the window here is exactly what
+        // must not happen.
+        store.length = 0;
+
+        emitSession(client, [maxAgeRoom(store)]);
+        await flush();
+
+        expect(window.state).toBe(WindowState.LATEST);
+        expect(window.items.map((m: any) => m.id)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5']);
+    });
+
+    test('deduplicates the messages returned in both the page and the local history', async () => {
+        const store = [
+            message('m1', 5), message('m2', 4), message('m3', 3),
+            message('m4', 2), message('m5', 1),
+        ];
+        const { client, window } = await openWindowWithHistory(store);
+
+        // Same messages come back in the page (nothing new was written).
+        emitSession(client, [maxAgeRoom(store)]);
+        await flush();
+
+        expect(window.items.map((m: any) => m.id)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5']);
+    });
+
+    test('marks the gap when the missed messages do not fit in a single page', async () => {
+        const store = [
+            message('m1', 5), message('m2', 4), message('m3', 3),
+            message('m4', 2), message('m5', 1),
+        ];
+        const { client, window } = await openWindowWithHistory(store);
+
+        // More messages than a single page arrived, so the loaded ones cannot be
+        // stitched to the fetched page: m6 was never fetched.
+        store.push(message('m6', 0), message('m7', 0), message('m8', 0), message('m9', 0));
+
+        emitSession(client, [maxAgeRoom(store)]);
+        await flush();
+
+        expect(window.state).toBe(WindowState.LATEST);
+        expect(window.items.map((m: any) => m.id))
+            .toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'm7', 'm8', 'm9']);
+        expect(window.gaps).toEqual(['m7']);
+        // A restored window is taken for continuous - the snapshot stops at the gap.
+        expect(window._exportLatest(50).messages.map((m: any) => m.id)).toEqual(['m7', 'm8', 'm9']);
+    });
+
+    test('a gap closed by a later page is forgotten', async () => {
+        const store = [
+            message('m1', 5), message('m2', 4), message('m3', 3),
+            message('m4', 2), message('m5', 1),
+        ];
+        const { client, window } = await openWindowWithHistory(store);
+
+        store.push(message('m6', 0), message('m7', 0), message('m8', 0), message('m9', 0));
+        emitSession(client, [maxAgeRoom(store)]);
+        await flush();
+
+        expect(window.gaps).toEqual(['m7']);
+
+        // A larger page starts above m7 and brings the missing m6 along.
+        window.fetchLimit = 5;
+        store.push(message('m10', 0));
+        emitSession(client, [maxAgeRoom(store)]);
+        await flush();
+
+        expect(window.items.map((m: any) => m.id))
+            .toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10']);
+        expect(window.gaps).toEqual([]);
+    });
+
+    test('does not mark a gap when the loaded history is continuous', async () => {
+        const store = [
+            message('m1', 5), message('m2', 4), message('m3', 3),
+            message('m4', 2), message('m5', 1),
+        ];
+        const { client, window } = await openWindowWithHistory(store);
+
+        store.push(message('m6', 0));
+
+        emitSession(client, [maxAgeRoom(store)]);
+        await flush();
+
+        expect(window.gaps).toEqual([]);
+    });
+
+    test('a full history room still resets to the latest page', async () => {
+        const store = [
+            message('m1', 5), message('m2', 4), message('m3', 3),
+            message('m4', 2), message('m5', 1),
+        ];
+        const { client, tracker } = createTracker();
+        serveMessages(client, store);
+
+        const fullRoom = () => createRoom('M', {
+            defaultTopic: { id: 'topic-M', messageCount: store.length, lastMessage: store[store.length - 1] },
+        });
+
+        emitSession(client, [fullRoom()]);
+
+        const history = await tracker.rooms.messages.getRoomHistory('M');
+        const window = await history.getMessagesWindow('topic-M');
+        window.fetchLimit = 3;
+
+        await window.resetToLatest();
+        await window.fetchPrevious();
+        client.sent.length = 0;
+
+        emitSession(client, [fullRoom()]);
+        await flush();
+
+        // Persisted history can always be traversed back, so the window is just
+        // reset - unchanged behaviour.
+        expect(window.items.map((m: any) => m.id)).toEqual(['m3', 'm4', 'm5']);
+    });
+
+    test('ephemeral history is never resynced, even when asked directly', async () => {
+        const { client, tracker } = createTracker();
+        client.respondTo('GetMessages', () => ({ messages: [{ id: 'x1' }] }));
+
+        emitSession(client, [createRoom('E', { history: { mode: 'Ephemeral' } })]);
+
+        const history = await tracker.rooms.messages.getRoomHistory('E');
+        const window = await history.getMessagesWindow('topic-E');
+        client.sent.length = 0;
+
+        await window.resyncToLatest();
+
+        expect(client.countSent('GetMessages')).toBe(0);
+        expect(window.items).toHaveLength(0);
+    });
+});
+
 describe('reconnect - SpacesManager', () => {
     test('reconciles roles in place and drops only removed spaces', async () => {
         const { client, tracker } = createTracker();

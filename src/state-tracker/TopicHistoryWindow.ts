@@ -50,11 +50,14 @@ export abstract class TraversableRemoteCollection<
     protected internalState: {
         current: WindowState,
         ongoing?: WindowState,
+        fetchSettled?: Promise<void>,
+        settleFetch?: () => void,
         limit: number | null, // Acts as High Watermark
         retainRatio: number, // Percentage of limit to keep when trimming
         fetchLimit: number,
         lastFetchCount: number,
         oldestId: string | null,
+        gaps: string[],
     } = {
         current: WindowState.LIVE,
         ongoing: undefined,
@@ -63,6 +66,7 @@ export abstract class TraversableRemoteCollection<
         fetchLimit: 50,
         lastFetchCount: 0,
         oldestId: null,
+        gaps: [],
     };
 
     /**
@@ -119,6 +123,16 @@ export abstract class TraversableRemoteCollection<
         return [WindowState.LATEST, WindowState.LIVE].includes(this.state);
     }
 
+    /**
+     * IDs of the items with a gap in front of them: the item right above in the window is not the real predecessor,
+     * an unknown number of items in between was never fetched. Such a seam appears when {@link resyncToLatest} gets
+     * a full page that does not reach the loaded items. A marker lives as long as its item stays in the window and
+     * is closed once the items right before it are fetched.
+     */
+    public get gaps(): readonly string[] {
+        return this.internalState.gaps;
+    }
+
     public get hasOldest(): boolean {
         return this.state === WindowState.OLDEST
             || this.state === WindowState.LATEST && this.length < this.fetchLimit
@@ -134,17 +148,60 @@ export abstract class TraversableRemoteCollection<
 
         let result;
         const originalState = this.state;
-        this.internalState.ongoing = WindowState.LATEST;
+        this.beginFetch(WindowState.LATEST);
 
         try {
             result = await this.fetchLatestItems();
             this.internalState.lastFetchCount = result.length;
         } finally {
-            this.internalState.ongoing = undefined;
+            this.endFetch();
+        }
+
+        this.replaceItems(result);
+        this.internalState.current = WindowState.LATEST;
+        this.emitChangeWithDiff(true, originalState);
+    }
+
+    /**
+     * Refresh the window with the latest page, keeping the already loaded items instead of replacing them - the
+     * reconnect-friendly variant of {@link resetToLatest}. The page is merged on top of the loaded items (an item in
+     * both is taken from the page) and only the window size limit pushes the oldest ones out. When the page is full
+     * and does not reach the newest loaded item, both parts are still kept and the seam is recorded in {@link gaps}.
+     */
+    public async resyncToLatest(): Promise<void> {
+        if (this.internalState.ongoing) {
+            return;
+        }
+
+        let result;
+        const originalState = this.state;
+        this.beginFetch(WindowState.LATEST);
+
+        try {
+            result = await this.fetchLatestItems();
+            this.internalState.lastFetchCount = result.length;
+        } finally {
+            this.endFetch();
+        }
+
+        const loaded = this.items;
+        const fetchedIds = new Set(result.map(item => this.getId(item)));
+        const retained = loaded.filter(item => ! fetchedIds.has(this.getId(item)));
+
+        // A page shorter than the limit is everything the remote side has, so nothing can be missing in between.
+        const isContinuous = ! retained.length
+            || result.length < this.internalState.fetchLimit
+            || fetchedIds.has(this.getId(loaded[loaded.length - 1]));
+
+        // The page is continuous, so only its first item can have a gap in front of it.
+        this.forgetGapsOf(result.slice(1).map(item => this.getId(item)));
+
+        if (! isContinuous && ! this.internalState.gaps.includes(this.getId(result[0]))) {
+            this.internalState.gaps = [...this.internalState.gaps, this.getId(result[0])];
         }
 
         this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
-        this.addItems(result, 'tail');
+        this.addItems([...retained, ...result], 'tail');
         this.internalState.current = WindowState.LATEST;
         this.emitChangeWithDiff(true, originalState);
     }
@@ -156,13 +213,14 @@ export abstract class TraversableRemoteCollection<
 
         let result;
         const originalState = this.state;
-        this.internalState.ongoing = WindowState.PAST;
+        const firstItem = this.getAt(0);
+        this.beginFetch(WindowState.PAST);
 
         try {
             result = await this.fetchItemsBefore();
             this.internalState.lastFetchCount = result ? result.length : 0;
         } finally {
-            this.internalState.ongoing = undefined;
+            this.endFetch();
         }
 
         if (! result) {
@@ -170,7 +228,6 @@ export abstract class TraversableRemoteCollection<
         }
 
         if (! result.length) {
-            const firstItem = this.getAt(0);
             this.internalState.oldestId = firstItem ? this.getId(firstItem) : null;
 
             await this.refreshFetchedState();
@@ -182,6 +239,11 @@ export abstract class TraversableRemoteCollection<
 
             this.emitChangeWithDiff(false, originalState);
             return;
+        }
+
+        if (firstItem) {
+            // The page was fetched as the direct predecessors of the first item, so a gap in front of it is closed.
+            this.forgetGapsOf([this.getId(firstItem)]);
         }
 
         this.addItems(result, 'head');
@@ -207,13 +269,13 @@ export abstract class TraversableRemoteCollection<
 
         let result;
         const originalState = this.state;
-        this.internalState.ongoing = WindowState.PAST;
+        this.beginFetch(WindowState.PAST);
 
         try {
             result = await this.fetchItemsAfter();
             this.internalState.lastFetchCount = result ? result.length : 0;
         } finally {
-            this.internalState.ongoing = undefined;
+            this.endFetch();
         }
 
         if (! result) {
@@ -229,29 +291,46 @@ export abstract class TraversableRemoteCollection<
         }
     }
 
+    /**
+     * Load the items around the given one. Asked for while another fetch is running, it waits for that fetch to end
+     * instead of being dropped - when the call returns, the window either holds the item or it could not be loaded.
+     */
     public async jumpTo(id: string): Promise<void> {
-        if (this.internalState.ongoing || (this.state !== WindowState.LIVE && this._items.has(id))) {
+        while (this.internalState.ongoing) {
+            await this.internalState.fetchSettled;
+        }
+
+        if (this.state !== WindowState.LIVE && this._items.has(id)) {
             return;
         }
 
         let result: ItemT[] | null;
         const originalState = this.state;
-        this.internalState.ongoing = WindowState.PAST;
+        this.beginFetch(WindowState.PAST);
 
         try {
             result = await this.fetchItemsAround(id);
             this.internalState.lastFetchCount = result ? result.length : 0;
 
             if (result) {
-                this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
-                this.addItems(result, 'tail');
+                this.replaceItems(result);
                 await this.refreshFetchedState();
             }
         } finally {
-            this.internalState.ongoing = undefined;
+            this.endFetch();
         }
 
         this.emitChangeWithDiff(!!result, originalState);
+    }
+
+    public delete(...ids: string[]): void {
+        super.delete(...ids);
+        this.forgetGapsOf(ids);
+    }
+
+    public deleteAll(): void {
+        super.deleteAll();
+        this.internalState.gaps = [];
     }
 
     protected abstract fetchLatestItems(): Promise<ItemT[]>;
@@ -289,6 +368,32 @@ export abstract class TraversableRemoteCollection<
         return this.trimTail(this.getLowWatermark(highWatermark));
     }
 
+    protected beginFetch(kind: WindowState): void {
+        this.internalState.ongoing = kind;
+        this.internalState.fetchSettled = new Promise(resolve => this.internalState.settleFetch = resolve);
+    }
+
+    protected endFetch(): void {
+        this.internalState.ongoing = undefined;
+        this.internalState.settleFetch?.();
+    }
+
+    /**
+     * Replace the whole content without emitting an event; the old gap markers mean nothing for the new content.
+     */
+    protected replaceItems(items: ItemT[]): void {
+        this._items.deleteAll();
+        this.internalState.gaps = [];
+        this.addItems(items, 'tail');
+    }
+
+    protected forgetGapsOf(ids: string[]): void {
+        if (this.internalState.gaps.length && ids.length) {
+            const removed = new Set(ids);
+            this.internalState.gaps = this.internalState.gaps.filter(id => ! removed.has(id));
+        }
+    }
+
     protected emitChangeWithDiff(itemChanged: boolean, originalState: WindowState): void {
         if (itemChanged || originalState !== this.state) {
             this.eventTarget.emit('change', { setItems: Array.from(this._items.items.keys()) })
@@ -316,6 +421,7 @@ export abstract class TraversableRemoteCollection<
         }
 
         this._items.delete(...deletedItems);
+        this.forgetGapsOf(deletedItems);
 
         if (this.internalState.current === WindowState.OLDEST) {
             this.internalState.current = WindowState.PAST;
@@ -331,6 +437,7 @@ export abstract class TraversableRemoteCollection<
 
         const deletedItems = Array.from(this._items.items.keys()).slice(keep);
         this._items.delete(...deletedItems);
+        this.forgetGapsOf(deletedItems);
 
         return deletedItems;
     }
@@ -451,6 +558,13 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         return super.resetToLatest(force);
     }
 
+    public async resyncToLatest(): Promise<void> {
+        if (this.internalState.traverseLock) {
+            return;
+        }
+        return super.resyncToLatest();
+    }
+
     public async fetchNext(): Promise<void> {
         if (this.internalState.traverseLock) {
             return;
@@ -484,7 +598,10 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
             return null;
         }
 
-        const messages = this.items.slice(-Math.max(limit, this.fetchLimit));
+        const items = this.items;
+        // A restored window is taken for continuous, so nothing above the newest gap goes into it.
+        const continuousFrom = Math.max(0, ...this.internalState.gaps.map(id => items.findIndex(item => item.id === id)));
+        const messages = items.slice(Math.max(continuousFrom, items.length - Math.max(limit, this.fetchLimit)));
         const myReactions: Record<string, UserReaction[]> = {};
 
         for (const message of messages) {
@@ -504,8 +621,7 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
     public _restoreLatest(messages: Message[], myReactions: Record<string, UserReaction[]>): void {
         const originalState = this.state;
 
-        this._items.deleteAll(); // Directly call deleteAll to prevent event emit.
-        this.addItems(messages, 'tail');
+        this.replaceItems(messages);
         this.internalState.myReactions = {...myReactions};
         this.internalState.current = WindowState.LATEST;
         this.emitChangeWithDiff(true, originalState);

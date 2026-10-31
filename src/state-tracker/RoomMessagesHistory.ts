@@ -25,6 +25,7 @@ export class RoomMessagesHistory {
     private readonly roomId: string;
     private historyWindows = new IndexedCollection<string, TopicHistoryWindow>();
     private traverseLock: boolean = false;
+    private timeLimitedHistory: boolean = false;
     private room: Room | null;
 
     public constructor(
@@ -36,7 +37,7 @@ export class RoomMessagesHistory {
         this.isPreview = this.room === null;
 
         if (this.room) {
-            this.updateTraverseLock(this.room);
+            this.updateHistoryMode(this.room);
         }
 
         if (this.room?.defaultTopic) {
@@ -72,13 +73,19 @@ export class RoomMessagesHistory {
      *
      * The window bindings are preserved; only windows that the application had
      * actually pulled to the latest page (state === LATEST) are refreshed, with
-     * a single resetToLatest instead of a chain of catch-up requests. Windows
-     * that were never pulled (LIVE) or belong to an ephemeral room are left
+     * a single request instead of a chain of catch-up requests. Windows that
+     * were never pulled (LIVE) or belong to an ephemeral room are left
      * untouched so their in-memory context survives the reconnect.
+     *
+     * Rooms keeping the full history are reset to the latest page (the rest can
+     * always be traversed back), while the windows of rooms with a time-limited
+     * history (MaxAge) keep what they had loaded and get the missed messages on
+     * top - the server may no longer serve the older ones. If more messages were
+     * missed than a single page holds, the seam is recorded in the window gaps.
      */
     public async resync(room: Room): Promise<void> {
         this.room = room;
-        this.updateTraverseLock(room);
+        this.updateHistoryMode(room);
 
         if (this.room.defaultTopic) {
             this.createHistoryWindowForTopic(this.room.defaultTopic);
@@ -94,7 +101,13 @@ export class RoomMessagesHistory {
                     continue;
                 }
 
-                if (window.state === WindowState.LATEST) {
+                if (window.state !== WindowState.LATEST) {
+                    continue;
+                }
+
+                if (this.timeLimitedHistory) {
+                    await window.resyncToLatest();
+                } else {
                     await window.resetToLatest(true);
                 }
             } catch (_e) {
@@ -137,7 +150,7 @@ export class RoomMessagesHistory {
     public async _handleRoomUpdated(ev: RoomUpdated): Promise<void> {
         this.room = ev.room;
 
-        this.updateTraverseLock(ev.room);
+        this.updateHistoryMode(ev.room);
 
         if (ev.room.defaultTopic) {
             this.createHistoryWindowForTopic(ev.room.defaultTopic);
@@ -231,7 +244,8 @@ export class RoomMessagesHistory {
         });
     }
 
-    private updateTraverseLock(room: Room): void {
+    private updateHistoryMode(room: Room): void {
         this.traverseLock = room.history.mode === 'Ephemeral';
+        this.timeLimitedHistory = room.history.mode === 'MaxAge';
     }
 }
