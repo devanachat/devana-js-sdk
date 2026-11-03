@@ -4,7 +4,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [semver](https://semver.org) (`0.x` minor releases may break the API).
 
-## [0.8.1] - Unreleased
+## [Unreleased]
+
+### Fixed
+
+- Withdrawing the last own reaction from a message (`Reacted` with `isAdded: false`) left it in
+  `TopicHistoryWindow.myReactions` in apps built with Babel's loose object rest transform (e.g. `babel-preset-expo` on
+  web) - it dropped the message ID from the exclusion list (babel/babel#18196).
+
+## [0.8.1]
 
 ### Added
 
@@ -28,7 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   earlier jump) waits for it to end and then jumps, instead of returning at once without loading anything - a caller
   checking `has(id)` afterwards took the message for missing.
 
-## [0.8.0] - Unreleased
+## [0.8.0]
 
 ### Added
 
@@ -53,7 +61,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   fetches it anew (as on a reconnect) and fetches the restored topics other than the default ones.
 - Type exports `StateSnapshot`, `StateSnapshotIntent`, `TopicHistorySnapshot`, `RoomMembersSnapshot`,
   `SpaceRoomsSnapshot`, `RoomFollowedTopicsSnapshot`, `EmoticonsSnapshot` and the `STATE_SNAPSHOT_VERSION` constant.
-## [0.7.0] - Unreleased
+## [0.7.0]
 
 ### Added
 
@@ -97,7 +105,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Migrating from `polfan-server-js-client` 0.5.0: see [docs/migration-0.5-to-0.7.md](docs/migration-0.5-to-0.7.md).
 
-## [0.6.0] - Unreleased
+## [0.6.0]
 
 The first release under the new name. Earlier versions were published as `polfan-server-js-client`.
 
