@@ -796,7 +796,9 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
             own.push({type, value});
         }
 
-        const {[ev.messageId]: _previous, ...myReactions} = this.internalState.myReactions;
+        // Not `{[ev.messageId]: _, ...rest}` - Babel's loose object rest drops the key when the binding is unused (babel/babel#18196)
+        const myReactions = {...this.internalState.myReactions};
+        delete myReactions[ev.messageId];
 
         if (own.length) {
             myReactions[ev.messageId] = own;

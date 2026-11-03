@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [semver](https://semver.org) (`0.x` minor releases may break the API).
 
+## [0.8.2] - Unreleased
+
+### Fixed
+
+- Withdrawing the last own reaction from a message (`Reacted` with `isAdded: false`) left it in
+  `TopicHistoryWindow.myReactions` in apps built with Babel's loose object rest transform (e.g. `babel-preset-expo` on
+  web) - it dropped the message ID from the exclusion list (babel/babel#18196).
+
 ## [0.8.1] - Unreleased
 
 ### Added
