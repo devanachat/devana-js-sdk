@@ -2,9 +2,8 @@ import {User} from "./User";
 
 export interface Emoticon {
     id: string;
-    spaceId?: string;
+    spaceId?: string | null;
     name: string;
     fileId: string;
-    user: User;
-    tag?: string;
+    user: User | null;
 }

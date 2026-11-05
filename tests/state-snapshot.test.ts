@@ -140,7 +140,6 @@ const createPopulatedTracker = async () => {
     await tracker.spaces.getRooms('S1');
     await tracker.rooms.followedTopics.cacheForSpace('S1');
     await tracker.rooms.followedTopics.cacheForSpace(null);
-    await tracker.emoticons.get();
     await tracker.emoticons.get('S1');
     await tracker.relationships.get();
 
@@ -169,7 +168,7 @@ describe('state snapshot - export', () => {
         expect(snapshot.rooms.map(room => room.id)).toEqual(['R1', 'PM1']);
         expect(snapshot.spaceRooms).toEqual([{ spaceId: 'S1', summaries: [expect.objectContaining({ id: 'R1' })] }]);
         expect(snapshot.followedTopics.map(item => item.roomId).sort()).toEqual(['PM1', 'R1']);
-        expect(snapshot.emoticons.map(item => item.spaceId).sort()).toEqual(['S1', null].sort());
+        expect(snapshot.emoticons.map(item => item.spaceId)).toEqual(['S1']);
         expect(snapshot.relationships.map(item => item.refUser.id)).toEqual(['u2']);
     });
 
@@ -231,7 +230,6 @@ describe('state snapshot - import', () => {
         expect(await tracker.rooms.followedTopics.summarize({ spaceId: 'S1' })).toEqual({
             mentionCount: 2, unreadTopicCount: 1, unreadRoomCount: 1, isUnread: true,
         });
-        expect((await tracker.emoticons.get()).items.map(item => item.id)).toEqual(['e-global']);
         expect((await tracker.emoticons.get('S1')).items.map(item => item.id)).toEqual(['e-S1']);
         expect((await tracker.relationships.get()).items).toHaveLength(1);
         expect((await tracker.users.getAvailable()).get('me')).toBeDefined();
@@ -451,9 +449,9 @@ describe('state snapshot - session after import', () => {
         expect(exported.rooms.map(room => room.id)).toEqual(['R2']);
         expect(exported.spaceRooms).toEqual([]);
         expect(exported.followedTopics).toEqual([]);
-        expect(exported.emoticons.map(item => item.spaceId)).toEqual([null]);
+        expect(exported.emoticons).toEqual([]);
         expect((tracker.rooms.followedTopics as any).followedTopics.length).toBe(0);
-        expect((tracker.emoticons as any).list.length).toBe(1);
+        expect((tracker.emoticons as any).list.length).toBe(0);
     });
 
     test('keeps the message histories of the surviving rooms', async () => {
