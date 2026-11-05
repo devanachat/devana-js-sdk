@@ -31,6 +31,18 @@ Both `npm test` and `npm run build` must pass before a change is done.
   or other attribution trailers.
 - Keep each commit to one logical change; changelog-only edits may go into a commit of their own.
 
+## Comments
+
+- **Comments only for the truly non-obvious.** The code explains itself through names, constants, types and small
+  functions, so do not describe what it does or why it is shaped the way it is: no notes repeating the code, no text
+  after `@param`/`@returns` types. A comment is warranted only for what the code cannot say and a reader would
+  otherwise get wrong or "simplify" into a bug: a platform or library quirk, a workaround, a constraint imposed from
+  elsewhere (e.g. a protocol or server limitation, a consumer's toolchain). Keep it to one short line at the spot it
+  concerns.
+- The exception is the public API: a JSDoc on an exported type, field or method ships in the type declarations and
+  is what a consumer reads in the editor. Keep one there only for what the type does not say - what `null` or an
+  absent field means, units, limits, ordering - in a sentence or two. Internal code follows the rule above.
+
 ## Code that survives consumers' toolchains
 
 The build is re-transpiled by the bundlers of the applications using it (e.g. `babel-preset-expo`, which enables
