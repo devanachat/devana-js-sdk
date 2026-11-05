@@ -104,10 +104,7 @@ export interface RoomFollowedTopicsSnapshot {
 }
 
 export interface EmoticonsSnapshot {
-    /**
-     * Null for the global emoticons.
-     */
-    spaceId: string | null;
+    spaceId: string;
     emoticons: Emoticon[];
 }
 

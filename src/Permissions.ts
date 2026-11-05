@@ -38,6 +38,7 @@ export class Permissions {
         MentionAllRoles: {value: 1 << 23, maxLayer: Layer.Topic},
         PreviewRooms: {value: 1 << 24, maxLayer: Layer.Room},
         SearchMessages: {value: 1 << 25, maxLayer: Layer.Room},
+        UseExternalEmoticons: {value: 1 << 26, maxLayer: Layer.Room},
     };
 
     public static getNames(): (keyof typeof this.list)[] {

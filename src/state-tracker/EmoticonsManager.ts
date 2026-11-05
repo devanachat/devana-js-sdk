@@ -7,8 +7,6 @@ import {Emoticon, EmoticonDeleted, Emoticons, NewEmoticon, SpaceDeleted} from ".
 import {PromiseRegistry} from "./AsyncUtils";
 import {EmoticonsSnapshot} from "./StateSnapshot";
 
-const GLOBAL_KEY = 'global';
-
 export class EmoticonsManager {
     private list: IndexedCollection<string, ObservableIndexedObjectCollection<Emoticon>> = new IndexedCollection();
     private emoticonsPromises = new PromiseRegistry();
@@ -21,21 +19,19 @@ export class EmoticonsManager {
         this.tracker.client.on('Session', () => this.handleSession());
     }
 
-    public async get(spaceId?: string): Promise<ObservableIndexedObjectCollection<Emoticon>> {
-        const key = spaceId ?? GLOBAL_KEY;
-
-        if (this.emoticonsPromises.notExist(key)) {
+    public async get(spaceId: string): Promise<ObservableIndexedObjectCollection<Emoticon>> {
+        if (this.emoticonsPromises.notExist(spaceId)) {
             this.emoticonsPromises.registerByFunction(async () => {
                 const result = await this.tracker.client.send('GetEmoticons', {spaceId});
                 if (result.error) {
                     throw result.error;
                 }
                 this.handleEmoticons(result.data);
-            }, key);
+            }, spaceId);
         }
 
-        await this.emoticonsPromises.get(key);
-        return this.list.get(key);
+        await this.emoticonsPromises.get(spaceId);
+        return this.list.get(spaceId);
     }
 
     /**
@@ -43,8 +39,8 @@ export class EmoticonsManager {
      * @internal
      */
     public _exportEmoticons(): EmoticonsSnapshot[] {
-        return Array.from(this.list.items).map(([key, emoticons]) => ({
-            spaceId: key === GLOBAL_KEY ? null : key,
+        return Array.from(this.list.items).map(([spaceId, emoticons]) => ({
+            spaceId,
             emoticons: emoticons.items,
         }));
     }
@@ -57,13 +53,15 @@ export class EmoticonsManager {
         const joinedSpaceIds = new Set(spaceIds);
 
         for (const {spaceId, emoticons} of snapshots) {
-            if (spaceId !== null && ! joinedSpaceIds.has(spaceId)) {
+            // TODO(emoticons-compat): snapshots written before the global emoticons were gone still hold them under
+            // null - drop the comment once no such snapshot can be left on a device (the check itself stays).
+            if (! joinedSpaceIds.has(spaceId)) {
                 continue;
             }
 
-            this.handleEmoticons({location: {spaceId: spaceId ?? undefined}, emoticons});
+            this.handleEmoticons({location: {spaceId}, emoticons});
             // Served from the snapshot until the session invalidates it.
-            this.emoticonsPromises.register(Promise.resolve(), spaceId ?? GLOBAL_KEY);
+            this.emoticonsPromises.register(Promise.resolve(), spaceId);
         }
     }
 
@@ -72,7 +70,7 @@ export class EmoticonsManager {
      * @internal
      */
     public _forgetSpacesExcept(spaceIds: string[]): void {
-        const keptKeys = new Set([GLOBAL_KEY, ...spaceIds]);
+        const keptKeys = new Set(spaceIds);
         const removedKeys = Array.from(this.list.items.keys()).filter(key => ! keptKeys.has(key));
 
         this.list.delete(...removedKeys);
@@ -80,7 +78,14 @@ export class EmoticonsManager {
     }
 
     private handleEmoticons(event: Emoticons): void {
-        const spaceId = event.location.spaceId ?? GLOBAL_KEY;
+        // A selection by ids has no location.
+        // TODO(emoticons-compat): one without a space is the always empty list of the gone global emoticons, sent
+        // until the server stops answering old clients that way.
+        const spaceId = event.location?.spaceId;
+
+        if (!spaceId) {
+            return;
+        }
 
         if (!this.list.has(spaceId)) {
             this.list.set([spaceId, new ObservableIndexedObjectCollection<Emoticon>('id')]);
@@ -93,12 +98,12 @@ export class EmoticonsManager {
     }
 
     private handleNewEmoticon(ev: NewEmoticon): void {
-        const collection = this.list.get(ev.emoticon.spaceId ?? GLOBAL_KEY);
+        const collection = this.list.get(ev.emoticon.spaceId);
         collection?.set(ev.emoticon);
     }
 
     private handleEmoticonDeleted(ev: EmoticonDeleted): void {
-        const collection = this.list.get(ev.spaceId ?? GLOBAL_KEY);
+        const collection = this.list.get(ev.spaceId);
         collection?.delete(ev.emoticonId);
     }
 

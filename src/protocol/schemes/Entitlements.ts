@@ -71,6 +71,7 @@ export enum UserFeature {
     MessageLength = 'user.message.length',
     StorageLimit = 'user.storage.limit',
     StorageSingleFileLimit = 'user.storage.single_file_limit',
+    ExternalEmoticons = 'user.external_emoticons',
 }
 
 /**

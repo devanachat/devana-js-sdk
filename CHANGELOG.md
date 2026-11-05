@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- `Permissions.list.UseExternalEmoticons` (`1 << 26`, space and room layer): using emoticons of other spaces.
+- `UserFeature.ExternalEmoticons` (`user.external_emoticons`): the account may use emoticons outside their spaces.
+- `MessageReaction.name` and `ToggledReaction.name`: the emoticon name of an `Emoticon` reaction.
+- `GetEmoticons` takes `ids` (up to 100) and returns those of the emoticons the user may see - the ones of the spaces
+  they belong to and of the spaces that let their emoticons be used outside (space flag `1 << 2`, `spaceId` and `user`
+  null for a space the user does not belong to); the rest is left out. The response has `location: null` and does not
+  change the collections returned by `EmoticonsManager.get()`.
+
+### Changed
+
+- **Breaking:** there are no global emoticons any more. `EmoticonsManager.get()` requires a `spaceId`,
+  `CreateEmoticon.spaceId` and `EmoticonDeleted.spaceId` are required, and `EmoticonsSnapshot.spaceId` is a string -
+  global emoticons kept in an older snapshot are dropped on import.
+- **Breaking:** `Emoticon.tag` (emoticon categories) is gone. `Emoticon.spaceId` and `Emoticon.user` (the author) are
+  `null` for an emoticon of a space the user does not belong to.
+- **Breaking (protocol):** an `Emoticon` reaction (`React`, `Unreact`, `GetReactionDetails`, reactions of a message,
+  poll options) is identified by the emoticon id in `value` instead of its name. Servers before this change send the
+  name in `value` and no `name` - an application that has to work with both tells them apart by the length of `value`
+  (a name has at most 20 characters, an id 22).
+
 ### Fixed
 
 - Withdrawing the last own reaction from a message (`Reacted` with `isAdded: false`) left it in
