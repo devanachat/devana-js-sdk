@@ -23,13 +23,22 @@ describe('EmoticonsManager', () => {
         const client = new FakeClient();
         const tracker = new ChatStateTracker(client as any);
 
-        const global = await tracker.emoticons.get();
         const space = await tracker.emoticons.get('S1');
 
         await client.send('GetEmoticons', {ids: ['picked']});
 
-        expect(global.items.map(item => item.id)).toEqual(['e-global']);
         expect(space.items.map(item => item.id)).toEqual(['e-S1']);
-        expect(tracker.emoticons._exportEmoticons().map(item => item.spaceId).sort()).toEqual(['S1', null].sort());
+        expect(tracker.emoticons._exportEmoticons().map(item => item.spaceId)).toEqual(['S1']);
+    });
+
+    test('global emoticons of an older snapshot are dropped on import', () => {
+        const tracker = new ChatStateTracker(new FakeClient() as any);
+
+        tracker.emoticons._importEmoticons([
+            {spaceId: null as any, emoticons: [emoticon('old-global')]},
+            {spaceId: 'S1', emoticons: [emoticon('e1', 'S1')]},
+        ], ['S1']);
+
+        expect(tracker.emoticons._exportEmoticons().map(item => item.spaceId)).toEqual(['S1']);
     });
 });

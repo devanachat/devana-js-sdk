@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Breaking:** there are no global emoticons any more. `EmoticonsManager.get()` requires a `spaceId`,
+  `CreateEmoticon.spaceId` and `EmoticonDeleted.spaceId` are required, and `EmoticonsSnapshot.spaceId` is a string -
+  global emoticons kept in an older snapshot are dropped on import.
+- **Breaking:** `Emoticon.tag` (emoticon categories) is gone. `Emoticon.spaceId` is absent for an emoticon of a space
+  the user does not belong to.
 - **Breaking (protocol):** an `Emoticon` reaction (`React`, `Unreact`, `GetReactionDetails`, reactions of a message,
   poll options) is identified by the emoticon id in `value` instead of its name. Servers before this change send the
   name in `value` and no `name` - an application that has to work with both tells them apart by the length of `value`
