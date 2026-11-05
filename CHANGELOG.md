@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- `GetEmoticons` takes `ids` (up to 100) and returns those of the emoticons the user may see - global ones and the
+  ones of the spaces they belong to; the rest is left out. The response has `location: null` and does not change the
+  collections returned by `EmoticonsManager.get()`.
+
 ### Fixed
 
 - Withdrawing the last own reaction from a message (`Reacted` with `isAdded: false`) left it in

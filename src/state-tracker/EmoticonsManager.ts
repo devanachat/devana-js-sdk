@@ -80,6 +80,10 @@ export class EmoticonsManager {
     }
 
     private handleEmoticons(event: Emoticons): void {
+        if (!event.location) {
+            return;
+        }
+
         const spaceId = event.location.spaceId ?? GLOBAL_KEY;
 
         if (!this.list.has(spaceId)) {
