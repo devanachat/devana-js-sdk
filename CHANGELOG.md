@@ -8,9 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- `MessageReaction.name` and `ToggledReaction.name`: the emoticon name of an `Emoticon` reaction.
 - `GetEmoticons` takes `ids` (up to 100) and returns those of the emoticons the user may see - global ones and the
   ones of the spaces they belong to; the rest is left out. The response has `location: null` and does not change the
   collections returned by `EmoticonsManager.get()`.
+
+### Changed
+
+- **Breaking (protocol):** an `Emoticon` reaction (`React`, `Unreact`, `GetReactionDetails`, reactions of a message,
+  poll options) is identified by the emoticon id in `value` instead of its name. Servers before this change send the
+  name in `value` and no `name` - an application that has to work with both tells them apart by the length of `value`
+  (a name has at most 20 characters, an id 22).
 
 ### Fixed
 
