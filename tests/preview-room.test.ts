@@ -237,6 +237,18 @@ describe('room history preview', () => {
         expect(regular?.isPreview).toBe(false);
         expect(regular).toBe(await messages.getRoomHistory(ROOM));
     });
+
+    test('topics asked for before joining the room are fetched again once it is joined', async () => {
+        const {client, tracker} = setup(10);
+
+        expect(await tracker.rooms.getTopics(ROOM, ['thread-1'])).toBeUndefined();
+
+        client.emit('RoomJoined', {room: createRoom(ROOM)} as any);
+        const topics = await tracker.rooms.getTopics(ROOM, ['thread-1']);
+
+        expect(topics?.has('thread-1')).toBe(true);
+        expect(client.count('GetTopics')).toBe(2);
+    });
 });
 
 describe('PreviewRooms and SearchMessages permissions', () => {

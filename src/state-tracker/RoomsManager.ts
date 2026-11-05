@@ -120,7 +120,16 @@ export class RoomsManager {
                 const promise = this.tracker
                     .client
                     .send('GetTopics', {roomId, topicIds: idsToFetch})
-                    .then(result => this.topics.get(result.data.location.roomId)?.set(...result.data.topics));
+                    .then(result => {
+                        const topics = this.topics.get(roomId);
+
+                        if (topics) {
+                            topics.set(...result.data.topics);
+                        } else {
+                            // A room not joined yet has nowhere to keep them - let them be fetched again once it is.
+                            this.topicsPromises.forget(...idsToFetch.map(topicId => roomId + topicId));
+                        }
+                    });
 
                 idsToFetch.forEach(topicId => this.topicsPromises.register(promise, roomId + topicId));
             }
