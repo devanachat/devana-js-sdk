@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- `Permissions.list.UseExternalEmoticons` (`1 << 26`, space and room layer): using emoticons of other spaces.
+- `UserFeature.ExternalEmoticons` (`user.external_emoticons`): the account may use emoticons outside their spaces.
+- `GetEmoticons` with `ids` also returns emoticons of spaces that let their emoticons be used outside (space flag
+  `1 << 2`), without their `spaceId` when the user does not belong to the space.
 - `MessageReaction.name` and `ToggledReaction.name`: the emoticon name of an `Emoticon` reaction.
 - `GetEmoticons` takes `ids` (up to 100) and returns those of the emoticons the user may see - global ones and the
   ones of the spaces they belong to; the rest is left out. The response has `location: null` and does not change the
