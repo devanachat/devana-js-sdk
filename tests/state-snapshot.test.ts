@@ -55,6 +55,7 @@ const createRoom = (id: string, overrides: any = {}): any => ({
     description: '',
     type: 'Text',
     defaultTopic: { id: `topic-${id}`, name: '', messageCount: 0, lastMessage: null },
+    participants: null,
     recipients: null,
     flags: 0,
     stream: null,
@@ -62,7 +63,11 @@ const createRoom = (id: string, overrides: any = {}): any => ({
     ...overrides,
 });
 
-const createPm = (id: string, recipients: any[]): any => createRoom(id, { type: 'Pm', recipients });
+const createPm = (id: string, recipients: any[]): any => createRoom(id, {
+    type: 'Pm',
+    participants: recipients.map(recipient => ({ user: recipient, flags: 0 })),
+    recipients,
+});
 
 const createSpace = (id: string, roles: any[] = []): any => ({
     id,
@@ -177,6 +182,7 @@ describe('state snapshot - export', () => {
         const users = [
             snapshot.user,
             ...snapshot.rooms.flatMap(room => room.recipients ?? []),
+            ...snapshot.rooms.flatMap(room => room.participants?.map(participant => participant.user) ?? []),
             ...snapshot.relationships.map(relationship => relationship.refUser),
         ];
 
@@ -293,7 +299,7 @@ describe('state snapshot - import', () => {
     test('is rejected for another version, leaving the state untouched', async () => {
         const snapshot = await exportPopulated();
 
-        for (const version of [0, 2, '1', undefined]) {
+        for (const version of [0, 1, 3, '2', undefined]) {
             const { tracker } = createTracker();
             expect(tracker.importSnapshot({ ...snapshot, version })).toBe(false);
             expect(tracker.me).toBeNull();
@@ -319,6 +325,8 @@ describe('state snapshot - import', () => {
             { ...snapshot, rooms: [{ ...snapshot.rooms[0], history: null }] },
             { ...snapshot, rooms: [{ ...snapshot.rooms[0], defaultTopic: { name: 'no id' } }] },
             { ...snapshot, rooms: [{ ...snapshot.rooms[1], recipients: [null] }] },
+            { ...snapshot, rooms: [{ ...snapshot.rooms[1], participants: [{ user: null, flags: 0 }] }] },
+            { ...snapshot, rooms: [{ ...snapshot.rooms[1], participants: undefined }] },
             { ...snapshot, spaceRooms: [{ spaceId: 'S1', summaries: [null] }] },
             { ...snapshot, followedTopics: [{ roomId: 'R1', followedTopics: [{ location: null }] }] },
             { ...snapshot, emoticons: [{ spaceId: 5, emoticons: [] }] },

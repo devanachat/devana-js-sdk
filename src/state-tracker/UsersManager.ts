@@ -1,7 +1,7 @@
 import {ChatStateTracker} from "./ChatStateTracker";
 import {ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
-import {RoomMember, Session, SpaceMember, User} from "../protocol";
-import {extractUserFromMember} from "./functions";
+import {Room, RoomMember, Session, SpaceMember, User} from "../protocol";
+import {extractUserFromMember, isSameUser} from "./functions";
 import {EventTarget} from "../EventTarget";
 
 export class UsersManager {
@@ -18,6 +18,9 @@ export class UsersManager {
         tracker.client.on('RoomMembers', event => this.handleMembers(event.members));
         tracker.client.on('Messages', event => this.handleUsers(event.messages.map(message => message.author.user)));
         tracker.client.on('NewMessage', event => this.handleUsers([event.message.author.user]));
+        tracker.client.on('RoomJoined', event => this.handleRooms([event.room]));
+        tracker.client.on('RoomUpdated', event => this.handleRooms([event.room]));
+        tracker.client.on('IgnoredRooms', event => this.handleRooms(event.rooms));
         tracker.client.on('Session', event => this.handleSession(event));
     }
 
@@ -36,15 +39,35 @@ export class UsersManager {
         this.handleUsers([user]);
     }
 
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _importRooms(rooms: Room[]): void {
+        this.handleRooms(rooms);
+    }
+
     private handleMembers(members: (RoomMember | SpaceMember)[]): void {
         this.handleUsers(members.map(extractUserFromMember));
     }
 
+    private handleRooms(rooms: Room[]): void {
+        const users = new Map<string, User>();
+
+        for (const room of rooms) {
+            for (const participant of room.participants ?? []) {
+                users.set(participant.user.id, participant.user);
+            }
+        }
+
+        this.handleUsers([...users.values()]);
+    }
+
     private handleSession(session: Session): void {
         // Keep the "seen users" cache across reconnects so bound user lists do
-        // not blank out; just ensure our own user is present/updated. Stale
-        // entries are refreshed as member/message collections refetch.
+        // not blank out. Stale entries are refreshed as member/message collections refetch.
         this.handleUsers([session.user]);
+        this.handleRooms(session.state.rooms);
     }
 
     /**
@@ -70,23 +93,4 @@ export class UsersManager {
 
         this.users.set(...changedUsers);
     }
-}
-
-function isSameUser(a: User, b: User): boolean {
-    const keys = Object.keys(a) as (keyof User)[];
-
-    if (keys.length !== Object.keys(b).length) {
-        return false;
-    }
-
-    return keys.every(key => {
-        const valueA = a[key];
-        const valueB = b[key];
-
-        if (Array.isArray(valueA) && Array.isArray(valueB)) {
-            return valueA.length === valueB.length && valueA.every((item, index) => item === valueB[index]);
-        }
-
-        return valueA === valueB;
-    });
 }

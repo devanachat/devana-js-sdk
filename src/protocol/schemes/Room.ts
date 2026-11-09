@@ -2,6 +2,7 @@ import {Topic} from "./Topic";
 import {User} from "./User";
 import {RoomStream} from "./RoomStream";
 import {RoomHistory} from "./RoomHistory";
+import {PmParticipant} from "./PmParticipant";
 
 export type RoomType = 'Text' | 'ClassicText' | 'Pm';
 
@@ -12,6 +13,8 @@ export interface Room {
     description: string;
     type: RoomType;
     defaultTopic: Topic | null;
+    participants: PmParticipant[] | null;
+    /** @deprecated */
     recipients: User[] | null;
     flags: number;
     stream: RoomStream | null;

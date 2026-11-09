@@ -16,7 +16,7 @@ import {
 /**
  * Version of the {@link StateSnapshot} format. A snapshot of any other version is rejected on import.
  */
-export const STATE_SNAPSHOT_VERSION = 1;
+export const STATE_SNAPSHOT_VERSION = 2;
 
 /**
  * Plain, JSON-serializable copy of the state tracked by {@link ChatStateTracker}, made to restore the state at the
@@ -167,6 +167,10 @@ function isUser(value: unknown): boolean {
     return hasId(value);
 }
 
+function isPmParticipant(value: unknown): boolean {
+    return isObject(value) && isUser(value.user) && typeof value.flags === 'number';
+}
+
 function isRole(value: unknown): boolean {
     return hasId(value) && typeof value.priority === 'number';
 }
@@ -201,6 +205,7 @@ function isRoom(value: unknown): boolean {
         && isString(value.type)
         && (value.spaceId === null || isString(value.spaceId))
         && (value.defaultTopic === null || isTopic(value.defaultTopic))
+        && (value.participants === null || isArrayOf(value.participants, isPmParticipant))
         && (value.recipients === null || isArrayOf(value.recipients, isUser))
         && isObject(value.history)
         && isString(value.history.mode);

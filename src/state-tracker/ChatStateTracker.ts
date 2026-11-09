@@ -132,6 +132,7 @@ export class ChatStateTracker {
         try {
             this._me = snapshot.user;
             this.users._importUser(snapshot.user);
+            this.users._importRooms(snapshot.rooms);
             this.rooms._importRooms(snapshot.rooms);
             this.spaces._importSpaces(snapshot.spaces, snapshot.spaceRooms);
             this.rooms.followedTopics._importFollowedTopics(snapshot.followedTopics);

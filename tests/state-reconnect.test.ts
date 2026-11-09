@@ -55,6 +55,7 @@ const createRoom = (id: string, overrides: any = {}): any => ({
     description: '',
     type: 'Text',
     defaultTopic: { id: `topic-${id}`, messageCount: 0, lastMessage: null },
+    participants: null,
     recipients: null,
     flags: 0,
     stream: null,

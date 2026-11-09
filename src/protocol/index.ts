@@ -3,6 +3,7 @@ import {Message, MessageType, MessageAuthor, MessageMentions} from "./schemes/Me
 import {PermissionOverwritesValue} from "./schemes/PermissionOverwritesValue";
 import {Role, RoleFlag} from "./schemes/Role";
 import {Room, RoomType} from "./schemes/Room";
+import {PmParticipant, PmParticipantFlag} from "./schemes/PmParticipant";
 import {RoomMember} from "./schemes/RoomMember";
 import {RoomSummary, RoomSummaryExtras} from "./schemes/RoomSummary";
 import {Space, SpaceDiscoverable, SpaceIntent} from "./schemes/Space";
@@ -11,7 +12,7 @@ import {Topic} from "./schemes/Topic";
 import {User, UserStatus} from "./schemes/User";
 import {UserState} from "./schemes/UserState";
 import {Bye} from "./schemes/events/Bye";
-import {Error, ErrorCode} from "./schemes/events/Error";
+import {Error, ErrorCode, ErrorDetails} from "./schemes/events/Error";
 import {Session} from "./schemes/events/Session";
 import {ComputedPermissions} from "./schemes/events/ComputedPermissions";
 import {SpaceJoined} from "./schemes/events/SpaceJoined";
@@ -54,6 +55,8 @@ import {SetPermissionOverwrites} from "./schemes/commands/SetPermissionOverwrite
 import {GetPermissionOverwrites} from "./schemes/commands/GetPermissionOverwrites";
 import {JoinRoom} from "./schemes/commands/JoinRoom";
 import {LeaveRoom} from "./schemes/commands/LeaveRoom";
+import {GetIgnoredRooms} from "./schemes/commands/GetIgnoredRooms";
+import {IgnoredRooms} from "./schemes/events/IgnoredRooms";
 import {CreateRoom} from "./schemes/commands/CreateRoom";
 import {DeleteRoom} from "./schemes/commands/DeleteRoom";
 import {GetRoomMembers} from "./schemes/commands/GetRoomMembers";
@@ -185,6 +188,7 @@ export type {
     Role,
     Room,
     RoomType,
+    PmParticipant,
     RoomStream,
     RoomStreamType,
     RoomHistory,
@@ -231,6 +235,8 @@ export type {
     // events
     Bye,
     Error,
+    ErrorDetails,
+    IgnoredRooms,
     Messages,
     FoundMessages,
     FoundMessage,
@@ -324,6 +330,7 @@ export type {
     JoinRoom,
     JoinSpace,
     LeaveRoom,
+    GetIgnoredRooms,
     LeaveSpace,
     UpdateRole,
     UpdateSpace,
@@ -375,6 +382,7 @@ export {
     NO_LIMIT,
     STORAGE_UNIT_BYTES,
     HistoryRotation,
+    PmParticipantFlag,
     RoleFlag,
     SearchRange,
     SpaceFeature,
