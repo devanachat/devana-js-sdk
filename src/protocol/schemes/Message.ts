@@ -3,7 +3,7 @@ import {ChatLocation} from "./ChatLocation";
 import {MessageReaction} from "./Reaction";
 import {MessagePoll} from "./MessagePoll";
 
-export type MessageType = 'Text'|'RoomJoin'|'RoomMemberAdd'|'RoomLeave'|'SpaceJoin'|'SpaceLeave'|'TopicChange'|'CustomNickChange'|'Ephemeral'|'Poll';
+export type MessageType = 'Text'|'RoomJoin'|'RoomMemberAdd'|'RoomLeave'|'SpaceJoin'|'SpaceLeave'|'TopicChange'|'CustomNickChange'|'Ephemeral'|'Poll'|'RoomRename';
 
 /**
  * Mention targets a message actually reached, as resolved by the server: role

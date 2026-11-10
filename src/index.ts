@@ -13,6 +13,7 @@ import {
     ErrorCode,
     HistoryRotation,
     NO_LIMIT,
+    PmParticipantFlag,
     RoleFlag,
     SearchRange,
     UiPurpose,
@@ -22,7 +23,7 @@ import {
     UserFeature,
     UserStatus,
 } from './protocol';
-import {extractUserFromMember} from "./state-tracker/functions";
+import {extractUserFromMember, getPmPeers, isGroupPm} from "./state-tracker/functions";
 import {AbstractRestClient} from "./AbstractRestClient";
 import {UnreadSummary} from "./state-tracker/FollowedTopicsManager";
 import {TopicHistoryWindow} from "./state-tracker/TopicHistoryWindow";
@@ -37,7 +38,10 @@ export {
     FilesClient,
     AbstractRestClient,
     extractUserFromMember,
+    isGroupPm,
+    getPmPeers,
     ErrorCode,
+    PmParticipantFlag,
     UserStatus,
     RoleFlag,
     SpaceFeature,

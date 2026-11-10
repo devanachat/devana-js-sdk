@@ -15,6 +15,7 @@ const createRoom = (roomId: string): any => ({
     description: '',
     type: 'Text',
     defaultTopic: {id: `topic-${roomId}`, name: '', messageCount: 0},
+    participants: null,
     recipients: null,
     flags: 0,
     stream: null,

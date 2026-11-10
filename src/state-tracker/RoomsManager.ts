@@ -25,6 +25,7 @@ import {
     TopicHistorySnapshot,
     withoutPresence,
 } from "./StateSnapshot";
+import {getActivePmParticipants, isSameUser} from "./functions";
 
 export class RoomsManager {
     public readonly messages: MessagesManager;
@@ -163,8 +164,12 @@ export class RoomsManager {
      * @internal
      */
     public _exportRooms(): Room[] {
-        return this.list.items.map(room => room.recipients
-            ? {...room, recipients: room.recipients.map(withoutPresence)}
+        return this.list.items.map(room => room.participants
+            ? {
+                ...room,
+                participants: room.participants.map(participant => ({...participant, user: withoutPresence(participant.user)})),
+                recipients: room.recipients?.map(withoutPresence) ?? null,
+            }
             : room);
     }
 
@@ -219,7 +224,7 @@ export class RoomsManager {
     }
 
     /**
-     * Members of private conversations are not exported - they are made of the recipients of the room.
+     * Members of private conversations are not exported - they are made of the participants of the room.
      * @internal
      */
     public _exportMembers(roomIds: string[], limit: number): RoomMembersSnapshot[] {
@@ -356,6 +361,11 @@ export class RoomsManager {
 
         const members = this.members.get(ev.roomId);
         const member = members.get(ev.userId);
+
+        if (! member) {
+            return;
+        }
+
         const user = member.spaceMember?.user ?? member.user;
 
         // Preserving user object, because it's not included in event
@@ -397,6 +407,7 @@ export class RoomsManager {
     private handleRoomUpdated(ev: RoomUpdated): void {
         if (this.list.has(ev.room.id)) {
             this.list.set(ev.room);
+            this.setPmMembers(ev.room);
         }
     }
 
@@ -424,26 +435,38 @@ export class RoomsManager {
                 this.addJoinedRoomTopics(room.id, room.defaultTopic);
             }
 
-            if (room.type === 'Pm' && room.recipients) {
-                // Treat PM recipients as normal room members.
-                // We are registering fake promise in `memberPromises`
-                // because GetMembers are not supported for PM rooms.
-                this.handleRoomMembers({
-                    id: room.id,
-                    members: room.recipients.map(user => ({
-                        user,
-                        spaceMember: null,
-                        roles: null,
-                        customColor: null,
-                        customNick: null,
-                        customAvatar: null,
-                        extras: '',
-                    })),
-                });
-                this.membersPromises.register(Promise.resolve(), room.id);
-            }
+            this.setPmMembers(room);
         }
         this.list.set(...rooms);
+    }
+
+    private setPmMembers(room: Room): void {
+        if (room.type !== 'Pm' || ! room.participants) {
+            return;
+        }
+
+        const current = this.members.get(room.id);
+        const members = getActivePmParticipants(room).map(({user}): RoomMember => {
+            const member = current?.get(user.id);
+
+            return member && isSameUser(member.user, user) ? member : {
+                user,
+                spaceMember: null,
+                roles: null,
+                customColor: null,
+                customNick: null,
+                customAvatar: null,
+                extras: '',
+            };
+        });
+
+        if (current?.length === members.length && members.every(member => current.get(member.user.id) === member)) {
+            return;
+        }
+
+        this.handleRoomMembers({id: room.id, members});
+        // GetRoomMembers is not supported for private conversations
+        this.membersPromises.register(Promise.resolve(), room.id);
     }
 
     private handleRoomLeft(ev: RoomLeft): void {
@@ -518,13 +541,16 @@ export class RoomsManager {
                 : {...member, spaceMember: {...member.spaceMember, user: ev.user}});
         });
 
-        // Update recipients users
+        // Update users of private conversation participants
         const newRooms: Room[] = [];
         this.list.items.forEach(room => {
-            if (room.recipients?.some(user => user.id === ev.user.id)) {
+            if (room.participants?.some(participant => participant.user.id === ev.user.id)) {
                 newRooms.push({
                     ...room,
-                    recipients: room.recipients.map(user => user.id === ev.user.id ? ev.user : user),
+                    participants: room.participants.map(participant => participant.user.id === ev.user.id
+                        ? {...participant, user: ev.user}
+                        : participant),
+                    recipients: room.recipients?.map(user => user.id === ev.user.id ? ev.user : user) ?? null,
                 });
             }
         });

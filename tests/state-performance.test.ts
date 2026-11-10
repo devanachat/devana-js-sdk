@@ -28,6 +28,12 @@ class FakeClient extends EventTarget {
     }
 }
 
+const pmRoom = (...users: any[]): any => ({
+    type: 'Pm',
+    participants: users.map(user => ({ user, flags: 0 })),
+    recipients: users,
+});
+
 const createRoom = (id: string, overrides: any = {}): any => ({
     id,
     spaceId: null,
@@ -35,6 +41,7 @@ const createRoom = (id: string, overrides: any = {}): any => ({
     description: '',
     type: 'Text',
     defaultTopic: { id: `topic-${id}`, messageCount: 0, lastMessage: null },
+    participants: null,
     recipients: null,
     flags: 0,
     stream: null,
@@ -250,7 +257,7 @@ describe('rooms list', () => {
 
     test('a private conversation is listed by its last message', async () => {
         const { client, tracker } = createTracker();
-        emitSession(client, [createRoom('P', { type: 'Pm', recipients: [createUser('me'), createUser('other')] })]);
+        emitSession(client, [createRoom('P', pmRoom(createUser('me'), createUser('other')))]);
 
         const rooms = await tracker.rooms.get();
         client.emit('NewMessage', { message: createMessage('P', 'topic-P', 'm1') });
@@ -267,20 +274,23 @@ describe('rooms list', () => {
         }));
         emitSession(client, [
             createRoom('A'),
-            createRoom('P', { type: 'Pm', recipients: [createUser('me'), createUser('u1')] }),
+            createRoom('P', pmRoom(createUser('me'), createUser('u1'))),
         ]);
 
         const members = await tracker.rooms.getMembers('A');
         const rooms = await tracker.rooms.get();
         const pm = rooms.get('P');
         const recipients = pm.recipients;
+        const participants = pm.participants;
 
         client.emit('UserUpdated', { user: createUser('u1', { nick: 'renamed' }) });
 
         expect(spaceMember.user.nick).toBe('u1');
         expect(recipients[1].nick).toBe('u1');
+        expect(participants[1].user.nick).toBe('u1');
         expect(members.get('u1').spaceMember.user.nick).toBe('renamed');
         expect(rooms.get('P').recipients[1].nick).toBe('renamed');
+        expect(rooms.get('P').participants[1].user.nick).toBe('renamed');
     });
 });
 

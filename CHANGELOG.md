@@ -4,7 +4,41 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [semver](https://semver.org) (`0.x` minor releases may break the API).
 
-## [Unreleased]
+## [0.10.0]
+
+### Added
+
+- Group private conversations: a `Pm` room has 1 (notes), 2 or 3-10 participants; `CreateRoom` takes up to 9
+  `recipientIds` and, for a new conversation of 3 or more people, a `name`.
+- `Room.participants` (`PmParticipant[]`, `null` for rooms of spaces): the users of a private conversation with their
+  `flags`; `PmParticipantFlag.IgnoresRoom` marks a participant ignoring it. The members of a private conversation
+  (`RoomsManager.getMembers()`) are its participants without the ones ignoring it, rebuilt on `RoomUpdated`, and the
+  participants land in `UsersManager.getAvailable()`.
+- `isGroupPm(room)` and `getPmPeers(room, meId)` helpers.
+- Ignoring a group conversation: `LeaveRoom` takes `ignore: true` (answered with `RoomLeft`, or `Ok` when the
+  user was not its member); `JoinRoom` of the ignoring participant stops ignoring it. `GetIgnoredRooms` returns the
+  ignored conversations as `IgnoredRooms`. `CreateRoom` for an ignored conversation fails with
+  `ErrorCode.RoomIgnored`, its id in `Error.details.roomId`.
+- `UpdateRoom` changes the name of a group conversation (only `name` is accepted for a `Pm` room).
+- Message type `RoomRename` (content: the new name, empty when the name was removed); `RoomJoin` and `RoomLeave` in a
+  group conversation mean stopping and starting to ignore it.
+
+### Changed
+
+- **Breaking:** the members of a private conversation and its users in `UsersManager` come from `Room.participants`,
+  so a server that does not send `participants` leaves private conversations without members.
+- `STATE_SNAPSHOT_VERSION` is 2 - snapshots of the previous version (rooms without `participants`) are rejected on
+  import.
+
+### Deprecated
+
+- `Room.recipients` - use `Room.participants`.
+
+### Fixed
+
+- `RoomMemberUpdated` of a member missing from the room's collection threw instead of being skipped.
+
+## [0.9.0]
 
 ### Added
 
