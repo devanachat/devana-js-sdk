@@ -460,13 +460,14 @@ export class RoomsManager {
             };
         });
 
+        // GetRoomMembers is not supported for private conversations
+        this.membersPromises.register(Promise.resolve(), room.id);
+
         if (current?.length === members.length && members.every(member => current.get(member.user.id) === member)) {
             return;
         }
 
         this.handleRoomMembers({id: room.id, members});
-        // GetRoomMembers is not supported for private conversations
-        this.membersPromises.register(Promise.resolve(), room.id);
     }
 
     private handleRoomLeft(ev: RoomLeft): void {

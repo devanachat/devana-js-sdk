@@ -109,6 +109,30 @@ describe('members of private conversations', () => {
         expect(members.items.map((member: any) => member.user.id).sort()).toEqual(['me', 'u1', 'u2']);
     });
 
+    test('members survive a reconnect without asking the server', async () => {
+        const { client, tracker } = createTracker();
+        const send = jest.spyOn(client, 'send');
+        emitSession(client, [createPm('P', ids(3))]);
+        const members = await tracker.rooms.getMembers('P');
+
+        emitSession(client, [createPm('P', ids(3))]);
+
+        expect(await tracker.rooms.getMembers('P')).toBe(members);
+        expect(members.items).toHaveLength(3);
+        expect(send).not.toHaveBeenCalled();
+    });
+
+    test('members imported from a snapshot survive the first session without asking the server', async () => {
+        const { client, tracker } = createTracker();
+        const send = jest.spyOn(client, 'send');
+        tracker.rooms._importRooms([createPm('P', ids(3))]);
+
+        emitSession(client, [createPm('P', ids(3))]);
+
+        expect(await memberIds(tracker, 'P')).toHaveLength(3);
+        expect(send).not.toHaveBeenCalled();
+    });
+
     test('RoomUpdated with a new name replaces the room', async () => {
         const { client, tracker } = createTracker();
         emitSession(client, [createPm('P', ids(3))]);
