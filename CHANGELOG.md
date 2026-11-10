@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [semver](https://semver.org) (`0.x` minor releases may break the API).
 
+## [Unreleased]
+
+### Changed
+
+- `LeaveRoom` with `ignore: true` is answered only with `RoomLeft`: like a plain `LeaveRoom`, it requires the membership
+  of the room and fails for a closed conversation instead of answering `Ok`.
+
+### Fixed
+
+- After a reconnect, or the first session after a snapshot import, `RoomsManager.getMembers()` of an unchanged
+  private conversation sent `GetRoomMembers` instead of using its participants.
+
 ## [0.10.0]
 
 ### Added

@@ -347,7 +347,7 @@ export type CommandsMap = {
     UpdateSpaceMember: CommandDefinition<UpdateSpaceMember, EventsMap['SpaceMemberUpdated']>,
      // Room commands
     JoinRoom: CommandDefinition<JoinRoom, EventsMap['RoomJoined']>,
-    LeaveRoom: CommandDefinition<LeaveRoom, EventsMap['RoomLeft'] | EventsMap['Ok']>,
+    LeaveRoom: CommandDefinition<LeaveRoom, EventsMap['RoomLeft']>,
     GetIgnoredRooms: CommandDefinition<GetIgnoredRooms, EventsMap['IgnoredRooms']>,
     CreateRoom: CommandDefinition<CreateRoom, EventsMap['RoomJoined']>,
     DeleteRoom: CommandDefinition<DeleteRoom, EventsMap['RoomDeleted']>,
