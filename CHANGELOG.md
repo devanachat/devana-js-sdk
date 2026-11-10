@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [semver](https://semver.org) (`0.x` minor releases may break the API).
 
-## [Unreleased]
+## [0.10.0]
 
 ### Added
 
@@ -22,6 +22,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `UpdateRoom` changes the name of a group conversation (only `name` is accepted for a `Pm` room).
 - Message type `RoomRename` (content: the new name, empty when the name was removed); `RoomJoin` and `RoomLeave` in a
   group conversation mean stopping and starting to ignore it.
+
+### Changed
+
+- **Breaking:** the members of a private conversation and its users in `UsersManager` come from `Room.participants`,
+  so a server that does not send `participants` leaves private conversations without members.
+- `STATE_SNAPSHOT_VERSION` is 2 - snapshots of the previous version (rooms without `participants`) are rejected on
+  import.
+
+### Deprecated
+
+- `Room.recipients` - use `Room.participants`.
+
+### Fixed
+
+- `RoomMemberUpdated` of a member missing from the room's collection threw instead of being skipped.
+
+## [0.9.0]
+
+### Added
+
 - `Permissions.list.UseExternalEmoticons` (`1 << 26`, space and room layer): using emoticons of other spaces.
 - `UserFeature.ExternalEmoticons` (`user.external_emoticons`): the account may use emoticons outside their spaces.
 - `MessageReaction.name` and `ToggledReaction.name`: the emoticon name of an `Emoticon` reaction.
@@ -32,10 +52,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
-- **Breaking:** the members of a private conversation and its users in `UsersManager` come from `Room.participants`,
-  so a server that does not send `participants` leaves private conversations without members.
-- `STATE_SNAPSHOT_VERSION` is 2 - snapshots of the previous version (rooms without `participants`) are rejected on
-  import.
 - **Breaking:** there are no global emoticons any more. `EmoticonsManager.get()` requires a `spaceId`,
   `CreateEmoticon.spaceId` and `EmoticonDeleted.spaceId` are required, and `EmoticonsSnapshot.spaceId` is a string -
   global emoticons kept in an older snapshot are dropped on import.
@@ -46,13 +62,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   name in `value` and no `name` - an application that has to work with both tells them apart by the length of `value`
   (a name has at most 20 characters, an id 22).
 
-### Deprecated
-
-- `Room.recipients` - use `Room.participants`.
-
 ### Fixed
 
-- `RoomMemberUpdated` of a member missing from the room's collection threw instead of being skipped.
 - Withdrawing the last own reaction from a message (`Reacted` with `isAdded: false`) left it in
   `TopicHistoryWindow.myReactions` in apps built with Babel's loose object rest transform (e.g. `babel-preset-expo` on
   web) - it dropped the message ID from the exclusion list (babel/babel#18196).
