@@ -17,6 +17,7 @@ import {ChatStateTracker} from "./ChatStateTracker";
 import {DeferredTask, PromiseRegistry} from "./AsyncUtils";
 import {MessagesManager} from "./MessagesManager";
 import {FollowedTopicsManager} from "./FollowedTopicsManager";
+import {TypingManager} from "./TypingManager";
 import {
     memberWithoutPresence,
     messageWithoutPresence,
@@ -30,6 +31,7 @@ import {getActivePmParticipants, isSameUser} from "./functions";
 export class RoomsManager {
     public readonly messages: MessagesManager;
     public readonly followedTopics: FollowedTopicsManager;
+    public readonly typing: TypingManager;
 
     private readonly list = new ObservableIndexedObjectCollection<Room>('id');
     private readonly topics = new IndexedCollection<string, ObservableIndexedObjectCollection<Topic>>();
@@ -42,6 +44,7 @@ export class RoomsManager {
     public constructor(private tracker: ChatStateTracker) {
         this.messages = new MessagesManager(tracker);
         this.followedTopics = new FollowedTopicsManager(tracker);
+        this.typing = new TypingManager(tracker);
 
         this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
         this.tracker.client.on('MessagesRedacted', ev => this.handleMessagesRedacted(ev));

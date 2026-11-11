@@ -133,6 +133,8 @@ import {
     ReactionUpdated,
     Reacted,
     ReactionDetails,
+    Type,
+    Typing,
     GetEntitlements,
     Entitlements,
     EntitlementUsage,
@@ -293,6 +295,7 @@ export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap
     ReactionUpdated: ReactionUpdated,
     Reacted: Reacted,
     ReactionDetails: ReactionDetails,
+    Typing: Typing,
 };
 
 /**
@@ -375,4 +378,5 @@ export type CommandsMap = {
     React: CommandDefinition<React, EventsMap['Reacted']>,
     Unreact: CommandDefinition<Unreact, EventsMap['Reacted']>,
     GetReactionDetails: CommandDefinition<GetReactionDetails, EventsMap['ReactionDetails']>,
+    Type: CommandDefinition<Type, EventsMap['Ok']>,
  }
