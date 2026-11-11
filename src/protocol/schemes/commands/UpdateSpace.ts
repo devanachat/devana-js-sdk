@@ -10,4 +10,5 @@ export interface UpdateSpace {
     banner?: string | null;
     discoverable?: SpaceDiscoverable;
     flags?: number;
+    guestRole?: string | null;
 }

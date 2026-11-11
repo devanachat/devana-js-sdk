@@ -17,6 +17,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   take a new sticky message from `NewMessage` and drop it when it is redacted.
 - Role icons: `Role.icon` (`RoleIcon` - an emoji or an emoticon of the space, `{type, value}` like a reaction) and
   `UpdateRole.icon` (an icon sets it, `null` removes it).
+- Guests: `Space.guestRole` and `UpdateSpace.guestRole` (a role of the space given to temporary accounts when they
+  join, `null` turns it off); `SpacesManager` clears it when the role is deleted. The `SendAttachments` permission
+  covers attachments and links in messages.
 
 ### Changed
 

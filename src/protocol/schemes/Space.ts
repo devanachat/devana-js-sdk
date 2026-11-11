@@ -19,4 +19,5 @@ export interface Space {
     banner: string | null;
     discoverable: SpaceDiscoverable;
     flags: number;
+    guestRole: string | null;
 }

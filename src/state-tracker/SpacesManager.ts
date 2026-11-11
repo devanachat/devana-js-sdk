@@ -216,6 +216,13 @@ export class SpacesManager {
 
     private handleRoleDeleted(ev: RoleDeleted): void {
         this.roles.get(ev.spaceId).delete(ev.id);
+
+        const space = this.list.get(ev.spaceId);
+
+        if (space?.guestRole === ev.id) {
+            this.list.set({...space, guestRole: null});
+        }
+
         this.syncSpaceRoles(ev.spaceId);
     }
 
