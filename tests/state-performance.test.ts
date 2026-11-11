@@ -255,6 +255,32 @@ describe('rooms list', () => {
         expect(rooms.get('A')).toBe(room);
     });
 
+    test('a sticky message stays until the next sticky one replaces it', async () => {
+        const { client, tracker } = createTracker();
+        emitSession(client, [createRoom('A')]);
+
+        client.emit('NewMessage', { message: createMessage('A', 'topic-A', 'm1'), sticky: true });
+        client.emit('NewMessage', { message: createMessage('A', 'topic-A', 'm2') });
+
+        const topics = await tracker.rooms.getTopics('A');
+        expect(topics.get('topic-A').stickyMessage.id).toBe('m1');
+
+        client.emit('NewMessage', { message: createMessage('A', 'topic-A', 'm3'), sticky: true });
+        expect(topics.get('topic-A').stickyMessage.id).toBe('m3');
+    });
+
+    test('redacting the sticky message unsticks it', async () => {
+        const { client, tracker } = createTracker();
+        client.respondTo('GetMessages', () => ({ messages: [], myReactions: {} }));
+        emitSession(client, [createRoom('A')]);
+
+        client.emit('NewMessage', { message: createMessage('A', 'topic-A', 'm1'), sticky: true });
+        client.emit('MessagesRedacted', { location: { roomId: 'A', topicId: 'topic-A' }, ids: ['m1'] });
+        await new Promise(resolve => setTimeout(resolve));
+
+        expect((await tracker.rooms.getTopics('A')).get('topic-A').stickyMessage).toBeNull();
+    });
+
     test('a private conversation is listed by its last message', async () => {
         const { client, tracker } = createTracker();
         emitSession(client, [createRoom('P', pmRoom(createUser('me'), createUser('other')))]);

@@ -12,6 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `ClassicText`. `RoomsManager.typing.get(roomId, topicId)` returns the ids of the users typing in a topic, tracked from
   the first call, each leaving `TYPING_TIMEOUT_MS` after their last notification or with their message.
   `RoomsManager.typing.notify(roomId, topicId)` sends `Type` at most once per `TYPING_INTERVAL_MS`.
+- Sticky messages: `Topic.stickyMessage`, `CreateMessage.sticky`, `NewMessage.sticky`, `UpdateTopic.stickyMessageId`
+  (a message id sticks it, `null` unsticks it) and the `ManagePins` permission. The topics tracked by `RoomsManager`
+  take a new sticky message from `NewMessage` and drop it when it is redacted.
 
 ### Changed
 
