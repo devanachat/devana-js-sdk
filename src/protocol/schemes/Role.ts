@@ -1,3 +1,5 @@
+import {ReactionType} from "./Reaction";
+
 /**
  * Bit flags of a role, stored in {@link Role.flags}.
  *
@@ -12,10 +14,16 @@ export enum RoleFlag {
     MentionableByEveryone = 1 << 1,
 }
 
+export interface RoleIcon {
+    type: ReactionType;
+    value: string;
+}
+
 export interface Role {
     id: string;
     priority: number;
     name: string;
     color?: string;
     flags: number;
+    icon?: RoleIcon | null;
 }
