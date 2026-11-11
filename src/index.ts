@@ -29,6 +29,7 @@ import {UnreadSummary} from "./state-tracker/FollowedTopicsManager";
 import {TopicHistoryWindow} from "./state-tracker/TopicHistoryWindow";
 import {PermissionsManager} from "./state-tracker/PermissionsManager";
 import {STATE_SNAPSHOT_VERSION} from "./state-tracker/StateSnapshot";
+import {TYPING_INTERVAL_MS, TYPING_TIMEOUT_MS, TypingManager, TypingUsers} from "./state-tracker/TypingManager";
 
 export {
     IndexedCollection, ObservableIndexedCollection,
@@ -53,6 +54,8 @@ export {
     NO_LIMIT,
     STORAGE_UNIT_BYTES,
     STATE_SNAPSHOT_VERSION,
+    TYPING_INTERVAL_MS,
+    TYPING_TIMEOUT_MS,
 };
 
 export type {
@@ -82,4 +85,6 @@ export type {
     UnreadSummary,
     TopicHistoryWindow,
     PermissionsManager,
+    TypingManager,
+    TypingUsers,
 };

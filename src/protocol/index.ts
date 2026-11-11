@@ -158,6 +158,8 @@ import {GetReactionDetails} from "./schemes/commands/GetReactionDetails";
 import {ReactionUpdated} from "./schemes/events/ReactionUpdated";
 import {Reacted} from "./schemes/events/Reacted";
 import {ReactionDetails} from "./schemes/events/ReactionDetails";
+import {Type} from "./schemes/commands/Type";
+import {Typing} from "./schemes/events/Typing";
 import {
     EntitlementsExtras,
     EntitlementsMap,
@@ -297,6 +299,7 @@ export type {
     ReactionUpdated,
     Reacted,
     ReactionDetails,
+    Typing,
     Entitlements,
     EntitlementUsage,
     AccessTicket,
@@ -373,6 +376,7 @@ export type {
     React,
     Unreact,
     GetReactionDetails,
+    Type,
     GetEntitlements,
     CreateAccessTicket,
 };

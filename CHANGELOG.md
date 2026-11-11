@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Typing notifications: the `Type` command and the `Typing` event (`{location, userId}`), for rooms other than
+  `ClassicText`. `RoomsManager.typing.get(roomId, topicId)` returns the ids of the users typing in a topic, tracked from
+  the first call, each leaving `TYPING_TIMEOUT_MS` after their last notification or with their message.
+  `RoomsManager.typing.notify(roomId, topicId)` sends `Type` at most once per `TYPING_INTERVAL_MS`.
+
 ### Changed
 
 - `LeaveRoom` with `ignore: true` is answered only with `RoomLeft`: like a plain `LeaveRoom`, it requires the membership
