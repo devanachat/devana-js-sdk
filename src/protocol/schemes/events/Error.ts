@@ -6,6 +6,7 @@ export interface Error {
     code: string;
     message: string;
     details?: ErrorDetails | null;
+    subcode?: string | null;
 }
 
 export enum ErrorCode {
@@ -16,6 +17,7 @@ export enum ErrorCode {
     MessageNotFound = 'MessageNotFoundException',
     RoomIgnored = 'RoomIgnoredException',
     RoomNotFound = 'RoomNotFoundException',
+    SpaceJoinRestricted = 'SpaceJoinRestrictedException',
     TopicNotFound = 'TopicNotFoundException',
     UserNotFound = 'UserNotFoundException',
 }
