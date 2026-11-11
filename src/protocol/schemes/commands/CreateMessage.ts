@@ -9,4 +9,5 @@ export interface CreateMessage {
     customColor?: string;
     /** Turns the message into a poll; its content becomes the question. */
     poll?: MessagePoll;
+    sticky?: boolean;
 }

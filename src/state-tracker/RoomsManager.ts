@@ -573,6 +573,7 @@ export class RoomsManager {
             ...topic,
             messageCount: topic.messageCount + 1,
             lastMessage: ev.message,
+            stickyMessage: ev.sticky ? ev.message : topic.stickyMessage,
         };
 
         topics.set(newTopic);
@@ -586,7 +587,10 @@ export class RoomsManager {
         if (topic) {
             const messageCount = Math.max(topic.messageCount - ev.ids.length, 0);
             const lastMessage: Message = messageCount > 0 ? await this.messages._resolveLastMessage(ev.location) : null;
-            const newTopic = { ...topic, messageCount, lastMessage } as Topic;
+            // Read after the await - a message stuck meanwhile must not be replaced with the stale one
+            const currentSticky = (topics.get(ev.location.topicId) ?? topic).stickyMessage;
+            const stickyMessage = ev.ids.includes(currentSticky?.id) ? null : currentSticky;
+            const newTopic = { ...topic, messageCount, lastMessage, stickyMessage } as Topic;
             topics.set(newTopic);
             this.updatePmDefaultTopic(ev.location.roomId, newTopic);
         }

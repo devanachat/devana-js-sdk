@@ -6,4 +6,5 @@ export interface Topic {
     messageCount: number;
     refMessage?: Message;
     lastMessage?: Message;
+    stickyMessage?: Message | null;
 }
