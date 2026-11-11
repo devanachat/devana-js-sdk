@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Sticky messages: `Topic.stickyMessage`, `CreateMessage.sticky`, `NewMessage.sticky`, `UpdateTopic.stickyMessageId`
   (a message id sticks it, `null` unsticks it) and the `ManagePins` permission. The topics tracked by `RoomsManager`
   take a new sticky message from `NewMessage` and drop it when it is redacted.
+- Role icons: `Role.icon` (`RoleIcon` - an emoji or an emoticon of the space, `{type, value}` like a reaction) and
+  `UpdateRole.icon` (an icon sets it, `null` removes it).
 
 ### Changed
 

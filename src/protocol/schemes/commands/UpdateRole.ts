@@ -1,3 +1,5 @@
+import {RoleIcon} from "../Role";
+
 export interface UpdateRole {
     spaceId: string;
     id: string;
@@ -5,4 +7,5 @@ export interface UpdateRole {
     name?: string;
     color?: string;
     flags?: number;
+    icon?: RoleIcon | null;
 }
