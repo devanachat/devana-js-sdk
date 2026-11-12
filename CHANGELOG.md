@@ -26,6 +26,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- `PermissionsManager.calculatePermissions` follows the server: on every layer the space default role (everyone) is
+  applied before the other roles, so a deny of another role overrides what everyone allows. An allow of any role still
+  wins over a deny of another one.
 - `LeaveRoom` with `ignore: true` is answered only with `RoomLeft`: like a plain `LeaveRoom`, it requires the membership
   of the room and fails for a closed conversation instead of answering `Ok`.
 

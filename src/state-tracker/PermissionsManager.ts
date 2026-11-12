@@ -126,7 +126,7 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
         const userId = (await this.tracker.getMe()).id;
         const [spaceMember, roomMember] = await this.fetchMembersOrFail(location);
         const userRoles: string[] = [...(spaceMember?.roles ?? []), ...(roomMember?.roles ?? [])];
-        const promises: Promise<PermissionOverwritesValue>[] = [
+        const promises: Promise<PermissionOverwritesValue | PermissionOverwritesValue[]>[] = [
             // Global user overwrites
             this.getOverwrites({}, { type: 'User', userId }).then(v => v.overwrites),
         ];
@@ -152,7 +152,7 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
             promises.push(this.getOverwrites(location, { type: 'User', userId }).then(v => v.overwrites));
         }
 
-        return this.resolveOverwritesHierarchy(await Promise.all(promises));
+        return this.resolveOverwritesHierarchy(([] as PermissionOverwritesValue[]).concat(...await Promise.all(promises)));
     }
 
     /**
@@ -226,56 +226,28 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
     private async collectRoleOverwrites(
         location: ChatLocation,
         userRoles: string[],
-    ): Promise<PermissionOverwritesValue> {
+    ): Promise<PermissionOverwritesValue[]> {
         const roleOverwrites = await Promise.all(userRoles.map(
             roleId => this.getOverwrites(location, { type: 'Role', roleId }),
         ));
+        // The space default role (everyone) has the space id; it is applied before the other roles, as on the server.
+        const isDefaultRole = (overwrites: PermissionOverwrites) => overwrites.target.roleId === location.spaceId;
 
-        return this.resolveOverwritesFromRolesByOrder(location.spaceId, roleOverwrites);
+        return [
+            this.mergeRolesOverwrites(roleOverwrites.filter(isDefaultRole)),
+            this.mergeRolesOverwrites(roleOverwrites.filter(overwrites => ! isDefaultRole(overwrites))),
+        ];
     }
 
-    private async resolveOverwritesFromRolesByOrder(
-        spaceId: string,
-        overwrites: PermissionOverwrites[],
-    ): Promise<PermissionOverwritesValue> {
-        let allows = 0, denies = 0;
-        const roles = await this.tracker.spaces.getRoles(spaceId);
-        const sortedOverwrites = overwrites.sort(
-            (a, b) =>
-                roles.get(a.target.roleId).priority - roles.get(b.target.roleId).priority
-        );
+    private mergeRolesOverwrites(rolesOverwrites: PermissionOverwrites[]): PermissionOverwritesValue {
+        let allow = 0, deny = 0;
 
-        // Max length of bit word
-        const permissionsLength = overwrites.reduce(
-            (previousValue: number, currentValue: PermissionOverwrites) =>
-                Math.max(
-                    previousValue,
-                    currentValue.overwrites.allow?.toString(2).length ?? 0,
-                    currentValue.overwrites.deny?.toString(2).length ?? 0,
-                ),
-            0,
-        );
+        for (const {overwrites} of rolesOverwrites) {
+            allow |= overwrites.allow ?? 0;
+            deny |= overwrites.deny ?? 0;
+        }
 
-        sortedOverwrites.forEach(overwriteEvent => {
-            const overwrites = overwriteEvent.overwrites;
-            const revDecDenies = overwrites.deny?.toString(2).split('').reverse().join('') ?? '';
-            const revDecAllows = overwrites.allow?.toString(2).split('').reverse().join('') ?? '';
-
-            for (let i = 0; i < permissionsLength; i++) {
-                const deny = parseInt(revDecDenies[i] ?? '0');
-                const allow = parseInt(revDecAllows[i] ?? '0');
-
-                if (deny) {
-                    denies |= 1 << i;
-                }
-
-                if (allow) {
-                    allows |= 1 << i;
-                }
-            }
-        });
-
-        return {allow: allows, deny: denies};
+        return {allow, deny};
     }
 
     private resolveOverwritesHierarchy(permissionOverwritesValues: PermissionOverwritesValue[]): number {
