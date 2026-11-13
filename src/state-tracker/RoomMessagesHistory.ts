@@ -2,6 +2,7 @@ import {ChatStateTracker} from "./ChatStateTracker";
 import {
     Message,
     MessagesRedacted,
+    MessageUpdated,
     NewMessage,
     NewTopic,
     Reacted,
@@ -138,9 +139,14 @@ export class RoomMessagesHistory {
      * For internal use.
      * @internal
      */
-    public _restoreWindow(topic: Topic, messages: Message[], myReactions: Record<string, UserReaction[]>): void {
+    public _restoreWindow(
+        topic: Topic,
+        messages: Message[],
+        myReactions: Record<string, UserReaction[]>,
+        repliedMessages: Message[],
+    ): void {
         this.createHistoryWindowForTopic(topic);
-        this.historyWindows.get(topic.id)._restoreLatest(messages, myReactions);
+        this.historyWindows.get(topic.id)._restoreLatest(messages, myReactions, repliedMessages);
     }
 
     /**
@@ -191,6 +197,14 @@ export class RoomMessagesHistory {
      */
     public _handleMessagesRedacted(ev: MessagesRedacted): void {
         void this.historyWindows.get(ev.location.topicId)?._handleMessagesRedacted(ev);
+    }
+
+    /**
+     * For internal use.
+     * @internal
+     */
+    public _handleMessageUpdated(ev: MessageUpdated): void {
+        this.historyWindows.get(ev.message.location.topicId)?._handleMessageUpdated(ev);
     }
 
     /**

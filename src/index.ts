@@ -12,6 +12,7 @@ import * as ChatTypes from './protocol';
 import {
     ErrorCode,
     HistoryRotation,
+    MessageEmbedFlag,
     NO_LIMIT,
     PmParticipantFlag,
     RoleFlag,
@@ -42,6 +43,7 @@ export {
     isGroupPm,
     getPmPeers,
     ErrorCode,
+    MessageEmbedFlag,
     PmParticipantFlag,
     UserStatus,
     RoleFlag,

@@ -2,6 +2,7 @@ import {IndexedCollection, ObservableIndexedObjectCollection} from "../IndexedOb
 import {
     Message,
     MessagesRedacted,
+    MessageUpdated,
     NewMessage,
     NewTopic,
     Room, RoomDeleted,
@@ -48,6 +49,7 @@ export class RoomsManager {
 
         this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
         this.tracker.client.on('MessagesRedacted', ev => this.handleMessagesRedacted(ev));
+        this.tracker.client.on('MessageUpdated', ev => this.handleMessageUpdated(ev));
         this.tracker.client.on('NewTopic', ev => this.handleNewTopic(ev));
         this.tracker.client.on('TopicDeleted', ev => this.handleTopicDeleted(ev));
         this.tracker.client.on('RoomJoined', ev => this.handleRoomJoined(ev));
@@ -219,6 +221,7 @@ export class RoomsManager {
                 topicId,
                 messages: latest.messages.map(messageWithoutPresence),
                 myReactions: latest.myReactions,
+                repliedMessages: latest.repliedMessages.map(messageWithoutPresence),
                 topics: Array.from(topicIds).filter(id => topics?.has(id)).map(id => topics.get(id)),
             });
         }
@@ -574,6 +577,26 @@ export class RoomsManager {
             messageCount: topic.messageCount + 1,
             lastMessage: ev.message,
             stickyMessage: ev.sticky ? ev.message : topic.stickyMessage,
+        };
+
+        topics.set(newTopic);
+        this.updatePmDefaultTopic(ev.message.location.roomId, newTopic);
+    }
+
+    private handleMessageUpdated(ev: MessageUpdated): void {
+        const topics = this.topics.get(ev.message.location.roomId);
+        const topic = topics?.get(ev.message.location.topicId);
+        const isLast = topic?.lastMessage?.id === ev.message.id;
+        const isSticky = topic?.stickyMessage?.id === ev.message.id;
+
+        if (!topic || (!isLast && !isSticky)) {
+            return;
+        }
+
+        const newTopic = {
+            ...topic,
+            lastMessage: isLast ? ev.message : topic.lastMessage,
+            stickyMessage: isSticky ? ev.message : topic.stickyMessage,
         };
 
         topics.set(newTopic);

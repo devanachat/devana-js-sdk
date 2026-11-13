@@ -1,5 +1,10 @@
 import {Envelope} from "./schemes/Envelope";
 import {Message, MessageType, MessageAuthor, MessageMentions} from "./schemes/Message";
+import {
+    MessageEmbed, MessageEmbedType, MessageEmbedFlag, SendableEmbed, EmbedTone, EmbedComponent, EmbedContainer,
+    EmbedColumns, EmbedColumn, EmbedSeparator, EmbedText, EmbedMedia, EmbedMediaItem, EmbedPlayer, EmbedButton,
+    EmbedSelect, EmbedSelectOption,
+} from "./schemes/MessageEmbed";
 import {PermissionOverwritesValue} from "./schemes/PermissionOverwritesValue";
 import {Role, RoleFlag, RoleIcon} from "./schemes/Role";
 import {Room, RoomType} from "./schemes/Room";
@@ -86,7 +91,7 @@ import {TopicFollowed} from "./schemes/events/TopicFollowed";
 import {GetFollowedTopics} from "./schemes/commands/GetFollowedTopics";
 import {FollowedTopicUpdated} from "./schemes/events/FollowedTopicUpdated";
 import {GetMessages} from "./schemes/commands/GetMessages";
-import {Messages} from "./schemes/events/Messages";
+import {Messages, MessageUserReactions} from "./schemes/events/Messages";
 import {SearchMessages, SearchDate} from "./schemes/commands/SearchMessages";
 import {FoundMessages, FoundMessage, TextRange} from "./schemes/events/FoundMessages";
 import {Topics} from "./schemes/events/Topics";
@@ -134,6 +139,14 @@ import {Pong} from "./schemes/events/Pong";
 import {ReportAbuse} from "./schemes/commands/ReportAbuse";
 import {RedactMessages} from "./schemes/commands/RedactMessages";
 import {MessagesRedacted} from "./schemes/events/MessagesRedacted";
+import {UpdateMessage} from "./schemes/commands/UpdateMessage";
+import {Interact} from "./schemes/commands/Interact";
+import {Interacted} from "./schemes/events/Interacted";
+import {MessageUpdated} from "./schemes/events/MessageUpdated";
+import {SearchGifs} from "./schemes/commands/SearchGifs";
+import {GetGifCategories} from "./schemes/commands/GetGifCategories";
+import {GifCategory, GifCategories} from "./schemes/events/GifCategories";
+import {FoundGif, FoundGifs} from "./schemes/events/FoundGifs";
 import {GetRelationships} from "./schemes/commands/GetRelationships";
 import {GetUserInfo} from "./schemes/commands/GetUserInfo";
 import {UserInfo} from "./schemes/events/UserInfo";
@@ -229,6 +242,22 @@ export type {
     ToggledReaction,
     MessagePoll,
     MessagePollOption,
+    MessageEmbed,
+    MessageEmbedType,
+    SendableEmbed,
+    EmbedTone,
+    EmbedComponent,
+    EmbedContainer,
+    EmbedColumns,
+    EmbedColumn,
+    EmbedSeparator,
+    EmbedText,
+    EmbedMedia,
+    EmbedMediaItem,
+    EmbedPlayer,
+    EmbedButton,
+    EmbedSelect,
+    EmbedSelectOption,
     EntitlementTarget,
     EntitlementsSubject,
     EntitlementValue,
@@ -241,6 +270,8 @@ export type {
     ErrorDetails,
     IgnoredRooms,
     Messages,
+    MessageUserReactions,
+    Interacted,
     FoundMessages,
     FoundMessage,
     TextRange,
@@ -295,6 +326,11 @@ export type {
     RoomSummaryUpdated,
     Pong,
     MessagesRedacted,
+    MessageUpdated,
+    FoundGif,
+    FoundGifs,
+    GifCategory,
+    GifCategories,
     UserInfo,
     Invited,
     ReactionUpdated,
@@ -366,6 +402,10 @@ export type {
     Ping,
     ReportAbuse,
     RedactMessages,
+    UpdateMessage,
+    Interact,
+    SearchGifs,
+    GetGifCategories,
     GetUserInfo,
     SetSessionData,
     GetSessionData,
@@ -384,6 +424,7 @@ export type {
 
 export {
     ErrorCode,
+    MessageEmbedFlag,
     NO_LIMIT,
     STORAGE_UNIT_BYTES,
     HistoryRotation,

@@ -41,6 +41,7 @@ export class Permissions {
         UseExternalEmoticons: {value: 1 << 26, maxLayer: Layer.Room},
         ManagePins: {value: 1 << 27, maxLayer: Layer.Topic},
         SendAttachments: {value: 1 << 28, maxLayer: Layer.Topic},
+        EditMessages: {value: 1 << 29, maxLayer: Layer.Topic},
     };
 
     public static getNames(): (keyof typeof this.list)[] {

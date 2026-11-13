@@ -4,6 +4,8 @@ import {
     MessageReaction,
     ReactionUpdated,
     MessagesRedacted,
+    MessageUpdated,
+    MessageUserReactions,
     NewMessage,
     Reacted,
     Topic,
@@ -471,6 +473,8 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         traverseLock: boolean,
         includeMyReactions: boolean,
         myReactions: Record<string, UserReaction[]>,
+        includeRepliedMessages: boolean,
+        repliedMessages: Map<string, Message>,
         liveLimit: number | null,
     };
 
@@ -488,6 +492,8 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         this.internalState.traverseLock = false;
         this.internalState.includeMyReactions = ! preview;
         this.internalState.myReactions = {};
+        this.internalState.includeRepliedMessages = true;
+        this.internalState.repliedMessages = new Map();
         this.internalState.liveLimit = 50;
     }
 
@@ -528,6 +534,36 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
 
     public set includeMyReactions(value: boolean) {
         this.internalState.includeMyReactions = value;
+    }
+
+    /**
+     * Whether the history is fetched together with the messages its messages reply to.
+     * Turn it off only where replies are never shown with what they reply to.
+     */
+    public get includeRepliedMessages(): boolean {
+        return this.internalState.includeRepliedMessages;
+    }
+
+    public set includeRepliedMessages(value: boolean) {
+        this.internalState.includeRepliedMessages = value;
+    }
+
+    /**
+     * The message the given one replies to: null when it replies to nothing or the replied message is gone,
+     * undefined when the window does not know it (replied messages are not fetched).
+     */
+    public getRepliedMessage(message: Message): Message | null | undefined {
+        if (! message.replyTo) {
+            return null;
+        }
+
+        const replied = this.get(message.replyTo) ?? this.internalState.repliedMessages.get(message.replyTo);
+
+        if (replied) {
+            return replied;
+        }
+
+        return this.internalState.includeRepliedMessages ? null : undefined;
     }
 
     /**
@@ -593,7 +629,11 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
      * The latest messages (oldest first) with the reactions of the user, or null if the window does not hold them.
      * @internal
      */
-    public _exportLatest(limit: number): {messages: Message[], myReactions: Record<string, UserReaction[]>} | null {
+    public _exportLatest(limit: number): {
+        messages: Message[],
+        myReactions: Record<string, UserReaction[]>,
+        repliedMessages: Message[],
+    } | null {
         if (this.state !== WindowState.LATEST) {
             return null;
         }
@@ -603,14 +643,22 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         const continuousFrom = Math.max(0, ...this.internalState.gaps.map(id => items.findIndex(item => item.id === id)));
         const messages = items.slice(Math.max(continuousFrom, items.length - Math.max(limit, this.fetchLimit)));
         const myReactions: Record<string, UserReaction[]> = {};
+        const exportedIds = new Set(messages.map(message => message.id));
+        const repliedMessages = new Map<string, Message>();
 
         for (const message of messages) {
             if (this.internalState.myReactions[message.id]) {
                 myReactions[message.id] = this.internalState.myReactions[message.id];
             }
+
+            const replied = this.getRepliedMessage(message);
+
+            if (replied && ! exportedIds.has(replied.id)) {
+                repliedMessages.set(replied.id, replied);
+            }
         }
 
-        return {messages, myReactions};
+        return {messages, myReactions, repliedMessages: [...repliedMessages.values()]};
     }
 
     /**
@@ -618,11 +666,18 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
      * them.
      * @internal
      */
-    public _restoreLatest(messages: Message[], myReactions: Record<string, UserReaction[]>): void {
+    public _restoreLatest(
+        messages: Message[],
+        myReactions: Record<string, UserReaction[]>,
+        repliedMessages: Message[],
+    ): void {
         const originalState = this.state;
 
         this.replaceItems(messages);
         this.internalState.myReactions = {...myReactions};
+        this.internalState.repliedMessages = new Map(repliedMessages.map(replied => [replied.id, replied]));
+        this.storeRepliedMessages(messages, []);
+
         this.internalState.current = WindowState.LATEST;
         this.emitChangeWithDiff(true, originalState);
     }
@@ -667,6 +722,7 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
             location: {roomId: this.roomId, topicId: this.topicId},
             limit: this.internalState.fetchLimit,
             includeMyReactions: this.internalState.includeMyReactions,
+            includeRepliedMessages: this.internalState.includeRepliedMessages,
             ...criteria,
         });
 
@@ -674,7 +730,8 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
             throw new Error(`Cannot fetch messages: ${result.error.message}`);
         }
 
-        this.storeMyReactions(result.data.messages, result.data.myReactions);
+        this.storeMyReactions(result.data.messages, result.data.myReactions ?? []);
+        this.storeRepliedMessages(result.data.messages, result.data.repliedMessages ?? []);
 
         return result.data.messages;
     }
@@ -683,7 +740,7 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
      * The response is the truth for every message it covers, so a message it does not
      * mention has no reaction of this user left on it.
      */
-    private storeMyReactions(messages: Message[], myReactions?: Record<string, UserReaction[]>): void {
+    private storeMyReactions(messages: Message[], myReactions: MessageUserReactions[]): void {
         if (! this.internalState.includeMyReactions) {
             return;
         }
@@ -691,16 +748,75 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         const next = {...this.internalState.myReactions};
 
         for (const message of messages) {
-            const own = myReactions?.[message.id];
+            delete next[message.id];
+        }
 
-            if (own?.length) {
-                next[message.id] = own;
-            } else {
-                delete next[message.id];
+        for (const own of myReactions) {
+            if (own.reactions.length) {
+                next[own.messageId] = own.reactions;
             }
         }
 
         this.internalState.myReactions = next;
+    }
+
+    /**
+     * The response is the truth for its replies: an original it leaves out is gone. The originals the page holds
+     * itself are kept too, as the window may drop them while their replies stay.
+     */
+    private storeRepliedMessages(incoming: Message[], repliedMessages: Message[]): void {
+        if (! this.internalState.includeRepliedMessages) {
+            return;
+        }
+
+        const fromResponse = new Map<string, Message>();
+
+        for (const message of [...incoming, ...repliedMessages]) {
+            fromResponse.set(message.id, message);
+        }
+
+        const stored = this.internalState.repliedMessages;
+        const kept = new Map<string, Message>();
+
+        for (const message of incoming) {
+            const replied = message.replyTo ? fromResponse.get(message.replyTo) : undefined;
+
+            if (replied) {
+                kept.set(replied.id, replied);
+            }
+        }
+
+        for (const message of this.items) {
+            if (! message.replyTo || fromResponse.has(message.id) || kept.has(message.replyTo)) {
+                continue;
+            }
+
+            const replied = stored.get(message.replyTo) ?? this.get(message.replyTo);
+
+            if (replied) {
+                kept.set(replied.id, replied);
+            }
+        }
+
+        this.internalState.repliedMessages = kept;
+    }
+
+    private emitChange(setItems: string[]): void {
+        if (setItems.length) {
+            this.eventTarget.emit('change', {setItems});
+        }
+    }
+
+    private repliesTo(repliedIds: Set<string>): string[] {
+        const replyIds: string[] = [];
+
+        for (const message of this.items) {
+            if (message.replyTo && repliedIds.has(message.replyTo)) {
+                replyIds.push(message.id);
+            }
+        }
+
+        return replyIds;
     }
 
     private async getTopic(): Promise<Topic | undefined> {
@@ -739,7 +855,16 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
         const limit = this.state === WindowState.LIVE && ! this.internalState.traverseLock
             ? this.internalState.liveLimit ?? this.limit
             : this.limit;
+        if (ev.repliedMessage && this.internalState.includeRepliedMessages) {
+            this.internalState.repliedMessages.set(ev.repliedMessage.id, ev.repliedMessage);
+        }
+
         const deletedItems = this.addItems([ev.message], 'tail', limit);
+
+        // Pruned only once the store outgrows the window, not on every message that pushes one out
+        if (deletedItems.length && this.internalState.repliedMessages.size > this.length) {
+            this.storeRepliedMessages([], []);
+        }
 
         this.eventTarget.emit('change', deletedItems.length
             ? {setItems: [ev.message.id], deletedItems}
@@ -809,6 +934,24 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
     }
 
     /**
+     * Replaces a loaded message, also where it is kept as a replied one.
+     * For internal use.
+     * @internal
+     */
+    public _handleMessageUpdated(ev: MessageUpdated): void {
+        const {message} = ev;
+
+        if (this.has(message.id)) {
+            this.set(message);
+        }
+
+        if (this.internalState.repliedMessages.has(message.id)) {
+            this.internalState.repliedMessages.set(message.id, message);
+            this.emitChange(this.repliesTo(new Set([message.id])));
+        }
+    }
+
+    /**
      * For internal use.
      * @internal
      */
@@ -817,7 +960,13 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
             .filter(msg => msg.topicRef && ev.ids.includes(msg.id))
             .map(msg => msg.topicRef as string);
 
+        const redactedOriginals = new Set(ev.ids.filter(id => this.internalState.repliedMessages.delete(id) || this.has(id)));
+
         this.delete(...ev.ids);
+
+        if (redactedOriginals.size) {
+            this.emitChange(this.repliesTo(redactedOriginals));
+        }
 
         if (this.length === 0) {
             await this.resetToLatest();

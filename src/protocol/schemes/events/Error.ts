@@ -15,6 +15,7 @@ export enum ErrorCode {
     InvalidSearchQuery = 'InvalidSearchQueryException',
     MessageSearchUnavailable = 'MessageSearchUnavailableException',
     MessageNotFound = 'MessageNotFoundException',
+    ReactionExistsAlready = 'ReactionExistsAlreadyException',
     RoomIgnored = 'RoomIgnoredException',
     RoomNotFound = 'RoomNotFoundException',
     SpaceJoinRestricted = 'SpaceJoinRestrictedException',

@@ -8,6 +8,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Editing messages: the `UpdateMessage` command (`{messageId, content?, embed?}` - a field left out stays, `embed: null`
+  removes the embed and hides a link preview for good; resolves with `MessageUpdated` or `Ok` when nothing changed), the `MessageUpdated` event carrying the whole message,
+  `Message.editedAt` (set only by an edit of the content) and the `EditMessages` permission (`1 << 29`, topic layer).
+  History windows replace the loaded message, also where they keep it as a replied one; the topics tracked by
+  `RoomsManager` replace it when it is their last or sticky message.
+- Breaking: `Messages.myReactions` is a list of `MessageUserReactions` (`{messageId, reactions}`) instead of a map keyed
+  by message id, so this version needs a server sending the list; `TopicHistoryWindow.myReactions` keeps the map.
+- Replies: `CreateMessage.replyTo` and `Message.replyTo` (the id of the replied message). The replied messages come
+  beside the replies: in `Messages.repliedMessages` when `GetMessages.includeRepliedMessages` is set, and in
+  `NewMessage.repliedMessage`. History windows fetch them by default (`includeRepliedMessages`), keep them up to date
+  and return them with `getRepliedMessage(message)` - `null` once the replied message is deleted.
+- State snapshots: version 3 (with the replied messages of the saved histories); older snapshots are rejected.
+- Embeds: `Message.embed` (`MessageEmbed` - `type` `Link`, `Video`, `Gif` or `Rich`, a `root` list of components and
+  `flags`, see `MessageEmbedFlag`). The server builds `Link`, `Video` and `Gif` from the first link of a message and
+  attaches them with `MessageUpdated`; bots send `Rich` ones with `CreateMessage.embed` / `UpdateMessage.embed`
+  (`SendableEmbed`). `UpdateMessage` with `embed: null` hides a generated embed.
+- Embed interactions: the `Interact` command (`{messageId, actionId, value?}`, resolves with `Ok`) uses a button or
+  select of a message's embed; the author of the message (a bot) gets the `Interacted` event
+  (`{location, messageId, user, actionId, value}`). Nothing is stored.
+- `React` with a reaction the user already has fails with `ReactionExistsAlreadyException`; `Unreact` of a reaction the
+  user does not have resolves with `Ok`. Both used to get no answer.
+- GIF search: the `SearchGifs` command (`{query, position?, locale?}`) resolving with `FoundGifs` (`{gifs, next}`, each
+  `FoundGif` with its post `url`, size, poster and MP4/WebM sources; pass `next` as `position` for the following page),
+  and the `GetGifCategories` command (`{locale?}`) resolving with `GifCategories` (`{categories}`, each `GifCategory`
+  with the search `term`, its English `name` and an `imageUrl`). Available when the server runs GIF search.
 - Typing notifications: the `Type` command and the `Typing` event (`{location, userId}`), for rooms other than
   `ClassicText`. `RoomsManager.typing.get(roomId, topicId)` returns the ids of the users typing in a topic, tracked from
   the first call, each leaving `TYPING_TIMEOUT_MS` after their last notification or with their message.

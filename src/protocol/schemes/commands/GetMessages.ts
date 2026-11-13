@@ -11,4 +11,5 @@ export interface GetMessages {
      * asking for their own state separately.
      */
     includeMyReactions?: boolean;
+    includeRepliedMessages?: boolean;
 }

@@ -299,7 +299,7 @@ describe('state snapshot - import', () => {
     test('is rejected for another version, leaving the state untouched', async () => {
         const snapshot = await exportPopulated();
 
-        for (const version of [0, 1, 3, '2', undefined]) {
+        for (const version of [0, 1, 2, '3', undefined]) {
             const { tracker } = createTracker();
             expect(tracker.importSnapshot({ ...snapshot, version })).toBe(false);
             expect(tracker.me).toBeNull();
@@ -543,7 +543,10 @@ describe('state snapshot - message histories', () => {
             if (topicId === 'topic-R1' && fetched === 1) {
                 list[59] = { ...list[59], topicRef: 'thread' };
             }
-            return { location: data.location, messages: list, myReactions: { m59: [{ type: 'Emoji', value: 'x' }], m1: [{ type: 'Emoji', value: 'y' }] } };
+            return { location: data.location, messages: list, myReactions: [
+                { messageId: 'm59', reactions: [{ type: 'Emoji', value: 'x' }] },
+                { messageId: 'm1', reactions: [{ type: 'Emoji', value: 'y' }] },
+            ] };
         });
         client.respondTo('GetTopics', (data: any) => ({
             location: { roomId: data.roomId },
@@ -646,7 +649,7 @@ describe('state snapshot - message histories', () => {
         const changes: any[] = [];
         window.on('change', (ev: any) => changes.push(ev));
 
-        window._restoreLatest(messages(2, 'R1', 'topic-R1'), {});
+        window._restoreLatest(messages(2, 'R1', 'topic-R1'), {}, []);
 
         expect(changes).toEqual([{ setItems: ['m0', 'm1'] }]);
     });
@@ -664,7 +667,7 @@ describe('state snapshot - message histories', () => {
         client.respondTo('GetMessages', (data: any) => ({
             location: data.location,
             messages: messages(5, data.location.roomId, data.location.topicId, 'fresh'),
-            myReactions: {},
+            myReactions: [],
         }));
         client.respondTo('GetTopics', () => ({ location: { roomId: 'R1' }, topics: [updatedThread] }));
         client.respondTo('GetRoomMembers', (data: any) => ({ id: data.id, members: [member('me')] }));

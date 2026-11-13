@@ -2,6 +2,7 @@ import {User} from "./User";
 import {ChatLocation} from "./ChatLocation";
 import {MessageReaction} from "./Reaction";
 import {MessagePoll} from "./MessagePoll";
+import {MessageEmbed} from "./MessageEmbed";
 
 export type MessageType = 'Text'|'RoomJoin'|'RoomMemberAdd'|'RoomLeave'|'SpaceJoin'|'SpaceLeave'|'TopicChange'|'CustomNickChange'|'Ephemeral'|'Poll'|'RoomRename';
 
@@ -33,4 +34,7 @@ export interface Message {
     reactions: MessageReaction[];
     poll?: MessagePoll;
     mentions: MessageMentions | null;
+    editedAt?: string | null;
+    replyTo?: string | null;
+    embed?: MessageEmbed | null;
 }

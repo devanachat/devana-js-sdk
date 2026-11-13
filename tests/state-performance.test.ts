@@ -215,7 +215,7 @@ describe('history windows', () => {
 
     test('own reactions are replaced, not mutated', async () => {
         const { client, tracker } = createTracker();
-        client.respondTo('GetMessages', () => ({ messages: [createMessage('A', 'topic-A', 'm1')], myReactions: {} }));
+        client.respondTo('GetMessages', () => ({ messages: [createMessage('A', 'topic-A', 'm1')], myReactions: [] }));
         emitSession(client, [createRoom('A')]);
 
         const window = await getWindow(tracker, 'A');
@@ -271,7 +271,7 @@ describe('rooms list', () => {
 
     test('redacting the sticky message unsticks it', async () => {
         const { client, tracker } = createTracker();
-        client.respondTo('GetMessages', () => ({ messages: [], myReactions: {} }));
+        client.respondTo('GetMessages', () => ({ messages: [], myReactions: [] }));
         emitSession(client, [createRoom('A')]);
 
         client.emit('NewMessage', { message: createMessage('A', 'topic-A', 'm1'), sticky: true });

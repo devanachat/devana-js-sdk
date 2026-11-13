@@ -1,5 +1,6 @@
 import {ChatLocation} from "../ChatLocation";
 import {MessagePoll} from "../MessagePoll";
+import {SendableEmbed} from "../MessageEmbed";
 
 export interface CreateMessage {
     location: ChatLocation;
@@ -10,4 +11,6 @@ export interface CreateMessage {
     /** Turns the message into a poll; its content becomes the question. */
     poll?: MessagePoll;
     sticky?: boolean;
+    replyTo?: string;
+    embed?: SendableEmbed;
 }

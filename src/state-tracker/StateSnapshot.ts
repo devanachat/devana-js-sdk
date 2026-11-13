@@ -16,7 +16,7 @@ import {
 /**
  * Version of the {@link StateSnapshot} format. A snapshot of any other version is rejected on import.
  */
-export const STATE_SNAPSHOT_VERSION = 2;
+export const STATE_SNAPSHOT_VERSION = 3;
 
 /**
  * Plain, JSON-serializable copy of the state tracked by {@link ChatStateTracker}, made to restore the state at the
@@ -81,6 +81,10 @@ export interface TopicHistorySnapshot {
      */
     messages: Message[];
     myReactions: Record<string, UserReaction[]>;
+    /**
+     * The messages replied to by the ones above.
+     */
+    repliedMessages: Message[];
     /**
      * The topic of the history (if not the default one of the room) and the topics the messages refer to, as far as
      * they are known.
@@ -241,6 +245,7 @@ function isTopicHistory(value: unknown): boolean {
         && isString(value.topicId)
         && isArrayOf(value.messages, isFullMessage)
         && isUserReactions(value.myReactions)
+        && isArrayOf(value.repliedMessages, isFullMessage)
         && isArrayOf(value.topics, isTopic);
 }
 

@@ -2,9 +2,14 @@ import {ChatLocation} from "../ChatLocation";
 import {Message} from "../Message";
 import {UserReaction} from "../Reaction";
 
+export interface MessageUserReactions {
+    messageId: string;
+    reactions: UserReaction[];
+}
+
 export interface Messages {
     location: ChatLocation;
     messages: Message[];
-    /** Message id => reactions of the asking user; present only when requested. */
-    myReactions?: Record<string, UserReaction[]>;
+    myReactions?: MessageUserReactions[] | null;
+    repliedMessages?: Message[] | null;
 }

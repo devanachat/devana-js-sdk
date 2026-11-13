@@ -31,6 +31,7 @@ export class MessagesManager {
         this.tracker.client.on('NewTopic', ev => this.roomHistories.get(ev.roomId)?._handleNewTopic(ev));
         this.tracker.client.on('TopicDeleted', ev => this.roomHistories.get(ev.location.roomId)?._handleTopicDeleted(ev));
         this.tracker.client.on('NewMessage', ev => this.roomHistories.get(ev.message.location.roomId)?._handleNewMessage(ev));
+        this.tracker.client.on('MessageUpdated', ev => this.roomHistories.get(ev.message.location.roomId)?._handleMessageUpdated(ev));
         this.tracker.client.on('MessagesRedacted', ev => this.roomHistories.get(ev.location.roomId)?._handleMessagesRedacted(ev));
         this.tracker.client.on('ReactionUpdated', ev => this.forEachRoomHistory(history => history._handleReactionUpdated(ev)));
         this.tracker.client.on('Reacted', ev => this.forEachRoomHistory(history => history._handleReacted(ev)));
@@ -117,7 +118,7 @@ export class MessagesManager {
             const messages = snapshot.messages.filter(
                 message => message.location.roomId === roomId && message.location.topicId === topic.id,
             );
-            history._restoreWindow(topic, messages, snapshot.myReactions);
+            history._restoreWindow(topic, messages, snapshot.myReactions, snapshot.repliedMessages);
         }
     }
 
