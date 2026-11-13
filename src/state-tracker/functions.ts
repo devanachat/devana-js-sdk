@@ -1,4 +1,15 @@
-import {PmParticipant, PmParticipantFlag, Role, Room, RoomMember, SpaceMember, User} from "../protocol";
+import {
+    MessageReaction,
+    PmParticipant,
+    PmParticipantFlag,
+    Role,
+    Room,
+    RoomMember,
+    SpaceMember,
+    ToggledReaction,
+    User,
+    UserReaction,
+} from "../protocol";
 
 /**
  * @return New objects of the other roles whose priority has to move; the given roles are left intact.
@@ -65,4 +76,40 @@ export function isSameUser(a: User, b: User): boolean {
 
         return valueA === valueB;
     });
+}
+
+/**
+ * The counter arrives as the global source of truth - only it is overwritten, and a reaction nobody holds any more
+ * (count 0) leaves the message.
+ * @return Null when the reactions stay as they are.
+ */
+export function applyReactionCounter(reactions: MessageReaction[], counter: MessageReaction): MessageReaction[] | null {
+    const index = reactions.findIndex(reaction => reaction.type === counter.type && reaction.value === counter.value);
+
+    if (index === -1 && ! counter.count) {
+        return null;
+    }
+
+    const next = [...reactions];
+
+    if (index === -1) {
+        next.push(counter);
+    } else if (counter.count) {
+        next[index] = counter; // In place - a pill must not jump around as its counter moves
+    } else {
+        next.splice(index, 1);
+    }
+
+    return next;
+}
+
+export function applyToggledReaction(own: UserReaction[], toggled: ToggledReaction): UserReaction[] {
+    const {type, value, isAdded} = toggled;
+    const next = own.filter(reaction => reaction.type !== type || reaction.value !== value);
+
+    if (isAdded) {
+        next.push({type, value});
+    }
+
+    return next;
 }

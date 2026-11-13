@@ -40,6 +40,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Sticky messages: `Topic.stickyMessage`, `CreateMessage.sticky`, `NewMessage.sticky`, `UpdateTopic.stickyMessageId`
   (a message id sticks it, `null` unsticks it) and the `ManagePins` permission. The topics tracked by `RoomsManager`
   take a new sticky message from `NewMessage` and drop it when it is redacted.
+- Reactions of sticky messages: `RoomsManager.getStickyMyReactions(location, messageId)` returns the reactions of the
+  connected user on sticky messages (`MessageUserReactions`, keyed by message id) - fetched once per message with `GetMessages` (`around`,
+  `limit: 1`, `includeMyReactions`), as a sticky message comes with its topic, then kept up to date with `Reacted`.
+  The topics tracked by `RoomsManager` follow the reaction counters of their sticky message with `ReactionUpdated`.
 - Role icons: `Role.icon` (`RoleIcon` - an emoji or an emoticon of the space, `{type, value}` like a reaction) and
   `UpdateRole.icon` (an icon sets it, `null` removes it).
 - Guests: `Space.guestRole` and `UpdateSpace.guestRole` (a role of the space given to temporary accounts when they

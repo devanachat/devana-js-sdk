@@ -216,7 +216,7 @@ because some structures are rebuilt from scratch on the `Session` event.
 | Manager | What it gives you |
 |---|---|
 | `state.spaces` | Your spaces; per space: `getRooms()`, `getMembers()`, `getRoles()`, `getMe()` |
-| `state.rooms` | Rooms you are in; per room: `getMembers()`, `getTopics()`, `getMe()` |
+| `state.rooms` | Rooms you are in; per room: `getMembers()`, `getTopics()`, `getMe()`; your reactions on a sticky message (`Topic.stickyMessage`): `getStickyMyReactions()` |
 | `state.rooms.messages` | Message history windows per topic |
 | `state.rooms.followedTopics` | Unread counters and mentions, marking rooms as read |
 | `state.permissions` | Your effective permissions in any location |

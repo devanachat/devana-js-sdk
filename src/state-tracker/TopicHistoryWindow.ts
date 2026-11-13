@@ -1,7 +1,6 @@
 import {
     GetMessages,
     Message,
-    MessageReaction,
     ReactionUpdated,
     MessagesRedacted,
     MessageUpdated,
@@ -13,6 +12,7 @@ import {
 } from "../protocol";
 import {ChatStateTracker} from "./ChatStateTracker";
 import {CollectionEventMap, ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
+import {applyReactionCounter, applyToggledReaction} from "./functions";
 
 export enum WindowState {
     /**
@@ -879,29 +879,11 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
      */
     public _handleReactionUpdated(ev: ReactionUpdated): void {
         const message = this.get(ev.messageId);
+        const reactions = message ? applyReactionCounter(message.reactions, ev.reaction) : null;
 
-        if (! message) {
-            return;
+        if (reactions) {
+            this.set({...message, reactions});
         }
-
-        const index = message.reactions.findIndex(
-            reaction => reaction.type === ev.reaction.type && reaction.value === ev.reaction.value);
-
-        if (index === -1 && ! ev.reaction.count) {
-            return;
-        }
-
-        const reactions: MessageReaction[] = [...message.reactions];
-
-        if (index === -1) {
-            reactions.push(ev.reaction);
-        } else if (ev.reaction.count) {
-            reactions[index] = ev.reaction; // In place - a pill must not jump around as its counter moves
-        } else {
-            reactions.splice(index, 1);
-        }
-
-        this.set({...message, reactions});
     }
 
     /**
@@ -913,13 +895,7 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
             return;
         }
 
-        const {type, value, isAdded} = ev.reaction;
-        const own = (this.internalState.myReactions[ev.messageId] ?? [])
-            .filter(reaction => reaction.type !== type || reaction.value !== value);
-
-        if (isAdded) {
-            own.push({type, value});
-        }
+        const own = applyToggledReaction(this.internalState.myReactions[ev.messageId] ?? [], ev.reaction);
 
         // Not `{[ev.messageId]: _, ...rest}` - Babel's loose object rest drops the key when the binding is unused (babel/babel#18196)
         const myReactions = {...this.internalState.myReactions};

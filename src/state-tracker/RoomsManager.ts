@@ -1,10 +1,13 @@
 import {IndexedCollection, ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
 import {
+    ChatLocation,
     Message,
     MessagesRedacted,
     MessageUpdated,
     NewMessage,
     NewTopic,
+    Reacted,
+    ReactionUpdated,
     Room, RoomDeleted,
     RoomJoined, RoomLeft,
     RoomMember, RoomMemberLeft, RoomMembers, RoomMembersJoined,
@@ -12,6 +15,7 @@ import {
     SpaceMemberUpdated,
     Topic,
     TopicDeleted, TopicUpdated,
+    MessageUserReactions,
     UserUpdated,
 } from "../protocol";
 import {ChatStateTracker} from "./ChatStateTracker";
@@ -27,7 +31,7 @@ import {
     TopicHistorySnapshot,
     withoutPresence,
 } from "./StateSnapshot";
-import {getActivePmParticipants, isSameUser} from "./functions";
+import {applyReactionCounter, applyToggledReaction, getActivePmParticipants, isSameUser} from "./functions";
 
 export class RoomsManager {
     public readonly messages: MessagesManager;
@@ -41,6 +45,8 @@ export class RoomsManager {
     private readonly membersPromises = new PromiseRegistry();
     private readonly topicsPromises = new PromiseRegistry();
     private readonly importedTopicIds = new Map<string, Set<string>>();
+    private readonly stickyMyReactions = new ObservableIndexedObjectCollection<MessageUserReactions>('messageId');
+    private readonly stickyMyReactionsPromises = new PromiseRegistry();
 
     public constructor(private tracker: ChatStateTracker) {
         this.messages = new MessagesManager(tracker);
@@ -50,6 +56,8 @@ export class RoomsManager {
         this.tracker.client.on('NewMessage', ev => this.handleNewMessage(ev));
         this.tracker.client.on('MessagesRedacted', ev => this.handleMessagesRedacted(ev));
         this.tracker.client.on('MessageUpdated', ev => this.handleMessageUpdated(ev));
+        this.tracker.client.on('ReactionUpdated', ev => this.handleReactionUpdated(ev));
+        this.tracker.client.on('Reacted', ev => this.handleReacted(ev));
         this.tracker.client.on('NewTopic', ev => this.handleNewTopic(ev));
         this.tracker.client.on('TopicDeleted', ev => this.handleTopicDeleted(ev));
         this.tracker.client.on('RoomJoined', ev => this.handleRoomJoined(ev));
@@ -85,6 +93,35 @@ export class RoomsManager {
 
         await this.membersPromises.get(roomId);
         return this.members.get(roomId);
+    }
+
+    /**
+     * Get the reactions of the connected user on sticky messages, keyed by message id. A sticky message comes with its
+     * topic, outside of the message history, so the reactions of the given one are fetched once and then follow
+     * the reactions of the user.
+     */
+    public async getStickyMyReactions(
+        location: ChatLocation,
+        messageId: string,
+    ): Promise<ObservableIndexedObjectCollection<MessageUserReactions>> {
+        if (this.stickyMyReactionsPromises.notExist(messageId)) {
+            this.stickyMyReactionsPromises.registerByFunction(async () => {
+                const result = await this.tracker.client.send(
+                    'GetMessages',
+                    {location, around: messageId, limit: 1, includeMyReactions: true},
+                );
+
+                if (result.error) {
+                    throw result.error;
+                }
+
+                const own = result.data.myReactions?.find(item => item.messageId === messageId);
+                this.stickyMyReactions.set({messageId, reactions: own?.reactions ?? []});
+            }, messageId);
+        }
+
+        await this.stickyMyReactionsPromises.get(messageId);
+        return this.stickyMyReactions;
     }
 
     /**
@@ -526,6 +563,9 @@ export class RoomsManager {
         // so bound views refresh in place without blanking.
         this.membersPromises.forgetAll();
         this.topicsPromises.forgetAll();
+        // Reactions could change meanwhile, and missed changes never arrive
+        this.stickyMyReactions.deleteAll();
+        this.stickyMyReactionsPromises.forgetAll();
 
         // Upsert surviving/new rooms from the authoritative snapshot.
         this.addJoinedRooms(...ev.state.rooms);
@@ -601,6 +641,30 @@ export class RoomsManager {
 
         topics.set(newTopic);
         this.updatePmDefaultTopic(ev.message.location.roomId, newTopic);
+    }
+
+    private handleReactionUpdated(ev: ReactionUpdated): void {
+        for (const [roomId, topics] of this.topics.items) {
+            for (const topic of topics.items) {
+                const reactions = topic.stickyMessage?.id === ev.messageId
+                    ? applyReactionCounter(topic.stickyMessage.reactions, ev.reaction)
+                    : null;
+
+                if (reactions) {
+                    const newTopic = {...topic, stickyMessage: {...topic.stickyMessage, reactions}};
+                    topics.set(newTopic);
+                    this.updatePmDefaultTopic(roomId, newTopic);
+                }
+            }
+        }
+    }
+
+    private handleReacted(ev: Reacted): void {
+        const own = this.stickyMyReactions.get(ev.messageId);
+
+        if (own) {
+            this.stickyMyReactions.set({messageId: own.messageId, reactions: applyToggledReaction(own.reactions, ev.reaction)});
+        }
     }
 
     private async handleMessagesRedacted(ev: MessagesRedacted): Promise<void> {
