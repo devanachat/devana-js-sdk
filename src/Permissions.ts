@@ -31,7 +31,7 @@ export class Permissions {
         Kick: {value: 1 << 16, maxLayer: Layer.Room},
         ChangeOwnProfile: {value: 1 << 17, maxLayer: Layer.Space},
         ChangeOwnColor: {value: 1 << 18, maxLayer: Layer.Room},
-        RedactMessages: {value: 1 << 19, maxLayer: Layer.Topic},
+        ManageMessages: {value: 1 << 19, maxLayer: Layer.Topic},
         AddMembers: {value: 1 << 20, maxLayer: Layer.Space},
         React: {value: 1 << 21, maxLayer: Layer.Topic},
         CreatePolls: {value: 1 << 22, maxLayer: Layer.Topic},

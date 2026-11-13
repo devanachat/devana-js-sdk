@@ -140,7 +140,7 @@ client.on('NewMessage', async ({message}) => {
         return;
     }
 
-    const {hasAll} = await client.state!.permissions.check(['RedactMessages'], message.location);
+    const {hasAll} = await client.state!.permissions.check(['ManageMessages'], message.location);
 
     if (hasAll) {
         await client.send('RedactMessages', {messageId: message.id});
