@@ -564,7 +564,6 @@ export class RoomsManager {
         this.membersPromises.forgetAll();
         this.topicsPromises.forgetAll();
         // Reactions could change meanwhile, and missed changes never arrive
-        this.stickyMyReactions.deleteAll();
         this.stickyMyReactionsPromises.forgetAll();
 
         // Upsert surviving/new rooms from the authoritative snapshot.
@@ -605,6 +604,11 @@ export class RoomsManager {
     }
 
     private handleNewMessage(ev: NewMessage): void {
+        // Shown to one user and never stored, so it is neither counted nor the last message of the topic
+        if (ev.message.type === 'Ephemeral') {
+            return;
+        }
+
         const topics = this.topics.get(ev.message.location.roomId);
         const topic = topics?.get(ev.message.location.topicId);
 
@@ -625,6 +629,12 @@ export class RoomsManager {
 
     private handleMessageUpdated(ev: MessageUpdated): void {
         const topics = this.topics.get(ev.message.location.roomId);
+        const refTopic = ev.message.topicRef ? topics?.get(ev.message.topicRef) : undefined;
+
+        if (refTopic?.refMessage?.id === ev.message.id) {
+            topics.set({...refTopic, refMessage: ev.message});
+        }
+
         const topic = topics?.get(ev.message.location.topicId);
         const isLast = topic?.lastMessage?.id === ev.message.id;
         const isSticky = topic?.stickyMessage?.id === ev.message.id;
@@ -668,6 +678,8 @@ export class RoomsManager {
     }
 
     private async handleMessagesRedacted(ev: MessagesRedacted): Promise<void> {
+        this.stickyMyReactions.delete(...ev.ids);
+
         // Remove redacted messages from topic and update metadata
         const topics = this.topics.get(ev.location.roomId);
         const topic = topics?.get(ev.location.topicId);

@@ -141,7 +141,10 @@ import {RedactMessages} from "./schemes/commands/RedactMessages";
 import {MessagesRedacted} from "./schemes/events/MessagesRedacted";
 import {UpdateMessage} from "./schemes/commands/UpdateMessage";
 import {Interact} from "./schemes/commands/Interact";
+import {NewInteraction} from "./schemes/events/NewInteraction";
 import {Interacted} from "./schemes/events/Interacted";
+import {InteractionResolved, InteractionStatus} from "./schemes/events/InteractionResolved";
+import {AckInteraction} from "./schemes/commands/AckInteraction";
 import {MessageUpdated} from "./schemes/events/MessageUpdated";
 import {SearchGifs} from "./schemes/commands/SearchGifs";
 import {GetGifCategories} from "./schemes/commands/GetGifCategories";
@@ -271,7 +274,10 @@ export type {
     IgnoredRooms,
     Messages,
     MessageUserReactions,
+    NewInteraction,
     Interacted,
+    InteractionResolved,
+    InteractionStatus,
     FoundMessages,
     FoundMessage,
     TextRange,
@@ -404,6 +410,7 @@ export type {
     RedactMessages,
     UpdateMessage,
     Interact,
+    AckInteraction,
     SearchGifs,
     GetGifCategories,
     GetUserInfo,

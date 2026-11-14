@@ -97,6 +97,36 @@ describe('MessageUpdated', () => {
         expect(topics.get(TOPIC).lastMessage.embed.type).toBe('Link');
     });
 
+    test('an edit of a loaded original refreshes its replies', async () => {
+        const {client, window} = await setup();
+        const changed: string[][] = [];
+
+        client.emit('NewMessage', {message: message('m1')} as any);
+        client.emit('NewMessage', {message: message('m2', {replyTo: 'm1'})} as any);
+        window.on('change', (ev: any) => changed.push(ev.setItems));
+        client.emit('MessageUpdated', {message: message('m1', {content: 'poprawione'})} as any);
+
+        expect(changed.flat()).toContain('m2');
+    });
+
+    test('updates the original message of a side topic', async () => {
+        const {client, tracker} = await setup();
+        const topics = await tracker.rooms.getTopics(ROOM);
+        topics.set({id: 'side', messageCount: 0, lastMessage: null, refMessage: message('m1', {topicRef: 'side'})});
+
+        client.emit('MessageUpdated', {message: message('m1', {topicRef: 'side', content: 'poprawione'})} as any);
+
+        expect(topics.get('side').refMessage.content).toBe('poprawione');
+    });
+
+    test('a restored window keeps the saved replied messages', async () => {
+        const {window} = await setup();
+
+        window._restoreLatest([message('m2', {replyTo: 'm1'})], {}, [message('m1')]);
+
+        expect(window.getRepliedMessage(window.get('m2')).id).toBe('m1');
+    });
+
     test('a deleted message leaves its replies without the replied one', async () => {
         const {client, window} = await setup();
 
@@ -108,5 +138,19 @@ describe('MessageUpdated', () => {
 
         expect(window.getRepliedMessage(window.get('m2'))).toBeNull();
         expect(window.getRepliedMessage(window.get('m3'))).toBeNull();
+    });
+});
+
+describe('Ephemeral messages', () => {
+    test('show in the window without counting or becoming the last message of the topic', async () => {
+        const {client, tracker, window} = await setup();
+
+        client.emit('NewMessage', {message: message('m1')} as any);
+        client.emit('NewMessage', {message: message('e1', {type: 'Ephemeral', author: {user: {id: 'bot', tags: ['bot']}}})} as any);
+
+        const topic = (await tracker.rooms.getTopics(ROOM)).get(TOPIC);
+        expect(window.has('e1')).toBe(true);
+        expect(topic.messageCount).toBe(1);
+        expect(topic.lastMessage.id).toBe('m1');
     });
 });

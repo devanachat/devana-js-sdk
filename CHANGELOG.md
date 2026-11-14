@@ -12,23 +12,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   removes the embed and hides a link preview for good; resolves with `MessageUpdated` or `Ok` when nothing changed), the `MessageUpdated` event carrying the whole message,
   `Message.editedAt` (set only by an edit of the content) and the `EditMessages` permission (`1 << 29`, topic layer).
   History windows replace the loaded message, also where they keep it as a replied one; the topics tracked by
-  `RoomsManager` replace it when it is their last or sticky message.
-- Breaking: `Messages.myReactions` is a list of `MessageUserReactions` (`{messageId, reactions}`) instead of a map keyed
-  by message id, so this version needs a server sending the list; `TopicHistoryWindow.myReactions` keeps the map.
+  `RoomsManager` replace it when it is their last or sticky message or the original message of a side topic.
 - Replies: `CreateMessage.replyTo` and `Message.replyTo` (the id of the replied message). The replied messages come
   beside the replies: in `Messages.repliedMessages` when `GetMessages.includeRepliedMessages` is set, and in
   `NewMessage.repliedMessage`. History windows fetch them by default (`includeRepliedMessages`), keep them up to date
-  and return them with `getRepliedMessage(message)` - `null` once the replied message is deleted.
-- State snapshots: version 3 (with the replied messages of the saved histories); older snapshots are rejected.
+  and return them with `getRepliedMessage(message)` - `null` once the replied message is deleted, `undefined` in a
+  window without `includeRepliedMessages` when the replied message is not loaded.
 - Embeds: `Message.embed` (`MessageEmbed` - `type` `Link`, `Video`, `Gif` or `Rich`, a `root` list of components and
   `flags`, see `MessageEmbedFlag`). The server builds `Link`, `Video` and `Gif` from the first link of a message and
   attaches them with `MessageUpdated`; bots send `Rich` ones with `CreateMessage.embed` / `UpdateMessage.embed`
   (`SendableEmbed`). `UpdateMessage` with `embed: null` hides a generated embed.
-- Embed interactions: the `Interact` command (`{messageId, actionId, value?}`, resolves with `Ok`) uses a button or
-  select of a message's embed; the author of the message (a bot) gets the `Interacted` event
-  (`{location, messageId, user, actionId, value}`). Nothing is stored.
-- `React` with a reaction the user already has fails with `ReactionExistsAlreadyException`; `Unreact` of a reaction the
-  user does not have resolves with `Ok`. Both used to get no answer.
+- Embed interactions: the `Interact` command (`{messageId, actionId, value?}`, resolves with `Interacted`
+  carrying the `interactionId`) uses a button or select of a message's embed; the author of the message (a bot) gets
+  the `NewInteraction` event (`{interactionId, location, messageId, user, actionId, value}`). Nothing is stored. The id
+  ties a later answer of the bot (such as a dialog) to the interaction and the client it came from.
+- Answering interactions: a bot answers within 15 s with `CreateMessage.interactionId` or `UpdateMessage.interactionId`
+  (the resulting `NewMessage` / `MessageUpdated` carries the `interactionId`), or with `AckInteraction`
+  (`{interactionId, status?: 'Ok' | 'Fail', notice?}`). The user who interacted gets `InteractionResolved`
+  (`{interactionId, status, notice}`) for an `AckInteraction`, for an edit that changed nothing and, with the `Timeout`
+  status, when nothing came in time.
+- Ephemeral bot messages: `CreateMessage.ephemeralFor` (a user id) shows the message only to that room member, as
+  `NewMessage` of the `Ephemeral` type, and resolves with `Ok`; it is not stored, takes no attachments or poll, may
+  reply to a message and mention its recipient (through `allowedMentions`, without a push). A recipient taking no
+  private messages at all does not get it. `RoomsManager` no longer counts `Ephemeral` messages nor makes them the last one of a topic.
 - GIF search: the `SearchGifs` command (`{query, position?, locale?}`) resolving with `FoundGifs` (`{gifs, next}`, each
   `FoundGif` with its post `url`, size, poster and MP4/WebM sources; pass `next` as `position` for the following page),
   and the `GetGifCategories` command (`{locale?}`) resolving with `GifCategories` (`{categories}`, each `GifCategory`
@@ -40,9 +46,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Sticky messages: `Topic.stickyMessage`, `CreateMessage.sticky`, `NewMessage.sticky`, `UpdateTopic.stickyMessageId`
   (a message id sticks it, `null` unsticks it) and the `ManagePins` permission. The topics tracked by `RoomsManager`
   take a new sticky message from `NewMessage` and drop it when it is redacted.
-- Breaking: the `RedactMessages` permission is `ManageMessages` (the same bit, `1 << 19`; the `RedactMessages` command
-  keeps its name). Besides deleting messages it lets `UpdateMessage` with `embed: null` hide a preview generated by the
-  server in any message.
 - Reactions of sticky messages: `RoomsManager.getStickyMyReactions(location, messageId)` returns the reactions of the
   connected user on sticky messages (`MessageUserReactions`, keyed by message id) - fetched once per message with `GetMessages` (`around`,
   `limit: 1`, `includeMyReactions`), as a sticky message comes with its topic, then kept up to date with `Reacted`.
@@ -58,6 +61,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- **Breaking:** `Messages.myReactions` is a list of `MessageUserReactions` (`{messageId, reactions}`) instead of a map
+  keyed by message id, so this version needs a server sending the list; `TopicHistoryWindow.myReactions` keeps the map.
+- **Breaking:** the `RedactMessages` permission is `ManageMessages` (the same bit, `1 << 19`; the `RedactMessages`
+  command keeps its name). Besides deleting messages it lets `UpdateMessage` with `embed: null` hide a preview
+  generated by the server in any message.
+- State snapshots: version 3 (with the replied messages of the saved histories); older snapshots are rejected.
+- `React` with a reaction the user already has fails with `ReactionExistsAlreadyException`; `Unreact` of a reaction the
+  user does not have resolves with `Ok`. Both used to get no answer.
 - `PermissionsManager.calculatePermissions` follows the server: on every layer the space default role (everyone) is
   applied before the other roles, so a deny of another role overrides what everyone allows. An allow of any role still
   wins over a deny of another one.

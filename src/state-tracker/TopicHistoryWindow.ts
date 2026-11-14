@@ -675,8 +675,7 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
 
         this.replaceItems(messages);
         this.internalState.myReactions = {...myReactions};
-        this.internalState.repliedMessages = new Map(repliedMessages.map(replied => [replied.id, replied]));
-        this.storeRepliedMessages(messages, []);
+        this.storeRepliedMessages(messages, repliedMessages);
 
         this.internalState.current = WindowState.LATEST;
         this.emitChangeWithDiff(true, originalState);
@@ -917,12 +916,18 @@ export class TopicHistoryWindow extends TraversableRemoteCollection<
     public _handleMessageUpdated(ev: MessageUpdated): void {
         const {message} = ev;
 
-        if (this.has(message.id)) {
+        const loaded = this.has(message.id);
+        const kept = this.internalState.repliedMessages.has(message.id);
+
+        if (loaded) {
             this.set(message);
         }
 
-        if (this.internalState.repliedMessages.has(message.id)) {
+        if (kept) {
             this.internalState.repliedMessages.set(message.id, message);
+        }
+
+        if (loaded || kept) {
             this.emitChange(this.repliesTo(new Set([message.id])));
         }
     }

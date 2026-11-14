@@ -1,10 +1,4 @@
-import {ChatLocation} from "../ChatLocation";
-import {User} from "../User";
-
+/** The answer to `Interact`: the id under which the author of the message gets the interaction. */
 export interface Interacted {
-    location: ChatLocation;
-    messageId: string;
-    user: User;
-    actionId: string;
-    value: string | null;
+    interactionId: string;
 }

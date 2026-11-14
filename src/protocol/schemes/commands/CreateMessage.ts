@@ -13,4 +13,8 @@ export interface CreateMessage {
     sticky?: boolean;
     replyTo?: string;
     embed?: SendableEmbed;
+    /** The interaction the message answers */
+    interactionId?: string;
+    /** Bots only: the id of the room member the message is shown to; it is not stored and resolves with `Ok` */
+    ephemeralFor?: string;
 }
