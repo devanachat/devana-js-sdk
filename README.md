@@ -167,7 +167,8 @@ once a connection has been stable for a while. The `disconnect` event
 tells whether a retry follows. A pending `connect()` promise resolves once an attempt authenticates, and is rejected by
 `disconnect()`, which also stops reconnecting. An invalid token (`Bye` with `AuthenticationException`) rejects `connect()`
 with the `Bye` data, emits an `error` event and stops reconnecting as well. A `Bye` with the `Service` reason (the server
-going down) is always followed by a retry, emitted as `Bye` and then `disconnect` with `true`, whatever the close code.
+going down) or with `ServiceUnavailableException` (the server overloaded) is always followed by a retry, emitted as
+`Bye` and then `disconnect` with `true`, whatever the close code.
 When a `Bye` carries `retryAfterMs`, the next retry waits that long (at most 60 s) instead of the backoff delay.
 
 ```ts
@@ -178,7 +179,7 @@ const client = new WebSocketChatClient({
     sessionTimeoutMs: 60000, // Until Session arrives on an open socket; the server may queue connections (default)
     reconnect: {
         minDelayMs: 1000, // Limit of the first delay after a lost connection, doubled on every next one (default)
-        serverCloseMinDelayMs: 5000, // The same after a closure by the server: 1001, 1012 or a Bye (default)
+        serverCloseMinDelayMs: 5000, // The same after a closure by the server: 1001, 1012, 1013 or a Bye (default)
         maxDelayMs: 30000, // Maximum delay between retries (default)
         stableConnectionMs: 30000, // A connection lasting this long starts the backoff over (default)
     },

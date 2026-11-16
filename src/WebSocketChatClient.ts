@@ -45,7 +45,7 @@ export interface WebSocketClientOptions {
          */
         minDelayMs?: number;
         /**
-         * Limit of the first delay when the server closed the connection (close code 1001 or 1012, or after
+         * Limit of the first delay when the server closed the connection (close code 1001, 1012 or 1013, or after
          * a `Bye`); each subsequent one doubles it. Default is 5 seconds.
          */
         serverCloseMinDelayMs?: number;
@@ -62,6 +62,8 @@ export interface WebSocketClientOptions {
 }
 
 const MAX_RETRY_AFTER_MS = 60000;
+// Going Away, Service Restart, Try Again Later
+const SERVER_CLOSE_CODES = [1001, 1012, 1013];
 
 function normalizeRetryAfter(retryAfterMs: unknown): number | undefined {
     return typeof retryAfterMs === 'number' && Number.isFinite(retryAfterMs) && retryAfterMs > 0
@@ -253,7 +255,7 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
         this.byeReceived = true;
         this.byeRetryAfterMs = normalizeRetryAfter(bye?.retryAfterMs);
 
-        if (bye?.reason?.type === 'Service') {
+        if (bye?.reason?.type === 'Service' || bye?.reason?.error?.code === 'ServiceUnavailableException') {
             // Not left to the close code: the server may close with 1000 and some platforms rewrite the code.
             this.handleConnectionLoss(true, true);
             return;
@@ -275,7 +277,7 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
 
     private onClose(event: CloseEvent): void {
         // Connection was closed because of error
-        this.handleConnectionLoss(event.code !== 1000, this.byeReceived || event.code === 1001 || event.code === 1012);
+        this.handleConnectionLoss(event.code !== 1000, this.byeReceived || SERVER_CLOSE_CODES.includes(event.code));
     }
 
     /**

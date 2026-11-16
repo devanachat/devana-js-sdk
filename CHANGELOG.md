@@ -77,7 +77,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `LeaveRoom` with `ignore: true` is answered only with `RoomLeft`: like a plain `LeaveRoom`, it requires the membership
   of the room and fails for a closed conversation instead of answering `Ok`.
 - Reconnecting spreads the clients dropped together: a retry waits a random time between 0 and the backoff delay
-  (it used to be 50-100% of it). After a closure by the server (close code 1001 or 1012, or after a `Bye`) the backoff
+  (it used to be 50-100% of it). After a closure by the server (close code 1001, 1012 or 1013, or after a `Bye`) the backoff
   starts at `reconnect.serverCloseMinDelayMs` (5 s by default) instead of `reconnect.minDelayMs` (1 s). The backoff
   starts over once a connection has stayed authenticated for `reconnect.stableConnectionMs` (30 s by default),
   not as soon as it authenticates.
@@ -92,6 +92,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `connect()` still waiting for `Session` stays pending for the retry. Other `Bye` reasons behave as before.
 - `Bye.retryAfterMs`: when the server sends it, the next reconnect waits that long instead of the backoff delay, without
   further jitter; values that are not positive finite numbers are ignored and longer ones are capped at 60 s.
+- A `Bye` with the `ServiceUnavailableException` error (the server too busy to take the connection) is followed by a
+  reconnect, like a `Service` one, instead of being treated as a rejected token: no `error` event, a pending
+  `connect()` stays pending for the retry. `AuthenticationException` still stops reconnecting.
 - After a reconnect, or the first session after a snapshot import, `RoomsManager.getMembers()` of an unchanged
   private conversation sent `GetRoomMembers` instead of using its participants.
 

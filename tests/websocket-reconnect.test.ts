@@ -693,3 +693,72 @@ describe('Bye', () => {
         expect(sockets().length).toBe(1);
     });
 });
+
+describe('ServiceUnavailableException Bye', () => {
+    const unavailableBye = (retryAfterMs?: number) => ({
+        reason: { type: 'Error', error: { code: 'ServiceUnavailableException', message: 'Service is temporary unavailable, please try again later' } },
+        retryAfterMs,
+    });
+
+    test.each([1013, 1000])('reconnects after retryAfterMs whatever the close code (%p), Bye before disconnect(true), no error', code => {
+        (Math.random as jest.Mock).mockReturnValue(0);
+        const { client, errors } = createClient();
+        const events: string[] = [];
+        client.on('Bye', () => events.push('Bye'));
+        client.on('disconnect', reconnect => events.push(`disconnect(${reconnect})`));
+        client.connect();
+        sockets()[0].open();
+
+        sockets()[0].receive('Bye', unavailableBye(4200));
+        sockets()[0].serverClose(code);
+
+        expect(events).toEqual(['Bye', 'disconnect(true)']);
+        expect(errors).toEqual([]);
+        jest.advanceTimersByTime(4199);
+        expect(sockets().length).toBe(1);
+        jest.advanceTimersByTime(1);
+        expect(sockets().length).toBe(2);
+    });
+
+    test('a pending connect() stays pending until the retry authenticates', async () => {
+        const { client } = createClient();
+        const promise = client.connect();
+        let settled = false;
+        promise.then(() => settled = true, () => settled = true);
+        sockets()[0].open();
+
+        sockets()[0].receive('Bye', unavailableBye(2000));
+        await Promise.resolve();
+        expect(settled).toBe(false);
+
+        jest.advanceTimersByTime(2000);
+        sockets()[1].authenticate();
+        await expect(promise).resolves.toBeUndefined();
+    });
+
+    test('without retryAfterMs it uses the server closure backoff', () => {
+        const { client } = createClient();
+        client.connect();
+        sockets()[0].open();
+
+        sockets()[0].receive('Bye', unavailableBye());
+
+        jest.advanceTimersByTime(4999);
+        expect(sockets().length).toBe(1);
+        jest.advanceTimersByTime(1);
+        expect(sockets().length).toBe(2);
+    });
+
+    test('a close with 1013 alone starts with the longer delay', () => {
+        const { client } = createClient();
+        client.connect();
+        sockets()[0].authenticate();
+
+        sockets()[0].serverClose(1013);
+
+        jest.advanceTimersByTime(4999);
+        expect(sockets().length).toBe(1);
+        jest.advanceTimersByTime(1);
+        expect(sockets().length).toBe(2);
+    });
+});
