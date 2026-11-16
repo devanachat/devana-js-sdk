@@ -46,7 +46,7 @@ export interface WebSocketClientOptions {
         minDelayMs?: number;
         /**
          * Limit of the first delay when the server closed the connection (close code 1001, 1012 or 1013, or after
-         * a `Bye`); each subsequent one doubles it. Default is 5 seconds.
+         * a `Bye`); each subsequent one doubles it. Default is 5 seconds. It wins over a lower `maxDelayMs`.
          */
         serverCloseMinDelayMs?: number;
         /**
@@ -228,9 +228,15 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
     private onMessage(event: MessageEvent): void {
         this.lastReceivedMessageAt = Date.now();
         const envelope: Envelope = JSON.parse(event.data);
+        const ws = this.ws;
         this.handleIncomingEnvelope(envelope);
         this.emit(envelope.type, envelope.data);
         this.emit(this.Event.message, envelope);
+
+        // A listener has called disconnect() or connect(), which settled this socket already.
+        if (ws !== this.ws) {
+            return;
+        }
 
         if (envelope.type === 'Bye') {
             this.onBye(envelope.data as Bye);

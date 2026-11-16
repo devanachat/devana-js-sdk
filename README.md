@@ -180,7 +180,7 @@ const client = new WebSocketChatClient({
     reconnect: {
         minDelayMs: 1000, // Limit of the first delay after a lost connection, doubled on every next one (default)
         serverCloseMinDelayMs: 5000, // The same after a closure by the server: 1001, 1012, 1013 or a Bye (default)
-        maxDelayMs: 30000, // Maximum delay between retries (default)
+        maxDelayMs: 30000, // Maximum delay between retries; a higher minimum delay wins over it (default)
         stableConnectionMs: 30000, // A connection lasting this long starts the backoff over (default)
     },
     ping: {

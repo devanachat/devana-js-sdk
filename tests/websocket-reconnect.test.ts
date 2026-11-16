@@ -530,6 +530,38 @@ describe('server closure', () => {
     });
 });
 
+describe('a listener disconnecting', () => {
+    test('from a Service Bye ends with a single disconnect(false) and no retry', () => {
+        const { client, disconnects } = createClient();
+        client.on('Bye', () => client.disconnect());
+        client.connect();
+        sockets()[0].authenticate();
+
+        sockets()[0].receive('Bye', { reason: { type: 'Service', service: 'Server termination' }, retryAfterMs: 1000 });
+        jest.advanceTimersByTime(60000);
+
+        expect(disconnects).toEqual([false]);
+        expect(sockets().length).toBe(1);
+    });
+
+    test('from Session leaves the client disconnected, without a connect event', () => {
+        const { client, disconnects } = createClient({ ping: { enabled: true } });
+        const connects: number[] = [];
+        client.on('connect', () => connects.push(1));
+        client.on('Session', () => client.disconnect());
+        client.connect().catch(() => undefined);
+
+        sockets()[0].authenticate();
+        jest.advanceTimersByTime(60000);
+
+        expect(connects).toEqual([]);
+        expect(disconnects).toEqual([false]);
+        expect(client.isReady).toBeFalsy();
+        expect(sockets().length).toBe(1);
+        expect(sockets()[0].sent).toEqual([]);
+    });
+});
+
 describe('Bye', () => {
     const serviceBye = (retryAfterMs?: unknown) => ({ reason: { type: 'Service', service: 'Server termination' }, retryAfterMs });
 
