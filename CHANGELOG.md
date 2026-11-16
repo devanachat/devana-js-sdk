@@ -87,6 +87,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- A `Bye` with the `Service` reason (the server shutting down) is followed by a reconnect even when the server closes
+  the connection with code 1000; the client used to stop. `Bye` is emitted first, then `disconnect` with `true`; a
+  `connect()` still waiting for `Session` stays pending for the retry. Other `Bye` reasons behave as before.
+- `Bye.retryAfterMs`: when the server sends it, the next reconnect waits that long instead of the backoff delay, without
+  further jitter; values that are not positive finite numbers are ignored and longer ones are capped at 60 s.
 - After a reconnect, or the first session after a snapshot import, `RoomsManager.getMembers()` of an unchanged
   private conversation sent `GetRoomMembers` instead of using its participants.
 

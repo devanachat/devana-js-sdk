@@ -61,6 +61,14 @@ export interface WebSocketClientOptions {
     },
 }
 
+const MAX_RETRY_AFTER_MS = 60000;
+
+function normalizeRetryAfter(retryAfterMs: unknown): number | undefined {
+    return typeof retryAfterMs === 'number' && Number.isFinite(retryAfterMs) && retryAfterMs > 0
+        ? Math.min(retryAfterMs, MAX_RETRY_AFTER_MS)
+        : undefined;
+}
+
 enum WebSocketChatClientEvent {
     connect = 'connect',
     disconnect = 'disconnect',
@@ -93,6 +101,7 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
     protected reconnectAttempts: number = 0;
     protected serverClosedSinceStable: boolean = false;
     protected byeReceived: boolean = false;
+    protected byeRetryAfterMs?: number;
     protected stableConnectionTimeoutId?: any;
 
     public constructor(private readonly options: WebSocketClientOptions) {
@@ -193,6 +202,7 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
         this.ws = ws;
         this.authenticated = false;
         this.byeReceived = false;
+        this.byeRetryAfterMs = undefined;
         this.startConnectingTimeout(this.options.connectingTimeoutMs ?? 10000);
     }
 
@@ -221,32 +231,45 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
         this.emit(this.Event.message, envelope);
 
         if (envelope.type === 'Bye') {
-            this.byeReceived = true;
+            this.onBye(envelope.data as Bye);
+            return;
         }
 
         // Login successfully
         if (!this.authenticated) {
-            const isAuthenticated = envelope.type !== 'Bye';
-            this.authenticated = isAuthenticated;
-            if (isAuthenticated) {
-                this.stableConnectionTimeoutId = setTimeout(
-                    () => this.resetBackoff(),
-                    this.options.reconnect?.stableConnectionMs ?? 30000
-                );
-                this.startConnectionMonitor();
-                this.settleConnect();
-                this.emit(this.Event.connect);
-                this.sendFromQueue();
-            } else {
-                this.settleConnect(envelope.data);
+            this.authenticated = true;
+            this.stableConnectionTimeoutId = setTimeout(
+                () => this.resetBackoff(),
+                this.options.reconnect?.stableConnectionMs ?? 30000
+            );
+            this.startConnectionMonitor();
+            this.settleConnect();
+            this.emit(this.Event.connect);
+            this.sendFromQueue();
+        }
+    }
 
-                const error = (envelope.data as Bye)?.reason?.error;
-                if (error?.code === 'AuthenticationException') {
-                    // Invalid token - retrying would be rejected the same way.
-                    this.handleConnectionLoss(false);
-                    this.emit(this.Event.error, new Error(`Authentication rejected: ${error.message}`));
-                }
-            }
+    private onBye(bye: Bye): void {
+        this.byeReceived = true;
+        this.byeRetryAfterMs = normalizeRetryAfter(bye?.retryAfterMs);
+
+        if (bye?.reason?.type === 'Service') {
+            // Not left to the close code: the server may close with 1000 and some platforms rewrite the code.
+            this.handleConnectionLoss(true, true);
+            return;
+        }
+
+        if (this.authenticated) {
+            return;
+        }
+
+        this.settleConnect(bye);
+
+        const error = bye?.reason?.error;
+        if (error?.code === 'AuthenticationException') {
+            // Invalid token - retrying would be rejected the same way.
+            this.handleConnectionLoss(false);
+            this.emit(this.Event.error, new Error(`Authentication rejected: ${error.message}`));
         }
     }
 
@@ -326,11 +349,11 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
         const delay = Math.min(maxDelay, minDelay * 2 ** Math.min(this.reconnectAttempts, 30));
         this.reconnectAttempts++;
 
-        // Full jitter spreads the clients dropped together over the whole delay.
+        // Full jitter spreads the clients dropped together over the whole delay; the server jitters its own hint.
         this.reconnectTimeoutId = setTimeout(() => {
             this.reconnectTimeoutId = undefined;
             this.connect().catch(() => undefined);
-        }, Math.random() * delay);
+        }, this.byeRetryAfterMs ?? Math.random() * delay);
     }
 
     private resetBackoff(): void {

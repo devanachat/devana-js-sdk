@@ -166,7 +166,9 @@ attempts. The backoff starts higher when the server closed the connection than a
 once a connection has been stable for a while. The `disconnect` event
 tells whether a retry follows. A pending `connect()` promise resolves once an attempt authenticates, and is rejected by
 `disconnect()`, which also stops reconnecting. An invalid token (`Bye` with `AuthenticationException`) rejects `connect()`
-with the `Bye` data, emits an `error` event and stops reconnecting as well.
+with the `Bye` data, emits an `error` event and stops reconnecting as well. A `Bye` with the `Service` reason (the server
+going down) is always followed by a retry, emitted as `Bye` and then `disconnect` with `true`, whatever the close code.
+When a `Bye` carries `retryAfterMs`, the next retry waits that long (at most 60 s) instead of the backoff delay.
 
 ```ts
 const client = new WebSocketChatClient({

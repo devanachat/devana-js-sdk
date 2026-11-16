@@ -529,3 +529,167 @@ describe('server closure', () => {
         }
     });
 });
+
+describe('Bye', () => {
+    const serviceBye = (retryAfterMs?: unknown) => ({ reason: { type: 'Service', service: 'Server termination' }, retryAfterMs });
+
+    test('a Service Bye reconnects even when the server closes with 1000, after Bye and disconnect(true) in that order', () => {
+        const { client } = createClient();
+        const events: string[] = [];
+        client.on('Bye', () => events.push('Bye'));
+        client.on('disconnect', reconnect => events.push(`disconnect(${reconnect})`));
+        client.connect();
+        sockets()[0].authenticate();
+
+        sockets()[0].receive('Bye', serviceBye());
+        sockets()[0].serverClose(1000);
+
+        expect(events).toEqual(['Bye', 'disconnect(true)']);
+        expect(client.isReady).toBeFalsy();
+        jest.advanceTimersByTime(4999);
+        expect(sockets().length).toBe(1);
+        jest.advanceTimersByTime(1);
+        expect(sockets().length).toBe(2);
+    });
+
+    test('the retry waits retryAfterMs exactly, with no jitter of its own', () => {
+        (Math.random as jest.Mock).mockReturnValue(0);
+        const { client } = createClient();
+        client.connect();
+        sockets()[0].authenticate();
+
+        sockets()[0].receive('Bye', serviceBye(7300));
+        sockets()[0].serverClose(1012);
+
+        jest.advanceTimersByTime(7299);
+        expect(sockets().length).toBe(1);
+        jest.advanceTimersByTime(1);
+        expect(sockets().length).toBe(2);
+    });
+
+    test('retryAfterMs is capped at 60 s', () => {
+        const { client } = createClient();
+        client.connect();
+        sockets()[0].authenticate();
+
+        sockets()[0].receive('Bye', serviceBye(3600000));
+
+        jest.advanceTimersByTime(59999);
+        expect(sockets().length).toBe(1);
+        jest.advanceTimersByTime(1);
+        expect(sockets().length).toBe(2);
+    });
+
+    test.each([0, -5, '5000', null, 1e400])('an invalid retryAfterMs (%p) falls back to the server closure backoff', retryAfterMs => {
+        const { client } = createClient();
+        client.connect();
+        sockets()[0].authenticate();
+
+        sockets()[0].receive('Bye', serviceBye(retryAfterMs));
+
+        jest.advanceTimersByTime(4999);
+        expect(sockets().length).toBe(1);
+        jest.advanceTimersByTime(1);
+        expect(sockets().length).toBe(2);
+    });
+
+    test('the hint applies only to the next retry; a failed one continues the server closure backoff', () => {
+        const { client } = createClient({ reconnect: { minDelayMs: 1000, maxDelayMs: 30000 } });
+        client.connect();
+        sockets()[0].authenticate();
+
+        sockets()[0].receive('Bye', serviceBye(2000));
+        jest.advanceTimersByTime(2000);
+        expect(sockets().length).toBe(2);
+
+        sockets()[1].fail();
+        jest.advanceTimersByTime(9999);
+        expect(sockets().length).toBe(2);
+        jest.advanceTimersByTime(1);
+        expect(sockets().length).toBe(3);
+    });
+
+    test('a Bye with retryAfterMs followed by an abnormal closure waits retryAfterMs', () => {
+        const { client } = createClient();
+        client.connect();
+        sockets()[0].authenticate();
+
+        sockets()[0].receive('Bye', { reason: { type: 'Error', error: { code: 'SomeException', message: 'x' } }, retryAfterMs: 3000 });
+        sockets()[0].serverClose(1006);
+
+        jest.advanceTimersByTime(2999);
+        expect(sockets().length).toBe(1);
+        jest.advanceTimersByTime(1);
+        expect(sockets().length).toBe(2);
+    });
+
+    test('a Service Bye rejects pending commands', async () => {
+        const { client } = createClient();
+        client.connect();
+        sockets()[0].authenticate();
+        const command = client.send('GetSession', {});
+
+        sockets()[0].receive('Bye', serviceBye(1000));
+
+        await expect(command).rejects.toThrow('Connection closed before the command was answered');
+    });
+
+    test('a Service Bye to a connection waiting for Session keeps connect() pending until a retry authenticates', async () => {
+        const { client } = createClient();
+        const promise = client.connect();
+        const command = client.send('GetSession', {});
+        sockets()[0].open();
+
+        sockets()[0].receive('Bye', serviceBye(1500));
+        await expect(command).rejects.toThrow('Connection closed before the command was answered');
+
+        jest.advanceTimersByTime(1500);
+        sockets()[1].authenticate();
+        await expect(promise).resolves.toBeUndefined();
+    });
+
+    test('disconnect() during the wait cancels the retry', () => {
+        const { client, disconnects } = createClient();
+        client.connect();
+        sockets()[0].authenticate();
+
+        sockets()[0].receive('Bye', serviceBye(5000));
+        client.disconnect();
+
+        expect(disconnects).toEqual([true, false]);
+        jest.advanceTimersByTime(60000);
+        expect(sockets().length).toBe(1);
+    });
+
+    test.each([
+        ['Kick', { type: 'Kick', kick: 'x' }],
+        ['Ban', { type: 'Ban', ban: {} }],
+        ['Leave', { type: 'Leave' }],
+    ])('a %s Bye followed by a normal closure does not reconnect', (_, reason) => {
+        const { client, disconnects } = createClient();
+        client.connect();
+        sockets()[0].authenticate();
+
+        sockets()[0].receive('Bye', { reason });
+        sockets()[0].serverClose(1000);
+
+        expect(disconnects).toEqual([false]);
+        jest.advanceTimersByTime(60000);
+        expect(sockets().length).toBe(1);
+    });
+
+    test('an AuthenticationException Bye stops reconnecting even with retryAfterMs', async () => {
+        const { client, disconnects, errors } = createClient();
+        const promise = client.connect();
+        const bye = { reason: { type: 'Error', error: { code: 'AuthenticationException', message: 'Unauthorized' } }, retryAfterMs: 3000 };
+        sockets()[0].open();
+
+        sockets()[0].receive('Bye', bye);
+
+        await expect(promise).rejects.toEqual(bye);
+        expect(disconnects).toEqual([false]);
+        expect(errors).toEqual(['Authentication rejected: Unauthorized']);
+        jest.advanceTimersByTime(60000);
+        expect(sockets().length).toBe(1);
+    });
+});
