@@ -76,6 +76,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   wins over a deny of another one.
 - `LeaveRoom` with `ignore: true` is answered only with `RoomLeft`: like a plain `LeaveRoom`, it requires the membership
   of the room and fails for a closed conversation instead of answering `Ok`.
+- Reconnecting spreads the clients dropped together: a retry waits a random time between 0 and the backoff delay
+  (it used to be 50-100% of it). After a closure by the server (close code 1001 or 1012, or after a `Bye`) the backoff
+  starts at `reconnect.serverCloseMinDelayMs` (5 s by default) instead of `reconnect.minDelayMs` (1 s). The backoff
+  starts over once a connection has stayed authenticated for `reconnect.stableConnectionMs` (30 s by default),
+  not as soon as it authenticates.
+- `connectingTimeoutMs` (10 s) limits only the time until the socket opens. An open socket waits for `Session` up to
+  the new `sessionTimeoutMs` (60 s by default), so a client the server holds in its queue during a reconnect storm is
+  no longer dropped and sent back to the end of it.
 
 ### Fixed
 

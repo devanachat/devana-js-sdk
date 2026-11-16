@@ -161,7 +161,9 @@ client.on('NewMessage', async ({message}) => {
 ## Connection maintenance
 
 `WebSocketChatClient` keeps the connection alive: after any loss (error, connecting timeout, missing pong, closure with
-a code other than 1000) it reconnects indefinitely, with an exponential backoff between attempts. The `disconnect` event
+a code other than 1000) it reconnects indefinitely, waiting a random time up to an exponentially growing delay between
+attempts. The backoff starts higher when the server closed the connection than after a network drop, and starts over
+once a connection has been stable for a while. The `disconnect` event
 tells whether a retry follows. A pending `connect()` promise resolves once an attempt authenticates, and is rejected by
 `disconnect()`, which also stops reconnecting. An invalid token (`Bye` with `AuthenticationException`) rejects `connect()`
 with the `Bye` data, emits an `error` event and stops reconnecting as well.
@@ -170,10 +172,13 @@ with the `Bye` data, emits an `error` event and stops reconnecting as well.
 const client = new WebSocketChatClient({
     url: 'wss://s1.devana.pl:1600/ws',
     token: 'your-access-token',
-    connectingTimeoutMs: 10000, // Per attempt (default)
+    connectingTimeoutMs: 10000, // Until the socket opens (default)
+    sessionTimeoutMs: 60000, // Until Session arrives on an open socket; the server may queue connections (default)
     reconnect: {
-        minDelayMs: 1000, // Delay before the first retry, doubled on every next one (default)
+        minDelayMs: 1000, // Limit of the first delay after a lost connection, doubled on every next one (default)
+        serverCloseMinDelayMs: 5000, // The same after a closure by the server: 1001, 1012 or a Bye (default)
         maxDelayMs: 30000, // Maximum delay between retries (default)
+        stableConnectionMs: 30000, // A connection lasting this long starts the backoff over (default)
     },
     ping: {
         noActivityTimeoutMs: 15000, // Send a ping after this much silence (default)

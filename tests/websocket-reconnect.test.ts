@@ -19,6 +19,7 @@ class FakeWebSocket {
     public onmessage: ((ev: any) => void) | null = null;
     public onclose: ((ev: any) => void) | null = null;
     public onerror: ((ev: any) => void) | null = null;
+    public onopen: ((ev: any) => void) | null = null;
     public readonly sent: any[] = [];
     public closedWith?: number;
 
@@ -40,8 +41,13 @@ class FakeWebSocket {
         this.onmessage?.({ data: JSON.stringify({ type, data, ref }) });
     }
 
-    public authenticate(): void {
+    public open(): void {
         this.readyState = this.OPEN;
+        this.onopen?.({});
+    }
+
+    public authenticate(): void {
+        this.open();
         this.receive('Session', {});
     }
 
@@ -66,6 +72,8 @@ const createClient = (options: Partial<WebSocketClientOptions> = {}) => {
         stateTracking: false,
         connectingTimeoutMs: 5000,
         reconnect: { minDelayMs: 1000, maxDelayMs: 8000 },
+        // Nothing answers pings here; the ping tests pass their own settings.
+        ping: { enabled: false },
         ...options,
     });
     const disconnects: boolean[] = [];
@@ -133,7 +141,7 @@ describe('retries with a delay', () => {
         expect(sockets().length).toBe(2);
     });
 
-    test('the backoff starts over after a successful connection', () => {
+    test('the backoff starts over only after the connection has been stable', () => {
         const { client } = createClient();
         client.connect();
 
@@ -141,11 +149,34 @@ describe('retries with a delay', () => {
         jest.advanceTimersByTime(1000);
         sockets()[1].serverClose(1006);
         jest.advanceTimersByTime(2000);
-        sockets()[2].authenticate();
 
+        // Authenticated, then dropped soon after: the backoff goes on.
+        sockets()[2].authenticate();
+        jest.advanceTimersByTime(29999);
         sockets()[2].serverClose(1006);
-        jest.advanceTimersByTime(1000);
+        jest.advanceTimersByTime(3999);
+        expect(sockets().length).toBe(3);
+        jest.advanceTimersByTime(1);
         expect(sockets().length).toBe(4);
+
+        sockets()[3].authenticate();
+        jest.advanceTimersByTime(30000);
+        sockets()[3].serverClose(1006);
+        jest.advanceTimersByTime(1000);
+        expect(sockets().length).toBe(5);
+    });
+
+    test('the stable connection period can be configured', () => {
+        const { client } = createClient({ reconnect: { minDelayMs: 1000, maxDelayMs: 8000, stableConnectionMs: 5000 } });
+        client.connect();
+
+        sockets()[0].serverClose(1006);
+        jest.advanceTimersByTime(1000);
+        sockets()[1].authenticate();
+        jest.advanceTimersByTime(5000);
+        sockets()[1].serverClose(1006);
+        jest.advanceTimersByTime(1000);
+        expect(sockets().length).toBe(3);
     });
 
     test('a manual connect() during the backoff connects immediately, once', async () => {
@@ -163,16 +194,77 @@ describe('retries with a delay', () => {
         await expect(promise).resolves.toBeUndefined();
     });
 
-    test('a jittered delay stays within 50-100% of the backoff', () => {
-        (Math.random as jest.Mock).mockReturnValue(0);
+    test.each([
+        [0, 0],
+        [0.25, 2000],
+        [0.999, 7992],
+    ])('a delay is spread over the whole backoff (random %p -> %p ms)', (random, expected) => {
+        (Math.random as jest.Mock).mockReturnValue(random);
         const { client } = createClient();
         client.connect();
-        sockets()[0].serverClose(1006);
+        for (let i = 0; i < 3; i++) {
+            lastSocket().serverClose(1006);
+            jest.advanceTimersToNextTimer();
+        }
+        lastSocket().serverClose(1006);
 
-        jest.advanceTimersByTime(499);
+        if (expected > 0) {
+            jest.advanceTimersByTime(expected - 1);
+            expect(sockets().length).toBe(4);
+        }
+        jest.advanceTimersByTime(1);
+        expect(sockets().length).toBe(5);
+    });
+
+    test.each([1001, 1012])('a closure by the server (%p) starts with the longer delay', code => {
+        const { client } = createClient({ reconnect: { minDelayMs: 1000, serverCloseMinDelayMs: 4000, maxDelayMs: 30000 } });
+        client.connect();
+        sockets()[0].authenticate();
+
+        sockets()[0].serverClose(code);
+        jest.advanceTimersByTime(3999);
         expect(sockets().length).toBe(1);
         jest.advanceTimersByTime(1);
         expect(sockets().length).toBe(2);
+
+        // The server is still down - a refused attempt keeps the longer backoff.
+        sockets()[1].fail();
+        jest.advanceTimersByTime(7999);
+        expect(sockets().length).toBe(2);
+        jest.advanceTimersByTime(1);
+        expect(sockets().length).toBe(3);
+    });
+
+    test('a closure after a Bye starts with the longer delay', () => {
+        const { client } = createClient();
+        client.connect();
+        sockets()[0].authenticate();
+
+        sockets()[0].receive('Bye', { reason: { type: 'Kick', kick: 'x' } });
+        sockets()[0].serverClose(4000);
+        jest.advanceTimersByTime(4999);
+        expect(sockets().length).toBe(1);
+        jest.advanceTimersByTime(1);
+        expect(sockets().length).toBe(2);
+    });
+
+    test('a lost connection keeps the fast first retry, with a 5 s default after a server closure', () => {
+        const { client } = createClient({ reconnect: undefined });
+        client.connect();
+        sockets()[0].authenticate();
+
+        sockets()[0].serverClose(1006);
+        jest.advanceTimersByTime(1000);
+        expect(sockets().length).toBe(2);
+
+        sockets()[1].authenticate();
+        jest.advanceTimersByTime(30000);
+        sockets()[1].serverClose(1012);
+        jest.advanceTimersByTime(4999);
+        expect(sockets().length).toBe(2);
+        jest.advanceTimersByTime(1);
+        expect(sockets().length).toBe(3);
+        client.disconnect();
     });
 });
 
@@ -195,6 +287,37 @@ describe('connecting timeout', () => {
         sockets()[1].authenticate();
         await expect(promise).resolves.toBeUndefined();
         expect(client.isReady).toBe(true);
+    });
+
+    test('an open socket waits for Session longer than for opening', async () => {
+        const { client, errors } = createClient({ connectingTimeoutMs: 5000, sessionTimeoutMs: 60000 });
+        const promise = client.connect();
+
+        jest.advanceTimersByTime(4000);
+        sockets()[0].open();
+        jest.advanceTimersByTime(59999);
+        expect(errors).toEqual([]);
+        expect(sockets().length).toBe(1);
+
+        sockets()[0].receive('Session', {});
+        await expect(promise).resolves.toBeUndefined();
+        jest.advanceTimersByTime(120000);
+        expect(errors).toEqual([]);
+    });
+
+    test('a server that never sends Session times out after the session timeout', () => {
+        const { client, errors } = createClient({ connectingTimeoutMs: 5000 });
+        client.connect();
+        sockets()[0].open();
+
+        jest.advanceTimersByTime(59999);
+        expect(errors).toEqual([]);
+        jest.advanceTimersByTime(1);
+        expect(errors).toEqual(['Connection timeout']);
+        expect(sockets()[0].closedWith).toBe(3000);
+
+        jest.advanceTimersByTime(1000);
+        expect(sockets().length).toBe(2);
     });
 
     test('repeated timeouts keep retrying', () => {

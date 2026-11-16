@@ -6,7 +6,16 @@ import {Bye, Envelope} from "./protocol";
 export interface WebSocketClientOptions {
     url: string;
     token: string;
+    /**
+     * Time an attempt may take until the socket opens. Default is 10 seconds.
+     */
     connectingTimeoutMs?: number;
+    /**
+     * Time to wait for `Session` once the socket is open. The server may hold a connection in a queue before
+     * authenticating it when many clients connect at once, so this is longer than `connectingTimeoutMs`.
+     * Default is 60 seconds.
+     */
+    sessionTimeoutMs?: number;
     awaitQueueSendDelayMs?: number;
     stateTracking?: boolean;
     queryParams?: Record<string, string>;
@@ -27,17 +36,28 @@ export interface WebSocketClientOptions {
     /**
      * Automatic reconnection. After the connection is lost (error, connecting timeout, missing pong
      * or closure with a code other than 1000) the client retries indefinitely, waiting between attempts
-     * with an exponential backoff. Calling `disconnect()` stops retrying until the next `connect()`.
+     * a random time up to an exponentially growing limit. Calling `disconnect()` stops retrying until
+     * the next `connect()`.
      */
     reconnect?: {
         /**
-         * Delay before the first retry; each subsequent one doubles it. Default is 1 second.
+         * Limit of the first delay after a lost connection; each subsequent one doubles it. Default is 1 second.
          */
         minDelayMs?: number;
+        /**
+         * Limit of the first delay when the server closed the connection (close code 1001 or 1012, or after
+         * a `Bye`); each subsequent one doubles it. Default is 5 seconds.
+         */
+        serverCloseMinDelayMs?: number;
         /**
          * Upper limit of the delay between retries. Default is 30 seconds.
          */
         maxDelayMs?: number;
+        /**
+         * Time an authenticated connection has to last for the next loss to start the backoff over.
+         * Default is 30 seconds.
+         */
+        stableConnectionMs?: number;
     },
 }
 
@@ -71,6 +91,9 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
     protected reconnectEnabled: boolean = false;
     protected reconnectTimeoutId?: any;
     protected reconnectAttempts: number = 0;
+    protected serverClosedSinceStable: boolean = false;
+    protected byeReceived: boolean = false;
+    protected stableConnectionTimeoutId?: any;
 
     public constructor(private readonly options: WebSocketClientOptions) {
         super();
@@ -114,7 +137,7 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
         const wasActive = this.ws !== null || this.reconnectTimeoutId !== undefined;
 
         this.reconnectEnabled = false;
-        this.reconnectAttempts = 0;
+        this.resetBackoff();
         this.cancelScheduledReconnect();
         this.releaseSocket(1000); // Normal closure
         this.failPendingCommands(new Error('Client disconnected before the command was answered'));
@@ -165,13 +188,17 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
         // Not every implementation follows a failed handshake with a close
         // event (e.g. Node.js), so an error alone means the connection is lost.
         ws.onerror = () => ws === this.ws && this.handleConnectionLoss(true);
+        ws.onopen = () => ws === this.ws && this.startConnectingTimeout(this.options.sessionTimeoutMs ?? 60000);
 
         this.ws = ws;
         this.authenticated = false;
-        this.connectingTimeoutId = setTimeout(
-            () => this.triggerConnectionTimeout(),
-            this.options.connectingTimeoutMs ?? 10000
-        );
+        this.byeReceived = false;
+        this.startConnectingTimeout(this.options.connectingTimeoutMs ?? 10000);
+    }
+
+    private startConnectingTimeout(timeoutMs: number): void {
+        clearTimeout(this.connectingTimeoutId);
+        this.connectingTimeoutId = setTimeout(() => this.triggerConnectionTimeout(), timeoutMs);
     }
 
     private sendEnvelope(envelope: Envelope): void {
@@ -193,12 +220,19 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
         this.emit(envelope.type, envelope.data);
         this.emit(this.Event.message, envelope);
 
+        if (envelope.type === 'Bye') {
+            this.byeReceived = true;
+        }
+
         // Login successfully
         if (!this.authenticated) {
             const isAuthenticated = envelope.type !== 'Bye';
             this.authenticated = isAuthenticated;
             if (isAuthenticated) {
-                this.reconnectAttempts = 0;
+                this.stableConnectionTimeoutId = setTimeout(
+                    () => this.resetBackoff(),
+                    this.options.reconnect?.stableConnectionMs ?? 30000
+                );
                 this.startConnectionMonitor();
                 this.settleConnect();
                 this.emit(this.Event.connect);
@@ -218,7 +252,7 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
 
     private onClose(event: CloseEvent): void {
         // Connection was closed because of error
-        this.handleConnectionLoss(event.code !== 1000);
+        this.handleConnectionLoss(event.code !== 1000, this.byeReceived || event.code === 1001 || event.code === 1012);
     }
 
     /**
@@ -226,7 +260,7 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
      * may never come, or take minutes on a dead TCP connection), settle
      * everything that depended on it and schedule a retry when requested.
      */
-    private handleConnectionLoss(reconnect: boolean): void {
+    private handleConnectionLoss(reconnect: boolean, closedByServer: boolean = false): void {
         this.releaseSocket(reconnect ? 3000 : 1000);
 
         // The server can no longer answer anything that was queued or in
@@ -238,7 +272,7 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
         if (reconnect) {
             // Keep a pending connect() promise unsettled - the retry below is
             // expected to authenticate and will resolve it.
-            this.scheduleReconnect();
+            this.scheduleReconnect(closedByServer);
         } else {
             this.reconnectEnabled = false;
             this.settleConnect(new Error('Connection closed before authentication'));
@@ -255,6 +289,8 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
         this.stopConnectionMonitor();
         clearTimeout(this.connectingTimeoutId);
         this.connectingTimeoutId = undefined;
+        clearTimeout(this.stableConnectionTimeoutId);
+        this.stableConnectionTimeoutId = undefined;
         this.authenticated = false;
 
         const ws = this.ws;
@@ -264,7 +300,7 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
             return;
         }
 
-        ws.onmessage = ws.onclose = ws.onerror = null;
+        ws.onmessage = ws.onclose = ws.onerror = ws.onopen = null;
 
         if (ws.readyState === ws.CONNECTING || ws.readyState === ws.OPEN) {
             try {
@@ -275,20 +311,31 @@ export class WebSocketChatClient extends AbstractChatClient<Pick<WebSocketEventM
         }
     }
 
-    private scheduleReconnect(): void {
+    private scheduleReconnect(closedByServer: boolean): void {
         this.cancelScheduledReconnect();
 
-        const minDelay = Math.max(0, this.options.reconnect?.minDelayMs ?? 1000);
-        const maxDelay = Math.max(minDelay, this.options.reconnect?.maxDelayMs ?? 30000);
+        // Once the server has closed a connection, the attempts that fail while it is still down
+        // keep the longer backoff.
+        this.serverClosedSinceStable ||= closedByServer;
+
+        const reconnectOptions = this.options.reconnect;
+        const minDelay = Math.max(0, this.serverClosedSinceStable
+            ? reconnectOptions?.serverCloseMinDelayMs ?? 5000
+            : reconnectOptions?.minDelayMs ?? 1000);
+        const maxDelay = Math.max(minDelay, reconnectOptions?.maxDelayMs ?? 30000);
         const delay = Math.min(maxDelay, minDelay * 2 ** Math.min(this.reconnectAttempts, 30));
         this.reconnectAttempts++;
 
-        // Random jitter (50-100% of the delay) keeps clients from reconnecting
-        // in lockstep after a server restart.
+        // Full jitter spreads the clients dropped together over the whole delay.
         this.reconnectTimeoutId = setTimeout(() => {
             this.reconnectTimeoutId = undefined;
             this.connect().catch(() => undefined);
-        }, delay / 2 + Math.random() * delay / 2);
+        }, Math.random() * delay);
+    }
+
+    private resetBackoff(): void {
+        this.reconnectAttempts = 0;
+        this.serverClosedSinceStable = false;
     }
 
     private cancelScheduledReconnect(): void {
