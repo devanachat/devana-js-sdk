@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.13.0]
+
+### Added
+
+- `CreateMessage.allowedMentions` (`MessageMentions`): limits the users and roles the message mentions - empty lists
+  mention no one.
+
+### Changed
+
+- Reconnecting spreads the clients dropped together: a retry waits a random time between 0 and the backoff delay
+  (it used to be 50-100% of it). After a closure by the server (close code 1001, 1012 or 1013, or after a `Bye`) the backoff
+  starts at `reconnect.serverCloseMinDelayMs` (5 s by default) instead of `reconnect.minDelayMs` (1 s). The backoff
+  starts over once a connection has stayed authenticated for `reconnect.stableConnectionMs` (30 s by default),
+  not as soon as it authenticates.
+- `connectingTimeoutMs` (10 s) limits only the time until the socket opens. An open socket waits for `Session` up to
+  the new `sessionTimeoutMs` (60 s by default), so a client the server holds in its queue during a reconnect storm is
+  no longer dropped and sent back to the end of it.
+
+### Fixed
+
+- A `Bye` with the `Service` reason (the server shutting down) is followed by a reconnect even when the server closes
+  the connection with code 1000; the client used to stop. `Bye` is emitted first, then `disconnect` with `true`; a
+  `connect()` still waiting for `Session` stays pending for the retry. Other `Bye` reasons behave as before.
+- `Bye.retryAfterMs`: when the server sends it, the next reconnect waits that long instead of the backoff delay, without
+  further jitter; values that are not positive finite numbers are ignored and longer ones are capped at 60 s.
+- A `Bye` with the `ServiceUnavailableException` error (the server too busy to take the connection) is followed by a
+  reconnect, like a `Service` one, instead of being treated as a rejected token: no `error` event, a pending
+  `connect()` stays pending for the retry. `AuthenticationException` still stops reconnecting.
+- `disconnect()` called by a listener of the message being received (e.g. of `Session`, to refuse the protocol
+  version, or of `Bye`) is final: the client no longer authenticates the closed connection, emits `connect` or
+  schedules a retry afterwards, and emits `disconnect` once.
+
+## [0.12.0]
+
 ### Added
 
 - Editing messages: the `UpdateMessage` command (`{messageId, content?, embed?}` - a field left out stays, `embed: null`
@@ -39,27 +73,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `FoundGif` with its post `url`, size, poster and MP4/WebM sources; pass `next` as `position` for the following page),
   and the `GetGifCategories` command (`{locale?}`) resolving with `GifCategories` (`{categories}`, each `GifCategory`
   with the search `term`, its English `name` and an `imageUrl`). Available when the server runs GIF search.
-- Typing notifications: the `Type` command and the `Typing` event (`{location, userId}`), for rooms other than
-  `ClassicText`. `RoomsManager.typing.get(roomId, topicId)` returns the ids of the users typing in a topic, tracked from
-  the first call, each leaving `TYPING_TIMEOUT_MS` after their last notification or with their message.
-  `RoomsManager.typing.notify(roomId, topicId)` sends `Type` at most once per `TYPING_INTERVAL_MS`.
-- Sticky messages: `Topic.stickyMessage`, `CreateMessage.sticky`, `NewMessage.sticky`, `UpdateTopic.stickyMessageId`
-  (a message id sticks it, `null` unsticks it) and the `ManagePins` permission. The topics tracked by `RoomsManager`
-  take a new sticky message from `NewMessage` and drop it when it is redacted.
 - Reactions of sticky messages: `RoomsManager.getStickyMyReactions(location, messageId)` returns the reactions of the
   connected user on sticky messages (`MessageUserReactions`, keyed by message id) - fetched once per message with `GetMessages` (`around`,
   `limit: 1`, `includeMyReactions`), as a sticky message comes with its topic, then kept up to date with `Reacted`.
   The topics tracked by `RoomsManager` follow the reaction counters of their sticky message with `ReactionUpdated`.
-- Role icons: `Role.icon` (`RoleIcon` - an emoji or an emoticon of the space, `{type, value}` like a reaction) and
-  `UpdateRole.icon` (an icon sets it, `null` removes it).
-- Guests: `Space.guestRole` and `UpdateSpace.guestRole` (a role of the space given to temporary accounts when they
-  join, `null` turns it off); `SpacesManager` clears it when the role is deleted. The `SendAttachments` permission
-  covers attachments and links in messages.
-- `CreateMessage.allowedMentions` (`MessageMentions`): limits the users and roles the message mentions - empty lists
-  mention no one.
-- `Error.subcode`: an optional refinement of `code`. `ErrorCode.SpaceJoinRestricted` (`JoinSpace` refused) comes with
-  `Guests` (the space does not accept temporary accounts) or `Vpn` (it does not accept connections through a VPN or
-  Tor).
 
 ### Changed
 
@@ -71,30 +88,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - State snapshots: version 3 (with the replied messages of the saved histories); older snapshots are rejected.
 - `React` with a reaction the user already has fails with `ReactionExistsAlreadyException`; `Unreact` of a reaction the
   user does not have resolves with `Ok`. Both used to get no answer.
+
+## [0.11.0]
+
+### Added
+
+- Typing notifications: the `Type` command and the `Typing` event (`{location, userId}`), for rooms other than
+  `ClassicText`. `RoomsManager.typing.get(roomId, topicId)` returns the ids of the users typing in a topic, tracked from
+  the first call, each leaving `TYPING_TIMEOUT_MS` after their last notification or with their message.
+  `RoomsManager.typing.notify(roomId, topicId)` sends `Type` at most once per `TYPING_INTERVAL_MS`.
+- Sticky messages: `Topic.stickyMessage`, `CreateMessage.sticky`, `NewMessage.sticky`, `UpdateTopic.stickyMessageId`
+  (a message id sticks it, `null` unsticks it) and the `ManagePins` permission. The topics tracked by `RoomsManager`
+  take a new sticky message from `NewMessage` and drop it when it is redacted.
+- Role icons: `Role.icon` (`RoleIcon` - an emoji or an emoticon of the space, `{type, value}` like a reaction) and
+  `UpdateRole.icon` (an icon sets it, `null` removes it).
+- Guests: `Space.guestRole` and `UpdateSpace.guestRole` (a role of the space given to temporary accounts when they
+  join, `null` turns it off); `SpacesManager` clears it when the role is deleted. The `SendAttachments` permission
+  covers attachments and links in messages.
+- `Error.subcode`: an optional refinement of `code`. `ErrorCode.SpaceJoinRestricted` (`JoinSpace` refused) comes with
+  `Guests` (the space does not accept temporary accounts) or `Vpn` (it does not accept connections through a VPN or
+  Tor).
+
+### Changed
+
 - `PermissionsManager.calculatePermissions` follows the server: on every layer the space default role (everyone) is
   applied before the other roles, so a deny of another role overrides what everyone allows. An allow of any role still
   wins over a deny of another one.
 - `LeaveRoom` with `ignore: true` is answered only with `RoomLeft`: like a plain `LeaveRoom`, it requires the membership
   of the room and fails for a closed conversation instead of answering `Ok`.
-- Reconnecting spreads the clients dropped together: a retry waits a random time between 0 and the backoff delay
-  (it used to be 50-100% of it). After a closure by the server (close code 1001, 1012 or 1013, or after a `Bye`) the backoff
-  starts at `reconnect.serverCloseMinDelayMs` (5 s by default) instead of `reconnect.minDelayMs` (1 s). The backoff
-  starts over once a connection has stayed authenticated for `reconnect.stableConnectionMs` (30 s by default),
-  not as soon as it authenticates.
-- `connectingTimeoutMs` (10 s) limits only the time until the socket opens. An open socket waits for `Session` up to
-  the new `sessionTimeoutMs` (60 s by default), so a client the server holds in its queue during a reconnect storm is
-  no longer dropped and sent back to the end of it.
 
 ### Fixed
 
-- A `Bye` with the `Service` reason (the server shutting down) is followed by a reconnect even when the server closes
-  the connection with code 1000; the client used to stop. `Bye` is emitted first, then `disconnect` with `true`; a
-  `connect()` still waiting for `Session` stays pending for the retry. Other `Bye` reasons behave as before.
-- `Bye.retryAfterMs`: when the server sends it, the next reconnect waits that long instead of the backoff delay, without
-  further jitter; values that are not positive finite numbers are ignored and longer ones are capped at 60 s.
-- A `Bye` with the `ServiceUnavailableException` error (the server too busy to take the connection) is followed by a
-  reconnect, like a `Service` one, instead of being treated as a rejected token: no `error` event, a pending
-  `connect()` stays pending for the retry. `AuthenticationException` still stops reconnecting.
 - After a reconnect, or the first session after a snapshot import, `RoomsManager.getMembers()` of an unchanged
   private conversation sent `GetRoomMembers` instead of using its participants.
 
