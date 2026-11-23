@@ -11,6 +11,11 @@ export interface Error {
 
 export enum ErrorCode {
     Authentication = 'AuthenticationException',
+    CallFull = 'CallFullException',
+    CallMode = 'CallModeException',
+    CallNotFound = 'CallNotFoundException',
+    CallsNotAccepted = 'CallsNotAcceptedException',
+    CallsUnavailable = 'CallsUnavailableException',
     CommandRateLimitExceeded = 'CommandRateLimitExceededException',
     InvalidSearchQuery = 'InvalidSearchQueryException',
     MessageSearchUnavailable = 'MessageSearchUnavailableException',
@@ -19,6 +24,7 @@ export enum ErrorCode {
     RoomIgnored = 'RoomIgnoredException',
     RoomNotFound = 'RoomNotFoundException',
     SpaceJoinRestricted = 'SpaceJoinRestrictedException',
+    TooManyCallInvitees = 'TooManyCallInviteesException',
     TopicNotFound = 'TopicNotFoundException',
     UserNotFound = 'UserNotFoundException',
 }

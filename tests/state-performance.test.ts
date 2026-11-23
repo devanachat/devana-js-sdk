@@ -67,7 +67,7 @@ const emitSession = (client: FakeClient, rooms: any[], spaces: any[] = []): void
         serverVersion: '1.0.0',
         protoVersion: '1.0.0',
         user: createUser('me'),
-        state: { rooms, spaces },
+        state: { rooms, spaces, calls: [], incomingCalls: [] },
     } as any);
 };
 

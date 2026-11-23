@@ -16,7 +16,7 @@ import {
 /**
  * Version of the {@link StateSnapshot} format. A snapshot of any other version is rejected on import.
  */
-export const STATE_SNAPSHOT_VERSION = 3;
+export const STATE_SNAPSHOT_VERSION = 4;
 
 /**
  * Plain, JSON-serializable copy of the state tracked by {@link ChatStateTracker}, made to restore the state at the

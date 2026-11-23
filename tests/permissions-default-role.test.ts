@@ -60,3 +60,27 @@ test('a role allow overrides a deny of the default role', async () => {
 
     expect(await manager.calculatePermissions({spaceId: SPACE})).toBe(CREATE_MESSAGES);
 });
+
+test('permissions beyond 32 bits are allowed, denied and checked', async () => {
+    const {InviteToCall, ManageCalls, JoinCalls} = Permissions.list;
+    const manager = createManager([SPACE, 'moderator', 'muted'], {
+        [SPACE]: {allow: InviteToCall.value + JoinCalls.value, deny: null},
+        moderator: {allow: ManageCalls.value, deny: null},
+        muted: {allow: null, deny: InviteToCall.value},
+    });
+
+    expect(await manager.calculatePermissions({spaceId: SPACE})).toBe(ManageCalls.value + JoinCalls.value);
+
+    const result = await manager.check(['ManageCalls', 'InviteToCall', 'JoinCalls'], {spaceId: SPACE});
+    expect(result.missing).toEqual(['InviteToCall']);
+    expect(result.hasAny).toBe(true);
+});
+
+test('Root grants the permissions beyond 32 bits', async () => {
+    const manager = createManager([SPACE], {
+        [SPACE]: {allow: Permissions.list.Root.value, deny: null},
+    });
+
+    const result = await manager.check(['ManageCalls', 'InviteToCall', 'ShareVideo'], {spaceId: SPACE});
+    expect(result.hasAll).toBe(true);
+});

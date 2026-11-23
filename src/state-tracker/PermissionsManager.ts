@@ -92,11 +92,11 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
         const ownedPermissions = await this.calculatePermissions(location);
         const missing: string[] = [];
 
-        permissionNames.forEach(name => {
-            if (~ ownedPermissions & Permissions.getByName(name).value) {
-                missing.push(name as string);
+        for (const name of permissionNames) {
+            if (! Permissions.has(ownedPermissions, name)) {
+                missing.push(name);
             }
-        });
+        }
 
         return {
             ok: missing.length === 0,
@@ -243,8 +243,8 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
         let allow = 0, deny = 0;
 
         for (const {overwrites} of rolesOverwrites) {
-            allow |= overwrites.allow ?? 0;
-            deny |= overwrites.deny ?? 0;
+            allow = Permissions.union(allow, overwrites.allow ?? 0);
+            deny = Permissions.union(deny, overwrites.deny ?? 0);
         }
 
         return {allow, deny};
@@ -254,24 +254,18 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
         let result = 0;
 
         for (const value of permissionOverwritesValues) {
-            if (value.allow & Permissions.getByName('Root').value) {
+            if (Permissions.has(value.allow ?? 0, 'Root')) {
                 return this.getRootAccessValue();
             }
 
-            result = (result & ~value.deny) | value.allow;
+            result = Permissions.union(Permissions.subtract(result, value.deny ?? 0), value.allow ?? 0);
         }
 
         return result;
     }
 
     private getRootAccessValue(): number {
-        let result = 0;
-
-        for (const name of Permissions.getNames()) {
-            result |= Permissions.getByName(name).value;
-        }
-
-        return result;
+        return Permissions.union(...Permissions.getNames().map(name => Permissions.getByName(name).value));
     }
 
     private async fetchComputedPermissions(location: ChatLocation): Promise<number> {

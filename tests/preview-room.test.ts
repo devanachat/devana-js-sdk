@@ -77,7 +77,7 @@ function setup(total: number) {
     const client = new FakeClient();
     client.fill(total);
     const tracker = new ChatStateTracker(client as any);
-    client.emit('Session', {user: {id: 'me'}, state: {rooms: [createRoom(JOINED)], spaces: [], spaceMembers: []}} as any);
+    client.emit('Session', {user: {id: 'me'}, state: {rooms: [createRoom(JOINED)], spaces: [], spaceMembers: [], calls: [], incomingCalls: []}} as any);
     return {client, tracker};
 }
 

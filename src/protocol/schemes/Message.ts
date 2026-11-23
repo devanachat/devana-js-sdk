@@ -3,8 +3,9 @@ import {ChatLocation} from "./ChatLocation";
 import {MessageReaction} from "./Reaction";
 import {MessagePoll} from "./MessagePoll";
 import {MessageEmbed} from "./MessageEmbed";
+import {MessageCall} from "./MessageCall";
 
-export type MessageType = 'Text'|'RoomJoin'|'RoomMemberAdd'|'RoomLeave'|'SpaceJoin'|'SpaceLeave'|'TopicChange'|'CustomNickChange'|'Ephemeral'|'Poll'|'RoomRename';
+export type MessageType = 'Text'|'RoomJoin'|'RoomMemberAdd'|'RoomLeave'|'SpaceJoin'|'SpaceLeave'|'TopicChange'|'CustomNickChange'|'Ephemeral'|'Poll'|'RoomRename'|'Call'|'CallJoin'|'CallLeave';
 
 /**
  * Mention targets a message actually reached, as resolved by the server: role
@@ -33,6 +34,7 @@ export interface Message {
     attachments: string[] | null;
     reactions: MessageReaction[];
     poll?: MessagePoll;
+    call?: MessageCall | null;
     mentions: MessageMentions | null;
     editedAt?: string | null;
     replyTo?: string | null;

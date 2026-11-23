@@ -151,6 +151,21 @@ import {
     EntitlementUsage,
     CreateAccessTicket,
     AccessTicket,
+    JoinCall,
+    DeclineCall,
+    InviteToCall,
+    MuteCallMember,
+    KickCallMember,
+    UpdateCallMember,
+    GetCallMembers,
+    CallJoined,
+    CallUpdated,
+    IncomingCallUpdated,
+    CallVideoLimitReached,
+    CallMembers,
+    CallMemberJoined,
+    CallMemberUpdated,
+    CallMemberLeft,
 } from "./protocol";
 import {EventTarget} from "./EventTarget";
 
@@ -313,6 +328,15 @@ export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap
     InteractionResolved: InteractionResolved,
     ReactionDetails: ReactionDetails,
     Typing: Typing,
+    // Call events
+    CallJoined: CallJoined,
+    CallUpdated: CallUpdated,
+    IncomingCallUpdated: IncomingCallUpdated,
+    CallVideoLimitReached: CallVideoLimitReached,
+    CallMembers: CallMembers,
+    CallMemberJoined: CallMemberJoined,
+    CallMemberUpdated: CallMemberUpdated,
+    CallMemberLeft: CallMemberLeft,
 };
 
 /**
@@ -405,4 +429,12 @@ export type CommandsMap = {
     Unreact: CommandDefinition<Unreact, EventsMap['Reacted'] | EventsMap['Ok']>,
     GetReactionDetails: CommandDefinition<GetReactionDetails, EventsMap['ReactionDetails']>,
     Type: CommandDefinition<Type, EventsMap['Ok']>,
+     // Call commands
+    JoinCall: CommandDefinition<JoinCall, EventsMap['CallJoined']>,
+    DeclineCall: CommandDefinition<DeclineCall, EventsMap['Ok']>,
+    InviteToCall: CommandDefinition<InviteToCall, EventsMap['Ok']>,
+    MuteCallMember: CommandDefinition<MuteCallMember, EventsMap['Ok']>,
+    KickCallMember: CommandDefinition<KickCallMember, EventsMap['Ok']>,
+    UpdateCallMember: CommandDefinition<UpdateCallMember, EventsMap['Ok']>,
+    GetCallMembers: CommandDefinition<GetCallMembers, EventsMap['CallMembers']>,
  }

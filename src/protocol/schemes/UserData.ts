@@ -8,4 +8,5 @@ export interface UserData {
      */
     showAsyncPresence: boolean;
     language: string | null;
+    acceptCalls: boolean;
 }

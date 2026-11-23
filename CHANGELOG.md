@@ -6,6 +6,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Voice and video calls in rooms. The protocol: commands `JoinCall` (answered with `CallJoined`: the media server URL,
+  token and quality), `DeclineCall`, `InviteToCall`, `MuteCallMember` and `KickCallMember`; events
+  `CallUpdated` (a call started, changed or ended), `CallMemberJoined`, `CallMemberUpdated` and `CallMemberLeft`
+  (a change of a single member), `IncomingCallUpdated` (an `IncomingCall` - the call and its caller - started or
+  stopped ringing at you) and `CallVideoLimitReached` (the server took your camera or screen share away because of
+  the video limit of the call); `Session.state.calls` with the ongoing calls, each with its `location`, and
+  `Session.state.incomingCalls` with the calls ringing at you; the `Call` message type
+  with `Message.call` (status, the `mode` the call had, duration, `memberCount` and some of the members in
+  `partialMembers`) and the
+  `CallJoin` / `CallLeave` messages in the call's topic; the `GetCallMembers` command answered with `CallMembers`
+  (`CallsManager.getMembers(messageId, {limit, offset})`) for all the members of the call of a message;
+  `SessionPush.voipToken` for the iOS PushKit token; error codes `CallsUnavailable`, `CallFull`, `CallNotFound` and
+  `TooManyCallInvitees`. The SDK does the signalling only - connect to the media server with the access yourself.
+- `ChatStateTracker.calls` (`CallsManager`): `get()` - the ongoing calls in your rooms keyed by room id, `getRinging()`
+  - the calls ringing at you, and `join`, `decline`, `invite`, `muteMember` and `kickMember`. The member events
+  replace the tracked call with a new object, and a `getRinging()` entry is replaced with a new object when its call
+  changes. `CallUpdated` of a room you are not in is ignored. Calls are not part of the state snapshot.
+- Call modes, set per room in `Room.call` / `UpdateRoom.call` (`RoomCall`: `mode`, `userLimit`, `turnSeconds`):
+  `Conversation` (everyone speaks), `Stage` (moderators bring listeners who raised a hand on the stage) and `Queue`
+  (members raise a hand to take turns). `Call.mode`, `Call.turn` (who speaks until when, and by when they have to turn
+  the microphone on, or the turn ends - null once they did), `CallMember.handRaisedAt` (`CallsManager.getQueue(call)`
+  orders the raised hands), `CallMemberFlag` (`Camera`, `ScreenShare`, `Speaker`, `RaiseBlocked`), the optional title of a call
+  started with `JoinCall`, the `UpdateCallMember` command (`CallsManager.updateMember`: raising and lowering a hand,
+  moving on and off the stage, which also ends or skips a turn) and the `CallMode` error code for an operation the
+  mode of the call does not allow.
+- `UserData.acceptCalls` (true by default) and `SetUserData.acceptCalls` (null or left out keeps it): with it off,
+  `JoinCall` starting a call in a one-to-one private room with you fails with the new `CallsNotAccepted` error code.
+- `Call.autoEndAt`: when the server ends the call because nobody is left to talk with (null while it is not going to).
+- Permissions `JoinCalls` (2^30), `ShareVideo` (2^31), `InviteToCall` (2^32) and `ManageCalls` (2^33). The last
+  three lie beyond the 31 bits JavaScript bitwise operators handle, so check and build permission masks with the
+  new `Permissions.has(mask, name)`, `Permissions.union(...masks)` and `Permissions.subtract(mask, removed)` instead
+  of `&`, `|` and `~`.
+- `SetPermissionOverwrites.knownPermissions`: the mask of the permissions the client knows. The server changes only
+  these bits of the overwrites; without it, it keeps the bits from 2^30 up, so an older client does not clear the call
+  permissions it cannot show. `Permissions.getKnownMask()` gives the mask of all the permissions of the SDK for it.
+
+### Changed
+
+- `Room.call` is required, as are `UserState.calls` and `UserState.incomingCalls` - the server always sends them.
+  `MessageType` has the new `Call`, `CallJoin` and `CallLeave` values, so a `switch` over it may need new cases.
+- State snapshots: version 4 (rooms with `call`); older snapshots are rejected.
+
+### Fixed
+
+- `PermissionsManager` computes permissions beyond the 31st bit correctly.
+
 ## [0.13.0]
 
 ### Added

@@ -4,4 +4,5 @@ export interface SetUserData {
     privateMessagePolicy?: PrivateMessagePolicy;
     showAsyncPresence?: boolean;
     language?: string;
+    acceptCalls?: boolean | null;
 }

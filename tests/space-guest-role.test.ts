@@ -28,7 +28,7 @@ const space = (guestRole: string | null): any => ({
 async function setup(guestRole: string | null) {
     const client = new FakeClient();
     const tracker = new ChatStateTracker(client as any);
-    client.emit('Session', {user: {id: 'me'}, state: {rooms: [], spaces: [space(guestRole)], spaceMembers: []}} as any);
+    client.emit('Session', {user: {id: 'me'}, state: {rooms: [], spaces: [space(guestRole)], spaceMembers: [], calls: [], incomingCalls: []}} as any);
     return {client, spaces: await tracker.spaces.get()};
 }
 

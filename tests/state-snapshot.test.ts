@@ -99,7 +99,7 @@ const emitSession = (client: FakeClient, rooms: any[], spaces: any[] = [], me: a
         serverVersion: '1.0.0',
         protoVersion: '1.0.0',
         user: me,
-        state: { rooms, spaces },
+        state: { rooms, spaces, calls: [], incomingCalls: [] },
     } as any);
 };
 
@@ -299,7 +299,7 @@ describe('state snapshot - import', () => {
     test('is rejected for another version, leaving the state untouched', async () => {
         const snapshot = await exportPopulated();
 
-        for (const version of [0, 1, 2, '3', undefined]) {
+        for (const version of [0, 1, 2, 3, '4', undefined]) {
             const { tracker } = createTracker();
             expect(tracker.importSnapshot({ ...snapshot, version })).toBe(false);
             expect(tracker.me).toBeNull();

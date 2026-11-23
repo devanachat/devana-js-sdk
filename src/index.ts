@@ -10,6 +10,7 @@ import {FilesClient, File} from "./FilesClient";
 import { Permissions, PermissionDefinition, Layer } from "./Permissions";
 import * as ChatTypes from './protocol';
 import {
+    CallMemberFlag,
     ErrorCode,
     HistoryRotation,
     MessageEmbedFlag,
@@ -31,6 +32,7 @@ import {TopicHistoryWindow} from "./state-tracker/TopicHistoryWindow";
 import {PermissionsManager} from "./state-tracker/PermissionsManager";
 import {STATE_SNAPSHOT_VERSION} from "./state-tracker/StateSnapshot";
 import {TYPING_INTERVAL_MS, TYPING_TIMEOUT_MS, TypingManager, TypingUsers} from "./state-tracker/TypingManager";
+import {CallsManager} from "./state-tracker/CallsManager";
 
 export {
     IndexedCollection, ObservableIndexedCollection,
@@ -42,6 +44,7 @@ export {
     extractUserFromMember,
     isGroupPm,
     getPmPeers,
+    CallMemberFlag,
     ErrorCode,
     MessageEmbedFlag,
     PmParticipantFlag,
@@ -89,4 +92,5 @@ export type {
     PermissionsManager,
     TypingManager,
     TypingUsers,
+    CallsManager,
 };

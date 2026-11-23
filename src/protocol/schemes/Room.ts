@@ -3,6 +3,7 @@ import {User} from "./User";
 import {RoomStream} from "./RoomStream";
 import {RoomHistory} from "./RoomHistory";
 import {PmParticipant} from "./PmParticipant";
+import {RoomCall} from "./RoomCall";
 
 export type RoomType = 'Text' | 'ClassicText' | 'Pm';
 
@@ -19,4 +20,5 @@ export interface Room {
     flags: number;
     stream: RoomStream | null;
     history: RoomHistory | null;
+    call: RoomCall;
 }

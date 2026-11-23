@@ -2,6 +2,7 @@ import {SessionPlatform} from "../SessionData";
 
 export interface SessionPush {
     token?: string;
+    voipToken?: string;
     active?: boolean;
     /**
      * @deprecated The platform describes the session, not its push registration.

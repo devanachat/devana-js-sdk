@@ -121,6 +121,7 @@ import {SetClientData} from "./schemes/commands/SetClientData";
 import {ClientData} from "./schemes/events/ClientData";
 import {RoomStream, RoomStreamType} from "./schemes/RoomStream";
 import {RoomHistory, RoomHistoryMode} from "./schemes/RoomHistory";
+import {RoomCall} from "./schemes/RoomCall";
 import {GetRoomSummary} from "./schemes/commands/GetRoomSummary";
 import {GetSpaceSummary} from "./schemes/commands/GetSpaceSummary";
 import {SpaceSummary as SpaceSummaryEvent} from "./schemes/events/SpaceSummary";
@@ -195,6 +196,24 @@ import {Entitlements} from "./schemes/events/Entitlements";
 import {EntitlementUsage} from "./schemes/events/EntitlementUsage";
 import {CreateAccessTicket, TicketAudience} from "./schemes/commands/CreateAccessTicket";
 import {AccessTicket} from "./schemes/events/AccessTicket";
+import {Call, CallMember, CallMemberFlag, CallMode, CallQuality, CallTurn} from "./schemes/Call";
+import {MessageCall, MessageCallStatus} from "./schemes/MessageCall";
+import {JoinCall} from "./schemes/commands/JoinCall";
+import {DeclineCall} from "./schemes/commands/DeclineCall";
+import {InviteToCall} from "./schemes/commands/InviteToCall";
+import {MuteCallMember} from "./schemes/commands/MuteCallMember";
+import {KickCallMember} from "./schemes/commands/KickCallMember";
+import {UpdateCallMember} from "./schemes/commands/UpdateCallMember";
+import {CallJoined} from "./schemes/events/CallJoined";
+import {CallUpdated} from "./schemes/events/CallUpdated";
+import {IncomingCall} from "./schemes/IncomingCall";
+import {IncomingCallUpdated} from "./schemes/events/IncomingCallUpdated";
+import {CallVideoLimitReached} from "./schemes/events/CallVideoLimitReached";
+import {GetCallMembers} from "./schemes/commands/GetCallMembers";
+import {CallMembers} from "./schemes/events/CallMembers";
+import {CallMemberJoined} from "./schemes/events/CallMemberJoined";
+import {CallMemberUpdated} from "./schemes/events/CallMemberUpdated";
+import {CallMemberLeft} from "./schemes/events/CallMemberLeft";
 
 export type {
     // objects
@@ -212,6 +231,7 @@ export type {
     RoomStreamType,
     RoomHistory,
     RoomHistoryMode,
+    RoomCall,
     RoomMember,
     RoomSummary,
     RoomSummaryExtras,
@@ -267,6 +287,14 @@ export type {
     EntitlementsMap,
     EntitlementsExtras,
     TicketAudience,
+    Call,
+    CallMember,
+    CallQuality,
+    CallMode,
+    CallTurn,
+    IncomingCall,
+    MessageCall,
+    MessageCallStatus,
     // events
     Bye,
     Error,
@@ -346,6 +374,14 @@ export type {
     Entitlements,
     EntitlementUsage,
     AccessTicket,
+    CallJoined,
+    CallUpdated,
+    IncomingCallUpdated,
+    CallVideoLimitReached,
+    CallMembers,
+    CallMemberJoined,
+    CallMemberUpdated,
+    CallMemberLeft,
     // commands
     AssignRole,
     GetMessages,
@@ -427,9 +463,17 @@ export type {
     Type,
     GetEntitlements,
     CreateAccessTicket,
+    JoinCall,
+    DeclineCall,
+    InviteToCall,
+    MuteCallMember,
+    KickCallMember,
+    UpdateCallMember,
+    GetCallMembers,
 };
 
 export {
+    CallMemberFlag,
     ErrorCode,
     MessageEmbedFlag,
     NO_LIMIT,

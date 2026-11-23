@@ -47,7 +47,7 @@ const createTracker = () => {
 };
 
 const emitSession = (client: FakeClient, rooms: any[]): void => {
-    client.emit('Session', { user: createUser('me'), state: { rooms, spaces: [] } } as any);
+    client.emit('Session', { user: createUser('me'), state: { rooms, spaces: [], calls: [], incomingCalls: [] } } as any);
 };
 
 const memberIds = async (tracker: any, roomId: string): Promise<string[]> =>

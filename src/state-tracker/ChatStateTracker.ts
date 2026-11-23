@@ -7,6 +7,7 @@ import {DeferredTask} from "./AsyncUtils";
 import {EmoticonsManager} from "./EmoticonsManager";
 import {UsersManager} from "./UsersManager";
 import {RelationshipsManager} from "./RelationshipsManager";
+import {CallsManager} from "./CallsManager";
 import {
     isValidStateSnapshot,
     STATE_SNAPSHOT_VERSION,
@@ -48,6 +49,11 @@ export class ChatStateTracker {
      */
     public readonly relationships: RelationshipsManager;
 
+    /**
+     * State of the calls in your rooms and of the calls ringing at you.
+     */
+    public readonly calls: CallsManager;
+
     private _me: User = null;
     private readonly deferredSession = new DeferredTask();
     private sessionReceived = false;
@@ -63,6 +69,7 @@ export class ChatStateTracker {
         this.emoticons = new EmoticonsManager(this);
         this.users = new UsersManager(this);
         this.relationships = new RelationshipsManager(this);
+        this.calls = new CallsManager(this);
 
         // Registered after the managers, so it runs once they have applied the session.
         this.client.on('Session', ev => this.handleSessionAfterImport(ev));

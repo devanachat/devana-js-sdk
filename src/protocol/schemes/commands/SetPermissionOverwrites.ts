@@ -6,4 +6,5 @@ export interface SetPermissionOverwrites {
     location: ChatLocation;
     target: PermissionOverwritesTarget;
     overwrites: PermissionOverwritesValue;
+    knownPermissions?: number;
 }
