@@ -28,4 +28,5 @@ export enum ErrorCode {
     TooManyCallInvitees = 'TooManyCallInviteesException',
     TopicNotFound = 'TopicNotFoundException',
     UserNotFound = 'UserNotFoundException',
+    UserType = 'UserTypeException',
 }
