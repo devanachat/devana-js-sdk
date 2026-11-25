@@ -72,7 +72,7 @@ export class ActivitiesManager extends EventTarget<EventMap> {
      * Your latest activities, keyed by id; always the same collection. The first call fetches them, later ones resolve
      * with them. Once fetched, they are fetched again after every reconnect, also when the first fetch failed because
      * the connection was not ready yet. The collection keeps no meaningful order - sort by `createdAt`. Marking the list
-     * as seen and clearing it is done with the `UpdateActivity` command.
+     * as seen and clearing it is done with the `UpdateActivities` command.
      * @param fetchWithMessages Fetch the messages and the actors of the activities along, so {@link getMessages} and
      * {@link getUsers} need no request.
      */

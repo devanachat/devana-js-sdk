@@ -1,4 +1,4 @@
-export interface UpdateActivity {
+export interface UpdateActivities {
     seenAt?: string;
     clear?: boolean;
 }

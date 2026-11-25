@@ -216,7 +216,7 @@ import {CallMemberUpdated} from "./schemes/events/CallMemberUpdated";
 import {CallMemberLeft} from "./schemes/events/CallMemberLeft";
 import {Activity, ActivityType} from "./schemes/Activity";
 import {GetActivities} from "./schemes/commands/GetActivities";
-import {UpdateActivity} from "./schemes/commands/UpdateActivity";
+import {UpdateActivities} from "./schemes/commands/UpdateActivities";
 import {Activities} from "./schemes/events/Activities";
 import {NewActivity} from "./schemes/events/NewActivity";
 import {ActivityUpdated} from "./schemes/events/ActivityUpdated";
@@ -496,7 +496,7 @@ export type {
     UpdateCallMember,
     GetCallMembers,
     GetActivities,
-    UpdateActivity,
+    UpdateActivities,
     SaveItem,
     UnsaveItem,
     GetSavedItems,
