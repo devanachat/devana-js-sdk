@@ -6,26 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.15.0]
+
 ### Added
 
 - Activities: your latest personal events from all spaces - a mention of you or of your role, a reply to you, a
   reaction to your message, a reply in a thread you follow and a missed call - and the activities the server publishes
   itself, with a `title`, a `description` and a `link`. Private conversations keep their own unread state: apart from a
-  missed call they make no activities. The protocol: the `GetActivities` command answered with `Activities` (up to 20
-  `Activity` objects, newest first, the `seenAt` time and the messages and users they point at), the `UpdateActivity`
-  command (`seenAt` marks the list as seen, `clear` empties it) answered with `ActivityUpdated`, which every session of
-  the user gets, and the events `NewActivity` and `ActivityDeleted`. Activities of one group (`groupKey`: reactions to
-  one message, replies in one thread) join while unseen: `count` grows, `actorIds` keeps the last three and `messageId`
-  points at the newest message. `Activity.isRead` is set once the message of the activity is acknowledged (`Ack`;
-  reactions excepted); a live `NewActivity` of a message comes a few seconds late and only to those who have not
-  acknowledged it by then, so an activity in the topic you are reading does not show at all.
-- `ChatStateTracker.activities` (`ActivitiesManager`): `load()`, `activities`, `unreadCount`, `seenAt`,
-  `getMessage()` / `getUser()`, `markSeen()`, `clear()` and a `change` event. A live activity joins its group the way
-  the server does; one that arrives without its message sets `isIncomplete`, and `refresh()` fetches the messages.
-  `FollowedTopicUpdated` (an acknowledgement, also from another device) marks the activities of its messages read, and
-  `unreadCount` leaves read activities out. `loaded` is true once the list has arrived. A list asked for with
-  `load()` is fetched again on every new session - after a reconnect, and when it was asked for before the connection
-  was ready. Activities are not part of the state snapshot.
+  missed call they make no activities. Bots have none: their `GetActivities` and `UpdateActivity` fail with
+  `UserTypeException`. The protocol: the `GetActivities` command answered with `Activities` - up to 20 `Activity`
+  objects, newest first, and the `seenAt` time; with `withMessages` also the messages they point at and their actors
+  (`users`), which are empty otherwise. The `UpdateActivity` command (`seenAt` marks the list as seen, `clear` empties
+  it) is answered with `ActivityUpdated`, which every session of the user gets. The event `NewActivity` carries the
+  new activity with its `message` and its actor (`users`), `ActivityDeleted` an activity the server deleted. Activities
+  of one group (`groupKey`: reactions to one message, replies in one thread) join while unseen: `count` grows,
+  `actorIds` keeps the last three and `messageId` points at the newest message. `Activity.isRead` is set once the
+  message of the activity is acknowledged (`Ack`; reactions excepted); a live `NewActivity` of a message comes a few
+  seconds late and only to those who have not acknowledged it by then, so an activity in the topic you are reading
+  does not show at all.
+- `ChatStateTracker.activities` (`ActivitiesManager`): `get(fetchWithMessages)` resolves with an observable collection
+  of the activities keyed by id, `getMessages()` and `getUsers()` with the collections of their messages and actors,
+  and `seenAt` (with a `seenAtChange` event) tells when the list was last seen; the activities created later that are
+  not `isRead` are the unread ones. Nothing is fetched until you ask; afterwards a reconnect fetches again what was
+  fetched, with one request, into the same collections - also when the first fetch failed because the connection was
+  not ready. A live activity joins its group the way the server does; `ActivityUpdated`, `ActivityDeleted`,
+  `FollowedTopicUpdated` (an acknowledgement, also from another device), edits and deletions of the messages and
+  deleted rooms change the collections; leaving a room hides its activities and rejoining brings them back. The
+  collection order is not meaningful - sort by `createdAt`. Activities are not part of the state snapshot.
+- Saved items: rooms (private conversations included) and messages you save to keep at hand. The protocol: the
+  `SaveItem` and `UnsaveItem` commands (`type` `Room` or `Message` and the `id`), answered with `ItemSaved` (the
+  `SavedItem` and, for a message, its `Message`) and `ItemUnsaved`, which the other sessions of the user get as
+  events when something changed; the `GetSavedItems` command answered with `SavedItems` - the items, newest first, and
+  with `withMessages` the saved messages too. Items of rooms you are not a member of are left out until you rejoin.
+  Saving over the server limit fails with `ErrorCode.SavedItemsLimitReached` (`subcode` `Room` or `Message`). Bots have
+  none: their commands fail with `ErrorCode.UserType`.
+- `ChatStateTracker.savedItems` (`SavedItemsManager`): `get(fetchWithMessages)` resolves with an observable collection
+  of the items keyed by `savedItemKey(type, id)`, `getMessages()` with the collection of the saved messages, and
+  `isSaved()`. Nothing is fetched until you ask; afterwards a reconnect fetches again what was fetched, with one request,
+  into the same collections. `ItemSaved` / `ItemUnsaved` (also from another device), edits and deletions of the saved
+  messages and deleted rooms change the collections; leaving a room hides its items and rejoining brings them back. The
+  collection order is not meaningful - sort by `SavedItem.savedAt`. Saved items are not part of the state snapshot.
 
 ## [0.14.0]
 
