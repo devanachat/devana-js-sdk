@@ -9,6 +9,7 @@ import {UsersManager} from "./UsersManager";
 import {RelationshipsManager} from "./RelationshipsManager";
 import {CallsManager} from "./CallsManager";
 import {ActivitiesManager} from "./ActivitiesManager";
+import {SavedItemsManager} from "./SavedItemsManager";
 import {
     isValidStateSnapshot,
     STATE_SNAPSHOT_VERSION,
@@ -61,6 +62,12 @@ export class ChatStateTracker {
      */
     public readonly activities: ActivitiesManager;
 
+    /**
+     * The rooms and messages you saved, from all spaces. Nothing is fetched until you ask for it. Not part of the state
+     * snapshot.
+     */
+    public readonly savedItems: SavedItemsManager;
+
     private _me: User = null;
     private readonly deferredSession = new DeferredTask();
     private sessionReceived = false;
@@ -78,6 +85,7 @@ export class ChatStateTracker {
         this.relationships = new RelationshipsManager(this);
         this.calls = new CallsManager(this);
         this.activities = new ActivitiesManager(this);
+        this.savedItems = new SavedItemsManager(this);
 
         // Registered after the managers, so it runs once they have applied the session.
         this.client.on('Session', ev => this.handleSessionAfterImport(ev));

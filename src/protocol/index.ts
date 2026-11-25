@@ -221,6 +221,13 @@ import {Activities} from "./schemes/events/Activities";
 import {NewActivity} from "./schemes/events/NewActivity";
 import {ActivityUpdated} from "./schemes/events/ActivityUpdated";
 import {ActivityDeleted} from "./schemes/events/ActivityDeleted";
+import {SavedItem, SavedItemType} from "./schemes/SavedItem";
+import {SaveItem} from "./schemes/commands/SaveItem";
+import {UnsaveItem} from "./schemes/commands/UnsaveItem";
+import {GetSavedItems} from "./schemes/commands/GetSavedItems";
+import {SavedItems} from "./schemes/events/SavedItems";
+import {ItemSaved} from "./schemes/events/ItemSaved";
+import {ItemUnsaved} from "./schemes/events/ItemUnsaved";
 
 export type {
     // objects
@@ -304,6 +311,8 @@ export type {
     MessageCallStatus,
     Activity,
     ActivityType,
+    SavedItem,
+    SavedItemType,
     // events
     Bye,
     Error,
@@ -395,6 +404,9 @@ export type {
     NewActivity,
     ActivityUpdated,
     ActivityDeleted,
+    SavedItems,
+    ItemSaved,
+    ItemUnsaved,
     // commands
     AssignRole,
     GetMessages,
@@ -485,6 +497,9 @@ export type {
     GetCallMembers,
     GetActivities,
     UpdateActivity,
+    SaveItem,
+    UnsaveItem,
+    GetSavedItems,
 };
 
 export {

@@ -23,6 +23,7 @@ export enum ErrorCode {
     ReactionExistsAlready = 'ReactionExistsAlreadyException',
     RoomIgnored = 'RoomIgnoredException',
     RoomNotFound = 'RoomNotFoundException',
+    SavedItemsLimitReached = 'SavedItemsLimitReachedException',
     SpaceJoinRestricted = 'SpaceJoinRestrictedException',
     TooManyCallInvitees = 'TooManyCallInviteesException',
     TopicNotFound = 'TopicNotFoundException',

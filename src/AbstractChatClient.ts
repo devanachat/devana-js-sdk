@@ -172,6 +172,12 @@ import {
     NewActivity,
     ActivityUpdated,
     ActivityDeleted,
+    SaveItem,
+    UnsaveItem,
+    GetSavedItems,
+    SavedItems,
+    ItemSaved,
+    ItemUnsaved,
 } from "./protocol";
 import {EventTarget} from "./EventTarget";
 
@@ -348,6 +354,10 @@ export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap
     NewActivity: NewActivity,
     ActivityUpdated: ActivityUpdated,
     ActivityDeleted: ActivityDeleted,
+    // Saved items events
+    SavedItems: SavedItems,
+    ItemSaved: ItemSaved,
+    ItemUnsaved: ItemUnsaved,
 };
 
 /**
@@ -450,4 +460,7 @@ export type CommandsMap = {
     GetCallMembers: CommandDefinition<GetCallMembers, EventsMap['CallMembers']>,
     GetActivities: CommandDefinition<GetActivities, EventsMap['Activities']>,
     UpdateActivity: CommandDefinition<UpdateActivity, EventsMap['ActivityUpdated']>,
+    SaveItem: CommandDefinition<SaveItem, EventsMap['ItemSaved']>,
+    UnsaveItem: CommandDefinition<UnsaveItem, EventsMap['ItemUnsaved']>,
+    GetSavedItems: CommandDefinition<GetSavedItems, EventsMap['SavedItems']>,
  }

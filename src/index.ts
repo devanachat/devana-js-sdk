@@ -34,10 +34,12 @@ import {STATE_SNAPSHOT_VERSION} from "./state-tracker/StateSnapshot";
 import {TYPING_INTERVAL_MS, TYPING_TIMEOUT_MS, TypingManager, TypingUsers} from "./state-tracker/TypingManager";
 import {CallsManager} from "./state-tracker/CallsManager";
 import {ActivitiesManager} from "./state-tracker/ActivitiesManager";
+import {SavedItemsManager, savedItemKey} from "./state-tracker/SavedItemsManager";
 
 export {
     IndexedCollection, ObservableIndexedCollection,
     IndexedObjectCollection, ObservableIndexedObjectCollection,
+    savedItemKey,
     Permissions, PermissionDefinition, Layer,
     WebSocketChatClient, WebApiChatClient,
     FilesClient,
@@ -95,4 +97,5 @@ export type {
     TypingUsers,
     CallsManager,
     ActivitiesManager,
+    SavedItemsManager,
 };
