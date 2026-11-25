@@ -166,6 +166,12 @@ import {
     CallMemberJoined,
     CallMemberUpdated,
     CallMemberLeft,
+    GetActivities,
+    UpdateActivity,
+    Activities,
+    NewActivity,
+    ActivityUpdated,
+    ActivityDeleted,
 } from "./protocol";
 import {EventTarget} from "./EventTarget";
 
@@ -337,6 +343,11 @@ export type CommandResponse<CommandType extends keyof CommandsMap> = CommandsMap
     CallMemberJoined: CallMemberJoined,
     CallMemberUpdated: CallMemberUpdated,
     CallMemberLeft: CallMemberLeft,
+    // Activity events
+    Activities: Activities,
+    NewActivity: NewActivity,
+    ActivityUpdated: ActivityUpdated,
+    ActivityDeleted: ActivityDeleted,
 };
 
 /**
@@ -437,4 +448,6 @@ export type CommandsMap = {
     KickCallMember: CommandDefinition<KickCallMember, EventsMap['Ok']>,
     UpdateCallMember: CommandDefinition<UpdateCallMember, EventsMap['Ok']>,
     GetCallMembers: CommandDefinition<GetCallMembers, EventsMap['CallMembers']>,
+    GetActivities: CommandDefinition<GetActivities, EventsMap['Activities']>,
+    UpdateActivity: CommandDefinition<UpdateActivity, EventsMap['ActivityUpdated']>,
  }

@@ -33,6 +33,7 @@ import {PermissionsManager} from "./state-tracker/PermissionsManager";
 import {STATE_SNAPSHOT_VERSION} from "./state-tracker/StateSnapshot";
 import {TYPING_INTERVAL_MS, TYPING_TIMEOUT_MS, TypingManager, TypingUsers} from "./state-tracker/TypingManager";
 import {CallsManager} from "./state-tracker/CallsManager";
+import {ActivitiesManager} from "./state-tracker/ActivitiesManager";
 
 export {
     IndexedCollection, ObservableIndexedCollection,
@@ -93,4 +94,5 @@ export type {
     TypingManager,
     TypingUsers,
     CallsManager,
+    ActivitiesManager,
 };

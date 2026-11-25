@@ -214,6 +214,13 @@ import {CallMembers} from "./schemes/events/CallMembers";
 import {CallMemberJoined} from "./schemes/events/CallMemberJoined";
 import {CallMemberUpdated} from "./schemes/events/CallMemberUpdated";
 import {CallMemberLeft} from "./schemes/events/CallMemberLeft";
+import {Activity, ActivityType} from "./schemes/Activity";
+import {GetActivities} from "./schemes/commands/GetActivities";
+import {UpdateActivity} from "./schemes/commands/UpdateActivity";
+import {Activities} from "./schemes/events/Activities";
+import {NewActivity} from "./schemes/events/NewActivity";
+import {ActivityUpdated} from "./schemes/events/ActivityUpdated";
+import {ActivityDeleted} from "./schemes/events/ActivityDeleted";
 
 export type {
     // objects
@@ -295,6 +302,8 @@ export type {
     IncomingCall,
     MessageCall,
     MessageCallStatus,
+    Activity,
+    ActivityType,
     // events
     Bye,
     Error,
@@ -382,6 +391,10 @@ export type {
     CallMemberJoined,
     CallMemberUpdated,
     CallMemberLeft,
+    Activities,
+    NewActivity,
+    ActivityUpdated,
+    ActivityDeleted,
     // commands
     AssignRole,
     GetMessages,
@@ -470,6 +483,8 @@ export type {
     KickCallMember,
     UpdateCallMember,
     GetCallMembers,
+    GetActivities,
+    UpdateActivity,
 };
 
 export {

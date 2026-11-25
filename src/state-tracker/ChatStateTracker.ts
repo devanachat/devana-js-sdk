@@ -8,6 +8,7 @@ import {EmoticonsManager} from "./EmoticonsManager";
 import {UsersManager} from "./UsersManager";
 import {RelationshipsManager} from "./RelationshipsManager";
 import {CallsManager} from "./CallsManager";
+import {ActivitiesManager} from "./ActivitiesManager";
 import {
     isValidStateSnapshot,
     STATE_SNAPSHOT_VERSION,
@@ -54,6 +55,12 @@ export class ChatStateTracker {
      */
     public readonly calls: CallsManager;
 
+    /**
+     * Your latest personal events from all spaces (mentions, replies, reactions, followed threads, missed calls) and the
+     * activities the server publishes. Private conversations keep their own unread state. Not part of the state snapshot.
+     */
+    public readonly activities: ActivitiesManager;
+
     private _me: User = null;
     private readonly deferredSession = new DeferredTask();
     private sessionReceived = false;
@@ -70,6 +77,7 @@ export class ChatStateTracker {
         this.users = new UsersManager(this);
         this.relationships = new RelationshipsManager(this);
         this.calls = new CallsManager(this);
+        this.activities = new ActivitiesManager(this);
 
         // Registered after the managers, so it runs once they have applied the session.
         this.client.on('Session', ev => this.handleSessionAfterImport(ev));
