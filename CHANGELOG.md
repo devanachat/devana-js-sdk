@@ -4,23 +4,6 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [semver](https://semver.org) (`0.x` minor releases may break the API).
 
-## [Unreleased]
-
-### Added
-
-- Saved items: rooms (private conversations included) and messages you save to keep at hand. The protocol: the
-  `SaveItem` and `UnsaveItem` commands (`type` `Room` or `Message` and the `id`), answered with `ItemSaved` (the
-  `SavedItem` and, for a message, its `Message`) and `ItemUnsaved`, which every session of the user gets; the
-  `GetSavedItems` command answered with `SavedItems` - the items, newest first, and with `withMessages` the saved
-  messages too. Items of rooms you are not a member of are left out until you rejoin. Saving over the server limit
-  fails with `ErrorCode.SavedItemsLimitReached` (`subcode` `Room` or `Message`).
-- `ChatStateTracker.savedItems` (`SavedItemsManager`): `get(fetchWithMessages)` resolves with an observable collection
-  of the items keyed by `savedItemKey(type, id)`, `getMessages()` with the collection of the saved messages, and
-  `isSaved()`. Nothing is fetched until you ask; afterwards a reconnect fetches again what was fetched, with one request,
-  into the same collections. `ItemSaved` / `ItemUnsaved` (also from another device), edits and deletions of the saved
-  messages and deleted rooms change the collections; leaving a room hides its items and rejoining brings them back. The
-  collection order is not meaningful - sort by `SavedItem.savedAt`. Saved items are not part of the state snapshot.
-
 ## [0.15.0]
 
 ### Added

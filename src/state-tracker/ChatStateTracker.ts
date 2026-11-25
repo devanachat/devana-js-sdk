@@ -58,7 +58,8 @@ export class ChatStateTracker {
 
     /**
      * Your latest personal events from all spaces (mentions, replies, reactions, followed threads, missed calls) and the
-     * activities the server publishes. Private conversations keep their own unread state. Not part of the state snapshot.
+     * activities the server publishes. Private conversations keep their own unread state. Nothing is fetched until you
+     * ask for it. Not part of the state snapshot.
      */
     public readonly activities: ActivitiesManager;
 

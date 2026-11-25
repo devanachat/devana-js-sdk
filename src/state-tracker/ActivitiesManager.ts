@@ -1,4 +1,5 @@
 import {EventTarget} from "../EventTarget";
+import {ObservableIndexedObjectCollection} from "../IndexedObjectCollection";
 import {
     Activities,
     Activity,
@@ -6,7 +7,12 @@ import {
     ActivityUpdated,
     FollowedTopicUpdated,
     Message,
+    MessagesRedacted,
+    MessageUpdated,
     NewActivity,
+    RoomDeleted,
+    RoomJoined,
+    RoomLeft,
     User,
 } from "../protocol";
 import {PromiseRegistry} from "./AsyncUtils";
@@ -18,10 +24,12 @@ const GROUP_SCAN = 5;
 const MAX_ACTORS = 3;
 
 interface EventMap {
-    change: {};
+    seenAtChange: {};
 }
 
 const time = (isoDate: string | null): number => isoDate ? Date.parse(isoDate) : 0;
+
+const newestFirst = (a: Activity, b: Activity): number => time(b.createdAt) - time(a.createdAt);
 
 // A reaction is to one's own message, so acknowledging it says nothing about the reaction
 const isReadWithAck = (activity: Activity): boolean => activity.type !== 'Reaction' && activity.type !== 'Custom';
@@ -34,147 +42,135 @@ const isAcknowledged = (activity: Activity, topicId: string, lastAckMessageId: s
     && activity.messageId <= lastAckMessageId;
 
 export class ActivitiesManager extends EventTarget<EventMap> {
-    private list: Activity[] = [];
-    private readonly messages = new Map<string, Message>();
-    private readonly users = new Map<string, User>();
-    private seen: string | null = null;
-    private incomplete = false;
+    private readonly activities = new ObservableIndexedObjectCollection<Activity>('id');
+    private readonly messages = new ObservableIndexedObjectCollection<Message>('id');
+    private readonly users = new ObservableIndexedObjectCollection<User>('id');
     private readonly promises = new PromiseRegistry();
     private readonly acks = new Map<string, string>();
-    private wanted = false;
-    private received = false;
+    private readonly hiddenRoomIds = new Set<string>();
+    private activitiesWanted = false;
+    private messagesWanted = false;
+    private refreshScheduled = false;
+    private seen: string | null = null;
 
     public constructor(private tracker: ChatStateTracker) {
         super();
 
-        this.tracker.client.on('Activities', ev => this.handleActivities(ev));
         this.tracker.client.on('NewActivity', ev => this.handleNewActivity(ev));
         this.tracker.client.on('ActivityUpdated', ev => this.handleActivityUpdated(ev));
         this.tracker.client.on('ActivityDeleted', ev => this.handleActivityDeleted(ev));
         this.tracker.client.on('FollowedTopicUpdated', ev => this.handleFollowedTopicUpdated(ev));
+        this.tracker.client.on('MessageUpdated', ev => this.handleMessageUpdated(ev));
+        this.tracker.client.on('MessagesRedacted', ev => this.handleMessagesRedacted(ev));
+        this.tracker.client.on('RoomDeleted', ev => this.handleRoomDeleted(ev));
+        this.tracker.client.on('RoomLeft', ev => this.handleRoomLeft(ev));
+        this.tracker.client.on('RoomJoined', ev => this.handleRoomJoined(ev));
         this.tracker.client.on('Session', () => this.handleSession());
     }
 
     /**
-     * Fetches the activities the first time; afterwards they change with the events of the server.
-     * A loaded list is fetched again after every reconnect, as events are missed while disconnected.
+     * Your latest activities, keyed by id; always the same collection. The first call fetches them, later ones resolve
+     * with them. Once fetched, they are fetched again after every reconnect, also when the first fetch failed because
+     * the connection was not ready yet. The collection keeps no meaningful order - sort by `createdAt`. Marking the list
+     * as seen and clearing it is done with the `UpdateActivity` command.
+     * @param fetchWithMessages Fetch the messages and the actors of the activities along, so {@link getMessages} and
+     * {@link getUsers} need no request.
      */
-    public async load(): Promise<void> {
-        this.wanted = true;
-
-        if (this.promises.notExist('all')) {
-            this.promises.registerByFunction(() => this.fetch(), 'all');
+    public async get(fetchWithMessages: boolean = false): Promise<ObservableIndexedObjectCollection<Activity>> {
+        if (fetchWithMessages) {
+            await this.getMessages();
         }
 
-        await this.promises.get('all');
+        if (this.promises.notExist('activities')) {
+            this.activitiesWanted = true;
+            this.registerFetch(false);
+        }
+
+        await this.promises.get('activities');
+        return this.activities;
     }
 
     /**
-     * Fetches the activities again - needed when {@link isIncomplete}, as an activity that arrives live does not carry
-     * the message it points at.
+     * The messages the activities point at, keyed by message id; always the same collection. The first call fetches
+     * them together with the list of {@link get}, unless they were fetched already; afterwards they come with new
+     * activities, follow the edits and are fetched again after every reconnect.
      */
-    public async refresh(): Promise<void> {
-        this.promises.register(this.fetch(), 'all');
-        await this.promises.get('all');
+    public async getMessages(): Promise<ObservableIndexedObjectCollection<Message>> {
+        if (this.promises.notExist('messages')) {
+            this.activitiesWanted = true;
+            this.messagesWanted = true;
+            this.registerFetch(true);
+        }
+
+        await this.promises.get('messages');
+        return this.messages;
     }
 
     /**
-     * Newest first. A new array after every change.
+     * The actors of the activities, keyed by user id; always the same collection, fetched and kept together with
+     * {@link getMessages}.
      */
-    public get activities(): Activity[] {
-        return this.list;
+    public async getUsers(): Promise<ObservableIndexedObjectCollection<User>> {
+        await this.getMessages();
+        return this.users;
     }
 
+    /**
+     * When the list was last seen, on any device; null until it is fetched or while it was never seen. A change emits
+     * `seenAtChange`. Activities created later that are not {@link Activity.isRead} are the unread ones.
+     */
     public get seenAt(): string | null {
         return this.seen;
     }
 
-    /**
-     * Activities newer than {@link seenAt} whose message is not acknowledged yet (see {@link Activity.isRead}).
-     */
-    public get unreadCount(): number {
-        const seen = time(this.seen);
-        return this.list.filter(activity => !activity.isRead && time(activity.createdAt) > seen).length;
-    }
+    private registerFetch(withMessages: boolean): void {
+        const fetching = this.fetch(withMessages);
 
-    /**
-     * True when an activity arrived without the message it points at; {@link refresh} brings it.
-     */
-    public get isIncomplete(): boolean {
-        return this.incomplete;
-    }
-
-    /**
-     * True once the list has arrived; until then {@link activities} is empty because it is not known yet.
-     */
-    public get loaded(): boolean {
-        return this.received;
-    }
-
-    public getMessage(messageId: string): Message | undefined {
-        return this.messages.get(messageId);
-    }
-
-    public getUser(userId: string): User | undefined {
-        return this.users.get(userId);
-    }
-
-    /**
-     * Marks everything shown as seen, on every device of the user. Nothing is sent when nothing is new.
-     */
-    public async markSeen(): Promise<void> {
-        const newest = this.list[0]?.createdAt ?? null;
-
-        if (!newest || time(newest) <= time(this.seen)) {
-            return;
+        this.promises.register(fetching, 'activities');
+        if (withMessages) {
+            this.promises.register(fetching, 'messages');
         }
+    }
 
-        this.seen = newest;
-        this.emit('change', {});
-
-        const result = await this.tracker.client.send('UpdateActivity', {seenAt: newest});
+    private async fetch(withMessages: boolean): Promise<void> {
+        const result = await this.tracker.client.send('GetActivities', {withMessages});
         if (result.error) {
             throw result.error;
         }
+
+        this.apply(result.data, withMessages);
     }
 
-    /**
-     * Empties the list on every device of the user.
-     */
-    public async clear(): Promise<void> {
-        const result = await this.tracker.client.send('UpdateActivity', {clear: true});
-        if (result.error) {
-            throw result.error;
+    private apply(ev: Activities, withMessages: boolean): void {
+        this.activities.reconcile(...ev.activities);
+
+        if (withMessages) {
+            this.messages.reconcile(...ev.messages);
+            this.users.reconcile(...ev.users);
         }
+
+        this.setSeen(ev.seenAt);
     }
 
-    private async fetch(): Promise<void> {
-        const result = await this.tracker.client.send('GetActivities', {});
-        if (result.error) {
-            throw result.error;
+    private refresh(): void {
+        if (this.messagesWanted) {
+            this.registerFetch(true);
+        } else if (this.activitiesWanted) {
+            this.registerFetch(false);
         }
+
+        this.promises.get('activities')?.catch(() => {});
     }
 
-    private handleActivities(ev: Activities): void {
-        this.received = true;
-        this.list = ev.activities;
-        this.seen = ev.seenAt;
-        this.incomplete = false;
-        this.messages.clear();
-        this.users.clear();
-
-        for (const message of ev.messages) {
-            this.messages.set(message.id, message);
+    private setSeen(seenAt: string | null): void {
+        if (seenAt !== this.seen) {
+            this.seen = seenAt;
+            this.emit('seenAtChange', {});
         }
-        for (const user of ev.users) {
-            this.users.set(user.id, user);
-        }
-
-        this.emit('change', {});
     }
 
     private handleNewActivity(ev: NewActivity): void {
-        if (!this.loaded) {
+        if (!this.activitiesWanted) {
             return;
         }
 
@@ -183,49 +179,46 @@ export class ActivitiesManager extends EventTarget<EventMap> {
         const added = lastAck && isAcknowledged(ev.activity, topicId, lastAck)
             ? {...ev.activity, isRead: true}
             : ev.activity;
-        const seen = time(this.seen);
-        const groupIndex = added.groupKey === null ? -1 : this.list
+        const newest = this.activities.items.sort(newestFirst);
+        const group = added.groupKey === null ? undefined : newest
             .slice(0, GROUP_SCAN)
-            .findIndex(activity => activity.groupKey === added.groupKey);
-        const group = groupIndex === -1 ? null : this.list[groupIndex];
-        const rest = this.list.slice();
+            .find(activity => activity.groupKey === added.groupKey);
 
-        if (group && time(group.createdAt) > seen) {
-            rest.splice(groupIndex, 1);
-            this.list = [{
+        if (group && time(group.createdAt) > time(this.seen)) {
+            this.activities.set({
                 ...added,
                 id: group.id,
                 count: group.count + 1,
                 actorIds: [...new Set([...added.actorIds, ...group.actorIds])].slice(0, MAX_ACTORS),
-            }, ...rest];
+            });
         } else {
-            this.list = [added, ...rest].slice(0, VISIBLE_LIMIT);
+            this.activities.set(added);
+            this.activities.delete(...newest.slice(VISIBLE_LIMIT - 1).map(activity => activity.id));
         }
 
-        if (added.messageId && !this.messages.has(added.messageId)) {
-            this.incomplete = true;
+        if (this.messagesWanted) {
+            if (ev.message) {
+                this.messages.set(ev.message);
+            }
+            this.users.set(...ev.users);
         }
-
-        this.emit('change', {});
     }
 
     private handleActivityUpdated(ev: ActivityUpdated): void {
         if (time(ev.seenAt) > time(this.seen)) {
-            this.seen = ev.seenAt;
-        }
-        if (ev.cleared) {
-            this.list = [];
+            this.setSeen(ev.seenAt);
         }
 
-        this.emit('change', {});
+        if (ev.cleared) {
+            this.activities.deleteAll();
+            this.messages.deleteAll();
+            this.users.deleteAll();
+        }
     }
 
     private handleActivityDeleted(ev: ActivityDeleted): void {
-        const list = this.list.filter(activity => activity.id !== ev.id);
-
-        if (list.length !== this.list.length) {
-            this.list = list;
-            this.emit('change', {});
+        if (this.activities.has(ev.id)) {
+            this.activities.delete(ev.id);
         }
     }
 
@@ -239,31 +232,65 @@ export class ActivitiesManager extends EventTarget<EventMap> {
         // An acknowledgement may come before the activity of the same message
         this.acks.set(location.topicId, lastAckMessageId);
 
-        let changed = false;
-        const list = this.list.map(activity => {
-            if (activity.isRead || !isAcknowledged(activity, location.topicId, lastAckMessageId)) {
-                return activity;
-            }
+        const read = this.activities.items
+            .filter(activity => !activity.isRead && isAcknowledged(activity, location.topicId, lastAckMessageId))
+            .map(activity => ({...activity, isRead: true}));
 
-            changed = true;
-            return {...activity, isRead: true};
-        });
+        this.activities.set(...read);
+    }
 
-        if (changed) {
-            this.list = list;
-            this.emit('change', {});
+    private handleMessageUpdated(ev: MessageUpdated): void {
+        if (this.messages.has(ev.message.id)) {
+            this.messages.set(ev.message);
         }
+    }
+
+    private handleMessagesRedacted(ev: MessagesRedacted): void {
+        const ids = new Set(ev.ids);
+
+        this.deleteActivities(activity => activity.messageId !== null && ids.has(activity.messageId));
+    }
+
+    private handleRoomDeleted(ev: RoomDeleted): void {
+        this.hiddenRoomIds.delete(ev.id);
+        this.deleteActivities(activity => activity.location?.roomId === ev.id);
+    }
+
+    private handleRoomLeft(ev: RoomLeft): void {
+        // The server keeps them and hands them back once you rejoin
+        if (this.deleteActivities(activity => activity.location?.roomId === ev.id)) {
+            this.hiddenRoomIds.add(ev.id);
+        }
+    }
+
+    private handleRoomJoined(ev: RoomJoined): void {
+        if (!this.hiddenRoomIds.delete(ev.room.id) || this.refreshScheduled) {
+            return;
+        }
+
+        // Joining a space joins its rooms one by one; one request brings back the activities of all of them
+        this.refreshScheduled = true;
+        setTimeout(() => {
+            this.refreshScheduled = false;
+            this.refresh();
+        }, 0);
+    }
+
+    private deleteActivities(predicate: (activity: Activity) => boolean): boolean {
+        const deleted = this.activities.items.filter(predicate);
+        const messageIds = deleted
+            .map(activity => activity.messageId)
+            .filter((id): id is string => id !== null && this.messages.has(id));
+
+        this.activities.delete(...deleted.map(activity => activity.id));
+        this.messages.delete(...messageIds);
+
+        return deleted.length > 0;
     }
 
     private handleSession(): void {
         this.acks.clear();
-
-        // Also after a load that failed, e.g. one asked for before the connection was ready
-        if (!this.wanted) {
-            return;
-        }
-
         this.promises.forgetAll();
-        this.load().catch(() => {});
+        this.refresh();
     }
 }
