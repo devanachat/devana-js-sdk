@@ -142,6 +142,23 @@ describe('activities', () => {
         expect(activities.has(initial[0].id)).toBe(false);
     });
 
+    test('the answer and the event of the same update are applied once, and an answer that moved nothing changes nothing', async () => {
+        const kept = activity();
+        const { client, manager } = createManager({ activities: [kept], seenAt: kept.createdAt });
+        const activities = await manager.get();
+        const seenChanges: (string | null)[] = [];
+        manager.on('seenAtChange', () => seenChanges.push(manager.seenAt));
+
+        client.emit('ActivityUpdated', { seenAt: null, cleared: false });
+        expect(manager.seenAt).toBe(kept.createdAt);
+        expect(activities.items).toEqual([kept]);
+
+        const later = new Date(clock += 1000).toISOString();
+        client.emit('ActivityUpdated', { seenAt: later, cleared: false });
+        client.emit('ActivityUpdated', { seenAt: later, cleared: false });
+        expect(seenChanges).toEqual([later]);
+    });
+
     test('another session marks the list seen, clears it and deletes an activity', async () => {
         const kept = activity();
         const deleted = activity({ type: 'Custom', messageId: null, location: null, title: 'News' });
