@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Activities: your latest personal events from all spaces - a mention of you or of your role, a reply to you, a
+  reaction to your message, a reply in a thread you follow and a missed call - and the activities the server publishes
+  itself, with a `title`, a `description` and a `link`. Private conversations keep their own unread state: apart from a
+  missed call they make no activities. The protocol: the `GetActivities` command answered with `Activities` (up to 20
+  `Activity` objects, newest first, the `seenAt` time and the messages and users they point at), the `UpdateActivity`
+  command (`seenAt` marks the list as seen, `clear` empties it) answered with `ActivityUpdated`, which every session of
+  the user gets, and the events `NewActivity` and `ActivityDeleted`. Activities of one group (`groupKey`: reactions to
+  one message, replies in one thread) join while unseen: `count` grows, `actorIds` keeps the last three and `messageId`
+  points at the newest message. `Activity.isRead` is set once the message of the activity is acknowledged (`Ack`;
+  reactions excepted); a live `NewActivity` of a message comes a few seconds late and only to those who have not
+  acknowledged it by then, so an activity in the topic you are reading does not show at all.
+- `ChatStateTracker.activities` (`ActivitiesManager`): `load()`, `activities`, `unreadCount`, `seenAt`,
+  `getMessage()` / `getUser()`, `markSeen()`, `clear()` and a `change` event. A live activity joins its group the way
+  the server does; one that arrives without its message sets `isIncomplete`, and `refresh()` fetches the messages.
+  `FollowedTopicUpdated` (an acknowledgement, also from another device) marks the activities of its messages read, and
+  `unreadCount` leaves read activities out. `loaded` is true once the list has arrived. A list asked for with
+  `load()` is fetched again on every new session - after a reconnect, and when it was asked for before the connection
+  was ready. Activities are not part of the state snapshot.
+
 ## [0.14.0]
 
 ### Added
