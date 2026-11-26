@@ -44,6 +44,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   into the same collections. `ItemSaved` / `ItemUnsaved` (also from another device), edits and deletions of the saved
   messages and deleted rooms change the collections; leaving a room hides its items and rejoining brings them back. The
   collection order is not meaningful - sort by `SavedItem.savedAt`. Saved items are not part of the state snapshot.
+- The `StartCalls` permission (`2 ** 34`, up to the room layer): starting a call in a room, in every call mode. It
+  takes effect only together with `JoinCalls`, as whoever starts a call joins it.
+
+### Changed
+
+- Room call permissions mean the same in every call mode. `JoinCalls` lets you join an ongoing call and no longer
+  start one: without `StartCalls` the `JoinCall` that would start a call fails with the `AccessDeniedException` error.
+  `ManageCalls` no longer lets you start an event (`Stage`). Whoever starts an event speaks in it, also without
+  `ManageCalls`. Private conversations still check none of these.
 
 ## [0.14.0]
 

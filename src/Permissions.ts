@@ -54,6 +54,7 @@ export class Permissions {
         ShareVideo: {value: 2 ** 31, maxLayer: Layer.Room},
         InviteToCall: {value: 2 ** 32, maxLayer: Layer.Room},
         ManageCalls: {value: 2 ** 33, maxLayer: Layer.Room},
+        StartCalls: {value: 2 ** 34, maxLayer: Layer.Room},
     };
 
     /**

@@ -14,17 +14,18 @@ test('can permission be defined on layer', () => {
 });
 
 describe('mask arithmetic beyond 32 bits', () => {
-    const {JoinCalls, ShareVideo, InviteToCall, ManageCalls, Root} = Permissions.list;
+    const {JoinCalls, ShareVideo, InviteToCall, ManageCalls, StartCalls, Root} = Permissions.list;
 
     test('every permission has its own bit', () => {
-        expect([JoinCalls.value, ShareVideo.value, InviteToCall.value, ManageCalls.value])
-            .toEqual([2 ** 30, 2 ** 31, 2 ** 32, 2 ** 33]);
+        expect([JoinCalls.value, ShareVideo.value, InviteToCall.value, ManageCalls.value, StartCalls.value])
+            .toEqual([2 ** 30, 2 ** 31, 2 ** 32, 2 ** 33, 2 ** 34]);
 
         const values = Object.values(Permissions.list).map(def => def.value);
         expect(new Set(values).size).toBe(values.length);
         expect(Permissions.union(...values)).toBe(values.reduce((sum, value) => sum + value, 0));
         expect(Permissions.getKnownMask()).toBe(Permissions.union(...values));
         expect(Permissions.has(Permissions.getKnownMask(), 'ManageCalls')).toBe(true);
+        expect(Permissions.has(Permissions.getKnownMask(), 'StartCalls')).toBe(true);
     });
 
     test('has', () => {
