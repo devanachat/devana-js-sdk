@@ -11,12 +11,15 @@ type Overwrites = {allow: number | null, deny: number | null};
 const createManager = (roles: string[], spaceRolesOverwrites: Record<string, Overwrites>): PermissionsManager => {
     const client = new class extends EventTarget {
         public async send(type: string, data: any): Promise<any> {
-            const {location, target} = data;
-            const overwrites = type === 'GetPermissionOverwrites' && target.type === 'Role'
-                ? spaceRolesOverwrites[target.roleId] ?? {allow: null, deny: null}
-                : {allow: null, deny: null};
+            const results = data.queries.map(({location, target}: any) => ({
+                location,
+                target,
+                overwrites: type === 'GetPermissionOverwrites' && target.type === 'Role'
+                    ? spaceRolesOverwrites[target.roleId] ?? {allow: null, deny: null}
+                    : {allow: null, deny: null},
+            }));
 
-            return {data: {location, target, overwrites}, error: null};
+            return {data: {results}, error: null};
         }
     };
     const tracker: any = {

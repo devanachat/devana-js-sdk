@@ -4,6 +4,30 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [semver](https://semver.org) (`0.x` minor releases may break the API).
 
+## [Unreleased]
+
+### Added
+
+- `GetPermissionOverwrites` takes a list: `queries`, each a `location` with a `target`, answered with
+  `PermissionOverwritesList` - its `results` hold one `PermissionOverwrites` for every query, in their order, an empty
+  `allow`/`deny` where nothing is set. One request takes at most 50 queries referring to at most 4 different
+  locations, and fails as a whole when you may not read one of them. The types: `GetPermissionOverwritesBatch`,
+  `GetPermissionOverwritesQuery` and the `PermissionOverwritesList` event.
+
+### Changed
+
+- `PermissionsManager` fetches every overwrite a permission check needs with one request instead of one request per
+  layer and role: a topic of a space where you hold 3 roles takes 1 request instead of 13, and so does every reconnect.
+  Checks of the room or the space of a topic already checked need no request; a role you get later is fetched alone.
+  `getOverwrites()` sends a list of one query and, as before, answers from the cache, which follows only your own
+  overwrites and those of your roles in the locations you belong to; for live overwrites of another target send
+  `GetPermissionOverwrites` yourself.
+
+### Deprecated
+
+- `GetPermissionOverwrites` with a single `location` and `target` (`GetSinglePermissionOverwrites`), answered with
+  `PermissionOverwrites`. The server still accepts it for now; send `queries` instead.
+
 ## [0.15.0]
 
 ### Added

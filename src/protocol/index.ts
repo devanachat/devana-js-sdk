@@ -43,6 +43,7 @@ import {TopicDeleted} from "./schemes/events/TopicDeleted";
 import {NewMessage} from "./schemes/events/NewMessage";
 import {PermissionOverwritesUpdated} from "./schemes/events/PermissionOverwritesUpdated";
 import {PermissionOverwrites} from "./schemes/events/PermissionOverwrites";
+import {PermissionOverwritesList} from "./schemes/events/PermissionOverwritesList";
 import {GetSession} from "./schemes/commands/GetSession";
 import {GetComputedPermissions} from "./schemes/commands/GetComputedPermissions";
 import {JoinSpace} from "./schemes/commands/JoinSpace";
@@ -57,7 +58,12 @@ import {RoleUpdated} from "./schemes/events/RoleUpdated";
 import {AssignRole} from "./schemes/commands/AssignRole";
 import {DeassignRole} from "./schemes/commands/DeassignRole";
 import {SetPermissionOverwrites} from "./schemes/commands/SetPermissionOverwrites";
-import {GetPermissionOverwrites} from "./schemes/commands/GetPermissionOverwrites";
+import {
+    GetPermissionOverwrites,
+    GetPermissionOverwritesBatch,
+    GetPermissionOverwritesQuery,
+    GetSinglePermissionOverwrites,
+} from "./schemes/commands/GetPermissionOverwrites";
 import {JoinRoom} from "./schemes/commands/JoinRoom";
 import {LeaveRoom} from "./schemes/commands/LeaveRoom";
 import {GetIgnoredRooms} from "./schemes/commands/GetIgnoredRooms";
@@ -337,6 +343,7 @@ export type {
     FollowedTopicUpdated,
     ComputedPermissions,
     PermissionOverwrites,
+    PermissionOverwritesList,
     PermissionOverwritesUpdated,
     RoleDeleted,
     RoleUpdated,
@@ -429,6 +436,9 @@ export type {
     DeleteTopic,
     SetPermissionOverwrites,
     GetPermissionOverwrites,
+    GetPermissionOverwritesBatch,
+    GetPermissionOverwritesQuery,
+    GetSinglePermissionOverwrites,
     GetComputedPermissions,
     GetRoomMembers,
     GetSession,

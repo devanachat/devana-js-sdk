@@ -1,6 +1,7 @@
 import {ChatStateTracker} from "./ChatStateTracker";
 import {
     ChatLocation,
+    GetPermissionOverwritesQuery,
     PermissionOverwrites, PermissionOverwritesTarget,
     PermissionOverwritesUpdated,
     PermissionOverwritesValue,
@@ -21,6 +22,8 @@ const getOvId = (
     location: ChatLocation,
     target?: PermissionOverwritesTarget,
 ) => [location.spaceId, location.roomId, location.topicId, target?.type, target?.userId, target?.roleId].filter(Boolean).join('/');
+
+const FETCH_CHUNK_SIZE = 50;
 
 const getOvIdByObject
     = (overwrites: PermissionOverwrites | PermissionOverwritesUpdated): string => getOvId(overwrites.location, overwrites.target);
@@ -56,29 +59,18 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
         this.tracker.client.on('Session', ev => this.handleSession(ev));
     }
 
+    /**
+     * Cached: kept up to date only for your own overwrites and those of your roles in the locations you belong to.
+     * For live overwrites of another target send `GetPermissionOverwrites` yourself.
+     */
     public async getOverwrites(
         location: ChatLocation,
         target: PermissionOverwritesTarget,
     ): Promise<PermissionOverwrites | undefined> {
         this.validateLocation(location);
+        await this.fetchOverwrites([{location, target}]);
 
-        const id = getOvId(location, target);
-
-        if (this.overwritesPromises.notExist(id)) {
-            this.overwritesPromises.registerByFunction(async () => {
-                const result = await this.tracker.client.send(
-                    'GetPermissionOverwrites',
-                    {location, target},
-                );
-                if (result.error) {
-                    throw result.error;
-                }
-                this.handlePermissionOverwrites(result.data);
-            }, id);
-        }
-
-        await this.overwritesPromises.get(id);
-        return this.overwrites.get(id);
+        return this.overwrites.get(getOvId(location, target));
     }
 
     public async check(
@@ -123,42 +115,102 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
             return this.fetchComputedPermissions(location);
         }
 
-        const userId = (await this.tracker.getMe()).id;
+        const me: PermissionOverwritesTarget = {type: 'User', userId: (await this.tracker.getMe()).id};
         const [spaceMember, roomMember] = await this.fetchMembersOrFail(location);
         const userRoles: string[] = [...(spaceMember?.roles ?? []), ...(roomMember?.roles ?? [])];
-        const promises: Promise<PermissionOverwritesValue | PermissionOverwritesValue[]>[] = [
-            // Global user overwrites
-            this.getOverwrites({}, { type: 'User', userId }).then(v => v.overwrites),
-        ];
+        const layers: {location: ChatLocation, withRoles: boolean}[] = [{location: {}, withRoles: false}];
 
         if (location.spaceId && (await this.tracker.spaces.get())?.has(location.spaceId)) {
-            const filterLocation: ChatLocation = {spaceId: location.spaceId};
-            promises.push(this.collectRoleOverwrites(filterLocation, userRoles));
-            promises.push(this.getOverwrites(filterLocation, { type: 'User', userId }).then(v => v.overwrites));
+            layers.push({location: {spaceId: location.spaceId}, withRoles: true});
         }
 
         if (room) {
-            const filterLocation: ChatLocation = {spaceId: location.spaceId, roomId: location.roomId};
-            if (userRoles.length) {
-                promises.push(this.collectRoleOverwrites(filterLocation, userRoles));
-            }
-            promises.push(this.getOverwrites(filterLocation, { type: 'User', userId }).then(v => v.overwrites));
+            layers.push({location: {spaceId: location.spaceId, roomId: location.roomId}, withRoles: userRoles.length > 0});
         }
 
         if (location.topicId && (await this.tracker.rooms.getTopics(location.roomId))?.has(location.topicId)) {
-            if (userRoles.length) {
-                promises.push(this.collectRoleOverwrites(location, userRoles));
-            }
-            promises.push(this.getOverwrites(location, { type: 'User', userId }).then(v => v.overwrites));
+            layers.push({location, withRoles: userRoles.length > 0});
         }
 
-        return this.resolveOverwritesHierarchy(([] as PermissionOverwritesValue[]).concat(...await Promise.all(promises)));
+        const queries: GetPermissionOverwritesQuery[] = [];
+
+        for (const layer of layers) {
+            if (layer.withRoles) {
+                queries.push(...userRoles.map((roleId): GetPermissionOverwritesQuery => ({location: layer.location, target: {type: 'Role', roleId}})));
+            }
+            queries.push({location: layer.location, target: me});
+        }
+
+        await this.fetchOverwrites(queries);
+
+        const values: PermissionOverwritesValue[] = [];
+
+        for (const layer of layers) {
+            if (layer.withRoles) {
+                values.push(...this.collectRoleOverwrites(layer.location, userRoles));
+            }
+            values.push(this.getFetchedOverwrites(layer.location, me).overwrites);
+        }
+
+        return this.resolveOverwritesHierarchy(values);
+    }
+
+    // Chunked by queries only: a calculation refers to at most 4 locations, the server limit for one request
+    private async fetchOverwrites(queries: GetPermissionOverwritesQuery[]): Promise<void> {
+        const missing = new Map<string, GetPermissionOverwritesQuery>();
+
+        for (const query of queries) {
+            const id = getOvId(query.location, query.target);
+            if (this.overwritesPromises.notExist(id)) {
+                missing.set(id, query);
+            }
+        }
+
+        const pending = [...missing];
+
+        for (let i = 0; i < pending.length; i += FETCH_CHUNK_SIZE) {
+            const chunk = pending.slice(i, i + FETCH_CHUNK_SIZE);
+            const request = this.requestOverwrites(chunk.map(([, query]) => query));
+
+            for (const [id] of chunk) {
+                this.overwritesPromises.register(request, id);
+            }
+        }
+
+        await Promise.all(queries.map(query => this.overwritesPromises.get(getOvId(query.location, query.target))));
+    }
+
+    private async requestOverwrites(queries: GetPermissionOverwritesQuery[]): Promise<void> {
+        const result = await this.tracker.client.send('GetPermissionOverwrites', {queries});
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        const results = 'results' in result.data ? result.data.results : [];
+
+        if (results.length !== queries.length) {
+            throw new Error(`Expected ${queries.length} permission overwrites, received ${results.length}`);
+        }
+
+        for (const overwrites of results) {
+            this.handlePermissionOverwrites(overwrites);
+        }
+    }
+
+    private getFetchedOverwrites(location: ChatLocation, target: PermissionOverwritesTarget): PermissionOverwrites {
+        const overwrites = this.overwrites.get(getOvId(location, target));
+
+        if (! overwrites) {
+            throw new Error(`Permission overwrites of ${getOvId(location, target)} are not fetched`);
+        }
+
+        return overwrites;
     }
 
     /**
      * Arriving overwrites change the permissions only when they replace different ones. The first ones fetched for a
-     * key have not been part of any result yet - every calculation needing them awaits their fetch - and a fetch
-     * response arrives twice, as the command result and as an event.
+     * key have not been part of any result yet - every calculation needing them awaits their fetch.
      */
     private handlePermissionOverwrites(ev: PermissionOverwritesUpdated | PermissionOverwrites): void {
         const id = getOvIdByObject(ev);
@@ -223,13 +275,8 @@ export class PermissionsManager extends EventTarget<PermissionsManagerEventMap> 
         return ids;
     }
 
-    private async collectRoleOverwrites(
-        location: ChatLocation,
-        userRoles: string[],
-    ): Promise<PermissionOverwritesValue[]> {
-        const roleOverwrites = await Promise.all(userRoles.map(
-            roleId => this.getOverwrites(location, { type: 'Role', roleId }),
-        ));
+    private collectRoleOverwrites(location: ChatLocation, userRoles: string[]): PermissionOverwritesValue[] {
+        const roleOverwrites = userRoles.map(roleId => this.getFetchedOverwrites(location, {type: 'Role', roleId}));
         // The space default role (everyone) has the space id; it is applied before the other roles, as on the server.
         const isDefaultRole = (overwrites: PermissionOverwrites) => overwrites.target.roleId === location.spaceId;
 
